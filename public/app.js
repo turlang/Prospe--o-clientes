@@ -48,6 +48,7 @@ const PIPELINE = [
 ];
 
 bootAuth();
+showPaymentReturnMessage();
 
 document.querySelectorAll('.nav-btn').forEach((button) => {
   button.addEventListener('click', () => switchView(button.dataset.view));
@@ -645,6 +646,12 @@ async function activatePlan(plan) {
       throw new Error(data.error || 'Erro ao ativar plano.');
     }
 
+    if (data.checkoutUrl) {
+      statusBox.innerHTML = `<p>${data.message}</p>`;
+      window.location.href = data.checkoutUrl;
+      return;
+    }
+
     currentUser = {
       ...currentUser,
       plan: data.plan.id,
@@ -893,3 +900,41 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+
+function showPaymentReturnMessage() {
+  const params = new URLSearchParams(window.location.search);
+  const status = params.get('pagamento');
+
+  if (!status) return;
+
+  const messages = {
+    sucesso: 'Pagamento aprovado ou em processamento. Seu plano será atualizado automaticamente pelo Mercado Pago.',
+    pendente: 'Pagamento pendente. Assim que for aprovado, seu plano será atualizado automaticamente.',
+    falha: 'Pagamento não aprovado. Você pode tentar novamente pela aba Planos.'
+  };
+
+  statusBox.innerHTML = `<p>${escapeHtml(messages[status] || 'Retorno de pagamento recebido.')}</p>`;
+
+  if (status === 'sucesso' || status === 'pendente') {
+    setTimeout(async () => {
+      try {
+        const response = await apiFetch('/api/billing/status');
+        const data = await readJson(response);
+        if (response.ok && data.plan) {
+          currentUser = {
+            ...currentUser,
+            plan: data.plan.id,
+            planName: data.plan.name,
+            dailyLeadLimit: data.plan.dailyLeadLimit,
+            totalLeadLimit: data.plan.totalLeadLimit,
+            subscriptionStatus: data.subscriptionStatus
+          };
+          localStorage.setItem('currentUser', JSON.stringify(currentUser));
+          await showDashboard();
+          switchView('planos');
+        }
+      } catch {}
+    }, 2500);
+  }
+}

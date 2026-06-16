@@ -30,6 +30,8 @@ services:
         value: true
       - key: PUBLIC_APP_URL
         sync: false
+      - key: MERCADO_PAGO_PUBLIC_KEY
+        sync: false
       - key: MERCADO_PAGO_ACCESS_TOKEN
         sync: false
       - key: MERCADO_PAGO_SUCCESS_URL

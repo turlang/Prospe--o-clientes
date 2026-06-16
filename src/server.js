@@ -15,6 +15,7 @@ const authRoutes = require('./authRoutes');
 const { requireAuth } = require('./middleware/auth');
 const { connectDatabase, hasMongoUri, getMongoStatus, mustRequireMongo } = require('./db');
 const User = require('./models/User');
+const Payment = require('./models/Payment');
 const { getAllPlans, getPlan, normalizePlan } = require('./planConfig');
 const { getDailyUsage, getTotalUsage, addDailyUsage } = require('./localUsageStore');
 const { findUserById, updateLocalUserPlan } = require('./localUserStore');
@@ -45,6 +46,74 @@ const requestCounters = {
 function publicBaseUrl(req) {
   return process.env.PUBLIC_APP_URL || `${req.protocol}://${req.get('host')}`;
 }
+
+function getPlanPrice(planId) {
+  return planId === 'agency' ? 199 : 59;
+}
+
+function getPlanDurationDays() {
+  return Number(process.env.PLAN_DURATION_DAYS || 30);
+}
+
+function getPlanExpirationDate() {
+  const date = new Date();
+  date.setDate(date.getDate() + getPlanDurationDays());
+  return date;
+}
+
+async function activatePaidPlan({ userId, planId, paymentId = '', raw = {} }) {
+  const plan = getPlan(planId);
+  const update = {
+    plan: plan.id,
+    dailyLeadLimit: plan.dailyLeadLimit,
+    totalLeadLimit: plan.totalLeadLimit ?? null,
+    subscriptionStatus: 'active',
+    mercadoPagoLastPaymentId: String(paymentId || ''),
+    planActivatedAt: new Date(),
+    planExpiresAt: getPlanExpirationDate()
+  };
+
+  if (hasMongoUri()) {
+    await User.findByIdAndUpdate(userId, update);
+  } else {
+    await updateLocalUserPlan(userId, plan.id, plan.dailyLeadLimit, plan.totalLeadLimit ?? null);
+  }
+
+  if (hasMongoUri() && paymentId) {
+    await Payment.findOneAndUpdate(
+      { paymentId: String(paymentId) },
+      {
+        $set: {
+          userId,
+          plan: plan.id,
+          status: 'approved',
+          paymentId: String(paymentId),
+          raw
+        }
+      },
+      { upsert: true, new: true }
+    );
+  }
+
+  return plan;
+}
+
+async function fetchMercadoPagoPayment(paymentId) {
+  const token = process.env.MERCADO_PAGO_ACCESS_TOKEN;
+  if (!token) throw new Error('MERCADO_PAGO_ACCESS_TOKEN não configurado.');
+
+  const response = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || 'Não foi possível consultar pagamento no Mercado Pago.');
+  }
+
+  return data;
+}
+
 
 function requestLogger(req, res, next) {
   requestCounters.total += 1;
@@ -86,8 +155,9 @@ async function createMercadoPagoPreference({ req, plan }) {
   const token = process.env.MERCADO_PAGO_ACCESS_TOKEN;
   if (!token) return null;
 
-  const monthlyPrice = plan.id === 'agency' ? 199 : 59;
+  const monthlyPrice = getPlanPrice(plan.id);
   const baseUrl = publicBaseUrl(req);
+  const externalReference = `${req.user.sub}:${plan.id}:${Date.now()}`;
 
   const response = await fetch('https://api.mercadopago.com/checkout/preferences', {
     method: 'POST',
@@ -98,20 +168,29 @@ async function createMercadoPagoPreference({ req, plan }) {
     body: JSON.stringify({
       items: [
         {
-          title: `Assinatura ${plan.name} - Prospecção Leads`,
+          id: `plan_${plan.id}`,
+          title: `Plano ${plan.name} - LeadHunter Pro`,
+          description: `${plan.dailyLeadLimit} leads por dia por ${getPlanDurationDays()} dias`,
           quantity: 1,
           currency_id: 'BRL',
           unit_price: monthlyPrice
         }
       ],
+      payer: {
+        email: req.user.email
+      },
       back_urls: {
-        success: process.env.MERCADO_PAGO_SUCCESS_URL || `${baseUrl}/?pagamento=sucesso`,
-        failure: process.env.MERCADO_PAGO_FAILURE_URL || `${baseUrl}/?pagamento=falha`,
-        pending: process.env.MERCADO_PAGO_PENDING_URL || `${baseUrl}/?pagamento=pendente`
+        success: process.env.MERCADO_PAGO_SUCCESS_URL || `${baseUrl}/app?pagamento=sucesso`,
+        failure: process.env.MERCADO_PAGO_FAILURE_URL || `${baseUrl}/app?pagamento=falha`,
+        pending: process.env.MERCADO_PAGO_PENDING_URL || `${baseUrl}/app?pagamento=pendente`
       },
       auto_return: 'approved',
-      external_reference: `${req.user.sub}:${plan.id}`,
-      notification_url: process.env.MERCADO_PAGO_WEBHOOK_URL || undefined
+      external_reference: externalReference,
+      notification_url: process.env.MERCADO_PAGO_WEBHOOK_URL || `${baseUrl}/api/billing/webhook`,
+      metadata: {
+        user_id: req.user.sub,
+        plan_id: plan.id
+      }
     })
   });
 
@@ -120,13 +199,27 @@ async function createMercadoPagoPreference({ req, plan }) {
     throw new Error(data.message || 'Não foi possível criar checkout no Mercado Pago.');
   }
 
+  if (hasMongoUri()) {
+    await Payment.create({
+      userId: req.user.sub,
+      plan: plan.id,
+      status: 'created',
+      provider: 'mercado_pago',
+      preferenceId: data.id,
+      externalReference,
+      checkoutUrl: data.init_point,
+      amount: monthlyPrice,
+      raw: data
+    });
+  }
+
   return {
     checkoutUrl: data.init_point,
     sandboxCheckoutUrl: data.sandbox_init_point,
-    preferenceId: data.id
+    preferenceId: data.id,
+    externalReference
   };
 }
-
 
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors());
@@ -227,11 +320,12 @@ app.post('/api/billing/checkout', requireAuth, async (req, res) => {
       return res.json({
         ok: true,
         mode: 'mercado_pago',
-        message: `Checkout do plano ${plan.name} criado.`,
+        message: `Checkout do plano ${plan.name} criado. Você será redirecionado para pagamento.`,
         plan,
         checkoutUrl: preference.checkoutUrl,
         sandboxCheckoutUrl: preference.sandboxCheckoutUrl,
-        preferenceId: preference.preferenceId
+        preferenceId: preference.preferenceId,
+        externalReference: preference.externalReference
       });
     }
 
@@ -480,8 +574,83 @@ app.post('/api/gerar-abordagem', requireAuth, async (req, res) => {
 });
 
 app.post('/api/billing/webhook', async (req, res) => {
-  console.log('[Mercado Pago Webhook]', JSON.stringify(req.body || {}));
-  res.json({ received: true });
+  try {
+    console.log('[Mercado Pago Webhook]', JSON.stringify(req.body || {}));
+
+    const paymentId =
+      req.body?.data?.id ||
+      req.body?.id ||
+      req.query?.id ||
+      req.query?.['data.id'];
+
+    const topic = req.body?.type || req.body?.topic || req.query?.topic || '';
+
+    if (!paymentId || !String(topic).includes('payment')) {
+      return res.status(200).json({ received: true, ignored: true });
+    }
+
+    const payment = await fetchMercadoPagoPayment(paymentId);
+    const externalReference = String(payment.external_reference || '');
+    const [userIdFromRef, planFromRef] = externalReference.split(':');
+    const planId = payment.metadata?.plan_id || planFromRef;
+    const userId = payment.metadata?.user_id || userIdFromRef;
+
+    if (!userId || !['pro', 'agency'].includes(planId)) {
+      return res.status(200).json({ received: true, ignored: true, reason: 'metadata inválido' });
+    }
+
+    if (hasMongoUri()) {
+      await Payment.findOneAndUpdate(
+        { paymentId: String(payment.id) },
+        {
+          $set: {
+            userId,
+            plan: planId,
+            status: payment.status,
+            paymentId: String(payment.id),
+            externalReference,
+            amount: Number(payment.transaction_amount || 0),
+            raw: payment
+          }
+        },
+        { upsert: true, new: true }
+      );
+    }
+
+    if (payment.status === 'approved') {
+      const plan = await activatePaidPlan({
+        userId,
+        planId,
+        paymentId: payment.id,
+        raw: payment
+      });
+
+      return res.json({ received: true, upgraded: true, plan: plan.id });
+    }
+
+    return res.json({ received: true, status: payment.status });
+  } catch (error) {
+    console.error('[Mercado Pago Webhook Error]', error);
+    return res.status(200).json({ received: true, error: error.message });
+  }
+});
+
+app.get('/api/billing/status', requireAuth, async (req, res) => {
+  try {
+    const user = hasMongoUri() ? await User.findById(req.user.sub).lean() : await findUserById(req.user.sub);
+    if (!user) return res.status(404).json({ error: 'Usuário não encontrado.' });
+
+    const plan = getPlan(user.plan || 'trial');
+    res.json({
+      plan,
+      subscriptionStatus: user.subscriptionStatus || 'trial',
+      planActivatedAt: user.planActivatedAt || null,
+      planExpiresAt: user.planExpiresAt || null,
+      mercadoPagoLastPaymentId: user.mercadoPagoLastPaymentId || ''
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 
