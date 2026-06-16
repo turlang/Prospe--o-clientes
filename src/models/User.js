@@ -12,7 +12,10 @@ const userSchema = new mongoose.Schema(
     isActive: { type: Boolean, default: true },
     subscriptionStatus: { type: String, default: 'trial' },
     mercadoPagoCustomerId: { type: String, default: '' },
-    mercadoPagoSubscriptionId: { type: String, default: '' }
+    mercadoPagoSubscriptionId: { type: String, default: '' },
+    mercadoPagoLastPaymentId: { type: String, default: '' },
+    planActivatedAt: { type: Date, default: null },
+    planExpiresAt: { type: Date, default: null }
   },
   { timestamps: true }
 );
