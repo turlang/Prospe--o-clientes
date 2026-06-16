@@ -356,3 +356,10 @@ MONGODB_URI=mongodb+srv://usuario:senha@cluster0.xxxxx.mongodb.net/prospeccao_le
 ## Observação sobre plano gratuito do Render
 
 No plano gratuito, o serviço pode dormir após inatividade. O primeiro acesso pode demorar alguns segundos.
+
+
+## Release v10.0.0
+
+Esta release está pronta para produção com Render, MongoDB Atlas, health check, cadastro/login, persistência real, trial de 10 leads, CRM, Kanban, campanhas, follow-ups e exportação CSV.
+
+Leia também: `RELEASE_V10.md`.

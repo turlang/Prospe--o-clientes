@@ -1,13 +1,13 @@
 {
   "name": "agente-prospeccao-real",
   "version": "10.0.0",
-  "description": "SaaS de prospecção comercial com landing page, CRM, planos, campanhas e observabilidade",
+  "description": "SaaS de prospecção comercial pronto para produção com MongoDB Atlas e Render",
   "main": "src/server.js",
   "type": "commonjs",
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "check": "node --check src/server.js && node --check public/app.js"
+    "check": "node --check src/server.js && node --check public/app.js && node --check src/db.js"
   },
   "dependencies": {
     "@fast-csv/format": "^5.0.5",

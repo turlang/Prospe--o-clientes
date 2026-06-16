@@ -7,7 +7,9 @@
  * - MongoDB ativo: quando MONGODB_URI está configurado e a conexão funciona.
  * - JSON local: quando MONGODB_URI está vazio ou quando o MongoDB não conecta.
  */
+
 const dns = require('dns');
+const mongoose = require('mongoose');
 
 if (process.env.DNS_SERVERS) {
   dns.setServers(
@@ -20,7 +22,6 @@ if (process.env.DNS_SERVERS) {
   console.log('[DNS] Usando servidores:', dns.getServers());
 }
 
-const mongoose = require('mongoose');
 
 let connectionPromise = null;
 let mongoConnected = false;

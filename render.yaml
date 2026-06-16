@@ -14,6 +14,8 @@ services:
         value: production
       - key: REQUIRE_MONGODB
         value: true
+      - key: DNS_SERVERS
+        value: 8.8.8.8,1.1.1.1
       - key: JWT_SECRET
         generateValue: true
       - key: MONGODB_URI
