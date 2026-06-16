@@ -48,3 +48,10 @@ prospecção
 CRM
 exportação CSV
 ```
+
+
+## Patch v10 — Rota inicial corrigida
+
+- `/` abre a landing page.
+- `/app` abre o sistema.
+- `express.static` configurado com `{ index: false }` para não abrir `index.html` automaticamente.

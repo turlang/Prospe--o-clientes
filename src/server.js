@@ -133,13 +133,17 @@ app.use(cors());
 app.use(express.json());
 app.use(requestLogger);
 app.use(simpleRateLimit({ windowMs: 60_000, max: 120 }));
-app.use(express.static('public'));
+app.use(express.static('public', { index: false }));
 
 app.get('/app', (_req, res) => {
   res.sendFile(path.join(process.cwd(), 'public', 'index.html'));
 });
 
 app.get('/', (_req, res) => {
+  res.sendFile(path.join(process.cwd(), 'public', 'landing.html'));
+});
+
+app.get('/landing.html', (_req, res) => {
   res.sendFile(path.join(process.cwd(), 'public', 'landing.html'));
 });
 

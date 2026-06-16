@@ -363,3 +363,15 @@ No plano gratuito, o serviço pode dormir após inatividade. O primeiro acesso p
 Esta release está pronta para produção com Render, MongoDB Atlas, health check, cadastro/login, persistência real, trial de 10 leads, CRM, Kanban, campanhas, follow-ups e exportação CSV.
 
 Leia também: `RELEASE_V10.md`.
+
+
+## Correção de rota inicial
+
+A rota `/` agora abre a landing page comercial.
+O dashboard continua em `/app`.
+
+```text
+/              -> landing page
+/app           -> dashboard
+/landing.html  -> landing page
+```
