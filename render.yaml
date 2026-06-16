@@ -1,0 +1,40 @@
+services:
+  - type: web
+    name: prospeccao-leads
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: NODE_ENV
+        value: production
+      - key: REQUIRE_MONGODB
+        value: true
+      - key: JWT_SECRET
+        generateValue: true
+      - key: MONGODB_URI
+        sync: false
+      - key: GOOGLE_PLACES_API_KEY
+        sync: false
+      - key: PLACES_PROVIDER
+        value: new
+      - key: ALLOW_INCOMPLETE_CONTACTS
+        value: false
+      - key: AUDIT_WEBSITES
+        value: true
+      - key: PUBLIC_APP_URL
+        sync: false
+      - key: MERCADO_PAGO_ACCESS_TOKEN
+        sync: false
+      - key: MERCADO_PAGO_SUCCESS_URL
+        sync: false
+      - key: MERCADO_PAGO_FAILURE_URL
+        sync: false
+      - key: MERCADO_PAGO_PENDING_URL
+        sync: false
+      - key: MERCADO_PAGO_WEBHOOK_URL
+        sync: false

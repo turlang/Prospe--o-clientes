@@ -1,0 +1,16 @@
+[
+  {
+    "id": "a4749e4d-0d37-4781-8817-2d15a6f2ac20",
+    "name": "ricardo",
+    "email": "ricardo@teste.com",
+    "passwordHash": "$2a$12$QC/El8ZfpQbIq3aHXWix3./SzyN6hlCZZ/0///qvVTTrRSPWn22T.",
+    "plan": "pro",
+    "dailyLeadLimit": 500,
+    "totalLeadLimit": null,
+    "trialStartedAt": "2026-06-15T22:04:03.867Z",
+    "subscriptionStatus": "simulated",
+    "isActive": true,
+    "createdAt": "2026-06-15T22:04:03.867Z",
+    "updatedAt": "2026-06-15T22:27:45.123Z"
+  }
+]

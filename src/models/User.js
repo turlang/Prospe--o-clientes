@@ -1,0 +1,20 @@
+const mongoose = require('mongoose');
+
+const userSchema = new mongoose.Schema(
+  {
+    name: { type: String, trim: true, required: true },
+    email: { type: String, trim: true, lowercase: true, unique: true, required: true },
+    passwordHash: { type: String, required: true },
+    plan: { type: String, enum: ['trial', 'pro', 'agency'], default: 'trial' },
+    dailyLeadLimit: { type: Number, default: 10 },
+    totalLeadLimit: { type: Number, default: 10 },
+    trialStartedAt: { type: Date, default: Date.now },
+    isActive: { type: Boolean, default: true },
+    subscriptionStatus: { type: String, default: 'trial' },
+    mercadoPagoCustomerId: { type: String, default: '' },
+    mercadoPagoSubscriptionId: { type: String, default: '' }
+  },
+  { timestamps: true }
+);
+
+module.exports = mongoose.model('User', userSchema);

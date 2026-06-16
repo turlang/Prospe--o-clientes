@@ -1,0 +1,187 @@
+/**
+ * storage.js
+ * -----------------------------------------------------------------------------
+ * Camada única de persistência dos leads.
+ *
+ * - Com MongoDB conectado: salva por usuário na collection Lead.
+ * - Sem MongoDB: salva em data/leads.json, também separado por usuário.
+ */
+
+const fs = require('fs/promises');
+const path = require('path');
+const Lead = require('./models/Lead');
+const { hasMongoUri } = require('./db');
+
+const DB_PATH = path.join(__dirname, '..', 'data', 'leads.json');
+
+async function readAllLocalLeads() {
+  try {
+    return JSON.parse(await fs.readFile(DB_PATH, 'utf8'));
+  } catch {
+    return [];
+  }
+}
+
+async function persistAllLocalLeads(leads) {
+  await fs.mkdir(path.dirname(DB_PATH), { recursive: true });
+  const sorted = leads.sort((a, b) => Number(b.score || 0) - Number(a.score || 0));
+  await fs.writeFile(DB_PATH, JSON.stringify(sorted, null, 2));
+  return sorted;
+}
+
+function belongsToUser(lead, userId) {
+  if (!userId) return true;
+  return String(lead.__userId || '') === String(userId);
+}
+
+async function readLeads(userId = null) {
+  if (hasMongoUri() && userId) {
+    const docs = await Lead.find({ userId }).sort({ 'data.score': -1, updatedAt: -1 }).lean();
+    return docs.map((doc) => doc.data);
+  }
+
+  const leads = await readAllLocalLeads();
+  return userId ? leads.filter((lead) => belongsToUser(lead, userId)) : leads;
+}
+
+async function saveLeads(newLeads, userId = null) {
+  if (hasMongoUri() && userId) {
+    for (const lead of newLeads) {
+      const leadKey = getLeadKey(lead);
+      const previous = await Lead.findOne({ userId, leadKey }).lean();
+      const previousData = previous?.data || {};
+
+      const data = {
+        ...previousData,
+        ...lead,
+        status: previousData.status || lead.status || 'NOVO',
+        interacoes: previousData.interacoes || lead.interacoes || [],
+        atualizadoEm: new Date().toISOString()
+      };
+
+      await Lead.updateOne(
+        { userId, leadKey },
+        { $set: { data } },
+        { upsert: true }
+      );
+    }
+
+    return readLeads(userId);
+  }
+
+  const allLeads = await readAllLocalLeads();
+  const map = new Map(allLeads.map((lead) => [`${lead.__userId || 'global'}:${getLeadKey(lead)}`, lead]));
+
+  for (const lead of newLeads) {
+    const key = `${userId || 'global'}:${getLeadKey(lead)}`;
+    const previous = map.get(key) || {};
+    map.set(key, {
+      ...previous,
+      ...lead,
+      __userId: userId || previous.__userId || 'global',
+      status: previous.status || lead.status || 'NOVO',
+      interacoes: previous.interacoes || lead.interacoes || [],
+      atualizadoEm: new Date().toISOString()
+    });
+  }
+
+  await persistAllLocalLeads([...map.values()]);
+  return readLeads(userId);
+}
+
+async function updateLeadStatus(leadId, status, interaction = null, userId = null) {
+  if (hasMongoUri() && userId) {
+    const doc = await Lead.findOne({ userId, leadKey: String(leadId) });
+    if (!doc) return null;
+
+    const interacoes = Array.isArray(doc.data.interacoes) ? doc.data.interacoes : [];
+    doc.data = {
+      ...doc.data,
+      status,
+      atualizadoEm: new Date().toISOString(),
+      interacoes: interaction ? [...interacoes, interaction] : interacoes
+    };
+
+    await doc.save();
+    return doc.data;
+  }
+
+  const allLeads = await readAllLocalLeads();
+  const index = allLeads.findIndex((lead) => getLeadKey(lead) === String(leadId) && belongsToUser(lead, userId));
+  if (index === -1) return null;
+
+  const current = allLeads[index];
+  const interacoes = Array.isArray(current.interacoes) ? current.interacoes : [];
+
+  allLeads[index] = {
+    ...current,
+    status,
+    atualizadoEm: new Date().toISOString(),
+    interacoes: interaction ? [...interacoes, interaction] : interacoes
+  };
+
+  await persistAllLocalLeads(allLeads);
+  return allLeads[index];
+}
+
+async function updateLeadMeta(leadId, updates = {}, interaction = null, userId = null) {
+  const safeUpdates = {
+    favorito: Boolean(updates.favorito),
+    tags: Array.isArray(updates.tags) ? updates.tags.map(String).map((tag) => tag.trim()).filter(Boolean).slice(0, 8) : [],
+    notas: String(updates.notas || '').trim().slice(0, 1200),
+    atualizadoEm: new Date().toISOString()
+  };
+
+  if (hasMongoUri() && userId) {
+    const doc = await Lead.findOne({ userId, leadKey: String(leadId) });
+    if (!doc) return null;
+    const interacoes = Array.isArray(doc.data.interacoes) ? doc.data.interacoes : [];
+    doc.data = {
+      ...doc.data,
+      ...safeUpdates,
+      interacoes: interaction ? [...interacoes, interaction] : interacoes
+    };
+    await doc.save();
+    return doc.data;
+  }
+
+  const allLeads = await readAllLocalLeads();
+  const index = allLeads.findIndex((lead) => getLeadKey(lead) === String(leadId) && belongsToUser(lead, userId));
+  if (index === -1) return null;
+
+  const current = allLeads[index];
+  const interacoes = Array.isArray(current.interacoes) ? current.interacoes : [];
+  allLeads[index] = {
+    ...current,
+    ...safeUpdates,
+    interacoes: interaction ? [...interacoes, interaction] : interacoes
+  };
+
+  await persistAllLocalLeads(allLeads);
+  return allLeads[index];
+}
+
+async function getLeadStats(userId = null) {
+  const leads = await readLeads(userId);
+  const byStatus = leads.reduce((acc, lead) => {
+    const status = lead.status || 'NOVO';
+    acc[status] = (acc[status] || 0) + 1;
+    return acc;
+  }, {});
+
+  return {
+    total: leads.length,
+    favoritos: leads.filter((lead) => lead.favorito).length,
+    quentes: leads.filter((lead) => Number(lead.score || 0) >= 80).length,
+    contatados: leads.filter((lead) => ['CONTATADO', 'INTERESSADO', 'REUNIAO', 'PROPOSTA', 'FECHADO'].includes(lead.status)).length,
+    fechados: leads.filter((lead) => lead.status === 'FECHADO').length,
+    taxaContato: leads.length ? Math.round((leads.filter((lead) => ['CONTATADO', 'INTERESSADO', 'REUNIAO', 'PROPOSTA', 'FECHADO'].includes(lead.status)).length / leads.length) * 100) : 0,
+    byStatus
+  };
+}
+
+function getLeadKey(lead) {
+  return String(lead.placeId || lead.nome || '').trim();
+}
+
+module.exports = { readLeads, saveLeads, updateLeadStatus, updateLeadMeta, getLeadStats, getLeadKey };

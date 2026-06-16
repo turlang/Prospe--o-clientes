@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LeadHunter Pro — Dashboard</title>
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="container">
+    <section class="hero">
+      <p><a href="/landing.html" class="tag">← Voltar para a landing page</a></p>
+      <p class="tag">SaaS de prospecção para freelancers e agências</p>
+      <h1>Sistema de prospecção comercial local</h1>
+      <p>Busque empresas reais, audite presença digital, priorize oportunidades e organize seus contatos em um CRM profissional.</p>
+    </section>
+
+    <section id="authCard" class="card auth-card">
+      <div class="auth-copy">
+        <p class="tag">SaaS comercial</p>
+        <h2>Acesse sua conta</h2>
+        <p>Dashboard executivo, CRM Kanban, lead score visual e geração de abordagem comercial personalizada.</p>
+      </div>
+
+      <form id="loginForm" class="auth-form">
+        <h3>Entrar</h3>
+        <label>E-mail<input id="loginEmail" type="email" required /></label>
+        <label>Senha<input id="loginPassword" type="password" required /></label>
+        <button>Entrar no dashboard</button>
+      </form>
+
+      <form id="registerForm" class="auth-form muted-form">
+        <h3>Criar conta</h3>
+        <label>Nome<input id="registerName" required /></label>
+        <label>E-mail<input id="registerEmail" type="email" required /></label>
+        <label>Senha<input id="registerPassword" type="password" minlength="6" required /></label>
+        <button type="submit" class="secondary">Criar conta gratuita</button>
+      </form>
+    </section>
+
+    <section id="status"></section>
+
+    <section id="dashboard" hidden class="app-shell">
+      <aside class="sidebar card-panel">
+        <div class="sidebar-account">
+          <div>
+            <p class="tag">Dashboard</p>
+            <h2 id="welcome">Sua central</h2>
+            <p id="planInfo" class="plan-pill"></p>
+          </div>
+          <button id="logout" type="button" class="secondary logout-top">Sair</button>
+        </div>
+        <div id="usageBox" class="usage-box"></div>
+        <nav>
+          <button class="nav-btn active" type="button" data-view="dashboard">Visão geral</button>
+          <button class="nav-btn" type="button" data-view="prospectar">Prospectar</button>
+          <button class="nav-btn" type="button" data-view="crm">CRM Kanban</button>
+          <button class="nav-btn" type="button" data-view="historico">Histórico</button>
+          <button class="nav-btn" type="button" data-view="planos">Planos</button>
+          <button class="nav-btn" type="button" data-view="sistema">Sistema</button>
+          <button class="nav-btn" type="button" data-view="campanhas">Campanhas</button>
+        </nav>
+        <div class="upgrade-box">
+          <strong>Preparado para Pro</strong>
+          <p>Na próxima fase entram limites por plano, Mercado Pago e MongoDB Atlas em produção.</p>
+        </div>
+      </aside>
+
+      <section class="workspace">
+        <div id="stats" class="stats-grid"></div>
+
+        <section id="view-dashboard" class="view active-view">
+          <div class="dashboard-header card-panel">
+            <div>
+              <p class="tag dark">Fase 3</p>
+              <h2>Central executiva de prospecção</h2>
+              <p class="meta">Acompanhe potencial de receita, prioridade dos leads, status do funil e atividades recentes.</p>
+            </div>
+            <button type="button" onclick="switchView('prospectar')">Buscar novos leads</button>
+          </div>
+          <div id="executiveStats" class="executive-grid"></div>
+          <section class="kanban-preview card-panel">
+            <div class="section-title"><h3>Pipeline comercial</h3><p class="meta">Arraste os cards para atualizar o status do lead.</p></div>
+            <div id="kanbanBoard" class="kanban-board"></div>
+          </section>
+          <section class="card-panel">
+            <div class="section-title"><h3>Atividades recentes</h3><p class="meta">Histórico gerado por mudanças de status e análises de resposta.</p></div>
+            <div id="activityTimeline" class="timeline"></div>
+          </section>
+        </section>
+
+        <section id="view-prospectar" class="view">
+          <form id="form" class="card search-card">
+            <label>Segmento<input id="segmento" placeholder="Ex: clínica odontológica, imobiliária, estética" required /></label>
+            <label>Bairro ou região<input id="regiao" placeholder="Ex: Perus, São Paulo" required /></label>
+            <label>Quantidade<select id="limite"><option>5</option><option selected>10</option><option>20</option></select></label>
+            <label class="check"><input id="auditarSites" type="checkbox" checked /> Auditar sites</label>
+            <button>Prospectar</button>
+            <small>Usa Google Places API. A auditoria acessa apenas sites públicos.</small>
+          </form>
+        </section>
+
+        <section id="view-crm" class="view">
+          <div class="toolbar card-panel">
+            <label>Buscar<input id="searchLead" placeholder="Nome, endereço ou segmento" /></label>
+            <label>Status<select id="filterStatus"><option value="">Todos</option><option>NOVO</option><option>CONTATADO</option><option>INTERESSADO</option><option>PROPOSTA</option><option>FECHADO</option><option>SEM_INTERESSE</option></select></label>
+            <label class="check"><input id="filterFavorite" type="checkbox" /> Favoritos</label>
+            <button id="loadSaved" type="button" class="secondary" onclick="carregarLeadsCRM()">Carregar</button>
+            <button id="exportCsv" type="button">Exportar CSV</button>
+          </div>
+          <div class="kanban-preview card-panel">
+            <div class="section-title"><h3>CRM Kanban</h3><p class="meta">Arraste os leads entre as etapas do funil.</p></div>
+            <div class="crm-help"><p class="meta">Clique em Carregar para listar os leads salvos abaixo.</p></div><div id="crmLoadedLeads" class="grid"></div>
+          </div>
+        </section>
+
+        <section id="view-historico" class="view">
+          <div class="card-panel">
+            <h2>Histórico de buscas</h2>
+            <p class="meta">Últimas pesquisas feitas pelo usuário logado.</p>
+            <div id="historyList" class="history-list"></div>
+          </div>
+        </section>
+
+
+        <section id="view-planos" class="view">
+          <div class="dashboard-header card-panel">
+            <div>
+              <p class="tag dark">Planos</p>
+              <h2>Planos e monetização</h2>
+              <p class="meta">Controle de limite diário por plano, upgrade simulado e estrutura preparada para Mercado Pago.</p>
+            </div>
+          </div>
+          <div id="plansGrid" class="plans-grid"></div>
+        </section>
+
+
+        <section id="view-sistema" class="view">
+          <div class="dashboard-header card-panel">
+            <div>
+              <p class="tag dark">Produção</p>
+              <h2>Produção e observabilidade</h2>
+              <p class="meta">Health check, métricas básicas, preparação para Render e checkout real via Mercado Pago.</p>
+            </div>
+            <button type="button" onclick="loadSystemMetrics()">Atualizar métricas</button>
+          </div>
+          <div id="systemMetrics" class="executive-grid"></div>
+        </section>
+
+
+        <section id="view-campanhas" class="view">
+          <div class="dashboard-header card-panel">
+            <div>
+              <p class="tag dark">Campanhas</p>
+              <h2>Campanhas e follow-ups</h2>
+              <p class="meta">Sequências comerciais, próximos contatos e lembretes manuais para aumentar conversão sem disparo automático.</p>
+            </div>
+            <button type="button" onclick="loadFollowups()">Atualizar</button>
+          </div>
+          <div id="followupList" class="history-list"></div>
+        </section>
+
+        <section id="results" class="grid"></section>
+      </section>
+    </section>
+  </main>
+  <script src="app.js?v=logout-top-1"></script>
+</body>
+</html>
