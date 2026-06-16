@@ -905,11 +905,12 @@ document.addEventListener('DOMContentLoaded', () => {
 function showPaymentReturnMessage() {
   const params = new URLSearchParams(window.location.search);
   const status = params.get('pagamento');
+  const paymentId = params.get('payment_id') || params.get('collection_id');
 
   if (!status) return;
 
   const messages = {
-    sucesso: 'Pagamento aprovado ou em processamento. Seu plano será atualizado automaticamente pelo Mercado Pago.',
+    sucesso: 'Pagamento aprovado ou em processamento. Sincronizando seu plano...',
     pendente: 'Pagamento pendente. Assim que for aprovado, seu plano será atualizado automaticamente.',
     falha: 'Pagamento não aprovado. Você pode tentar novamente pela aba Planos.'
   };
@@ -919,22 +920,47 @@ function showPaymentReturnMessage() {
   if (status === 'sucesso' || status === 'pendente') {
     setTimeout(async () => {
       try {
-        const response = await apiFetch('/api/billing/status');
-        const data = await readJson(response);
-        if (response.ok && data.plan) {
-          currentUser = {
-            ...currentUser,
-            plan: data.plan.id,
-            planName: data.plan.name,
-            dailyLeadLimit: data.plan.dailyLeadLimit,
-            totalLeadLimit: data.plan.totalLeadLimit,
-            subscriptionStatus: data.subscriptionStatus
-          };
-          localStorage.setItem('currentUser', JSON.stringify(currentUser));
-          await showDashboard();
-          switchView('planos');
+        let response;
+        let data;
+
+        if (paymentId) {
+          response = await apiFetch('/api/billing/sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ paymentId })
+          });
+          data = await readJson(response);
+        } else {
+          response = await apiFetch('/api/billing/status');
+          data = await readJson(response);
         }
-      } catch {}
-    }, 2500);
+
+        if (response.ok) {
+          const planData = data.user || data;
+
+          if (planData.plan) {
+            currentUser = {
+              ...currentUser,
+              plan: planData.plan.id || planData.plan,
+              planName: planData.plan.name || planData.planName,
+              dailyLeadLimit: planData.dailyLeadLimit || planData.plan?.dailyLeadLimit,
+              totalLeadLimit: planData.totalLeadLimit ?? planData.plan?.totalLeadLimit ?? null,
+              subscriptionStatus: planData.subscriptionStatus
+            };
+
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            await showDashboard();
+            switchView('planos');
+
+            if (currentUser.subscriptionStatus === 'active') {
+              statusBox.innerHTML = `<p>Pagamento confirmado. Plano ${escapeHtml(currentUser.planName || currentUser.plan)} ativado.</p>`;
+            }
+          }
+        }
+      } catch (error) {
+        statusBox.innerHTML = `<p class="error">Pagamento recebido, mas não foi possível sincronizar agora. Faça logout e login novamente em alguns instantes.</p>`;
+      }
+    }, 1500);
   }
 }
+

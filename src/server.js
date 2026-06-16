@@ -27,7 +27,8 @@ app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
 
 async function getCurrentUserPlan(userId) {
-  const user = hasMongoUri() ? await User.findById(userId) : await findUserById(userId);
+  let user = hasMongoUri() ? await User.findById(userId) : await findUserById(userId);
+  user = await downgradeExpiredUserIfNeeded(user);
   const plan = getPlan(user?.plan || 'trial');
   return {
     user,
@@ -61,7 +62,31 @@ function getPlanExpirationDate() {
   return date;
 }
 
-async function activatePaidPlan({ userId, planId, paymentId = '', raw = {} }) {
+function planRank(planId) {
+  return ({ trial: 0, pro: 1, agency: 2 })[planId] ?? 0;
+}
+
+async function downgradeExpiredUserIfNeeded(user) {
+  if (!user || user.plan === 'trial' || !user.planExpiresAt) return user;
+
+  const expiresAt = new Date(user.planExpiresAt);
+  if (Number.isNaN(expiresAt.getTime()) || expiresAt > new Date()) return user;
+
+  const update = {
+    plan: 'trial',
+    dailyLeadLimit: 10,
+    totalLeadLimit: 10,
+    subscriptionStatus: 'expired'
+  };
+
+  if (hasMongoUri()) {
+    return User.findByIdAndUpdate(user._id || user.id, update, { new: true });
+  }
+
+  return { ...user, ...update };
+}
+
+async function activatePaidPlan({ userId, planId, paymentId = '', externalReference = '', raw = {} }) {
   const plan = getPlan(planId);
   const update = {
     plan: plan.id,
@@ -79,16 +104,23 @@ async function activatePaidPlan({ userId, planId, paymentId = '', raw = {} }) {
     await updateLocalUserPlan(userId, plan.id, plan.dailyLeadLimit, plan.totalLeadLimit ?? null);
   }
 
-  if (hasMongoUri() && paymentId) {
+  if (hasMongoUri()) {
+    const filters = [];
+    if (paymentId) filters.push({ paymentId: String(paymentId) });
+    if (externalReference) filters.push({ externalReference: String(externalReference) });
+
     await Payment.findOneAndUpdate(
-      { paymentId: String(paymentId) },
+      filters.length ? { $or: filters } : { userId, plan: plan.id, status: 'created' },
       {
         $set: {
           userId,
           plan: plan.id,
           status: 'approved',
-          paymentId: String(paymentId),
-          raw
+          paymentId: String(paymentId || ''),
+          externalReference: String(externalReference || ''),
+          amount: Number(raw.transaction_amount || getPlanPrice(plan.id)),
+          raw,
+          reconciledAt: new Date()
         }
       },
       { upsert: true, new: true }
@@ -96,6 +128,38 @@ async function activatePaidPlan({ userId, planId, paymentId = '', raw = {} }) {
   }
 
   return plan;
+}
+
+async function expirePaidPlan({ userId, paymentId = '', externalReference = '', raw = {} }) {
+  const update = {
+    plan: 'trial',
+    dailyLeadLimit: 10,
+    totalLeadLimit: 10,
+    subscriptionStatus: raw?.status === 'cancelled' ? 'cancelled' : 'expired'
+  };
+
+  if (hasMongoUri()) {
+    await User.findByIdAndUpdate(userId, update);
+    const filters = [];
+    if (paymentId) filters.push({ paymentId: String(paymentId) });
+    if (externalReference) filters.push({ externalReference: String(externalReference) });
+
+    await Payment.findOneAndUpdate(
+      filters.length ? { $or: filters } : { userId },
+      {
+        $set: {
+          status: raw?.status || 'expired',
+          paymentId: String(paymentId || ''),
+          externalReference: String(externalReference || ''),
+          raw,
+          reconciledAt: new Date()
+        }
+      },
+      { upsert: true, new: true }
+    );
+  }
+
+  return getPlan('trial');
 }
 
 async function fetchMercadoPagoPayment(paymentId) {
@@ -114,6 +178,74 @@ async function fetchMercadoPagoPayment(paymentId) {
   return data;
 }
 
+function extractPaymentContext(payment) {
+  const externalReference = String(payment.external_reference || '');
+  const [userIdFromRef, planFromRef] = externalReference.split(':');
+
+  return {
+    externalReference,
+    userId: payment.metadata?.user_id || userIdFromRef,
+    planId: payment.metadata?.plan_id || planFromRef
+  };
+}
+
+async function reconcileMercadoPagoPayment(paymentId) {
+  const payment = await fetchMercadoPagoPayment(paymentId);
+  const { externalReference, userId, planId } = extractPaymentContext(payment);
+
+  if (!userId || !['pro', 'agency'].includes(planId)) {
+    return { ignored: true, reason: 'metadata inválido', payment };
+  }
+
+  if (hasMongoUri()) {
+    await Payment.findOneAndUpdate(
+      {
+        $or: [
+          { paymentId: String(payment.id) },
+          { externalReference: String(externalReference) }
+        ]
+      },
+      {
+        $set: {
+          userId,
+          plan: planId,
+          status: payment.status,
+          paymentId: String(payment.id),
+          externalReference,
+          amount: Number(payment.transaction_amount || getPlanPrice(planId)),
+          raw: payment,
+          reconciledAt: new Date()
+        }
+      },
+      { upsert: true, new: true }
+    );
+  }
+
+  if (payment.status === 'approved') {
+    const plan = await activatePaidPlan({
+      userId,
+      planId,
+      paymentId: payment.id,
+      externalReference,
+      raw: payment
+    });
+
+    return { upgraded: true, status: payment.status, plan, payment };
+  }
+
+  if (['cancelled', 'refunded', 'charged_back', 'rejected'].includes(payment.status)) {
+    const plan = await expirePaidPlan({
+      userId,
+      paymentId: payment.id,
+      externalReference,
+      raw: payment
+    });
+
+    return { downgraded: true, status: payment.status, plan, payment };
+  }
+
+  return { received: true, status: payment.status, payment };
+}
 
 function requestLogger(req, res, next) {
   requestCounters.total += 1;
@@ -299,11 +431,10 @@ app.get('/api/billing/usage', requireAuth, async (req, res) => {
 });
 
 /**
- * Checkout simulado para a Planos.
+ * Checkout Mercado Pago.
  *
- * Em produção, esta rota deve criar uma preferência/assinatura no Mercado Pago.
- * Para validação local, o endpoint atualiza o plano do usuário e deixa a UI
- * pronta para monetização sem depender de credenciais reais.
+ * Em produção cria uma preferência real e nunca altera o plano antes da
+ * confirmação do pagamento pelo webhook/sincronização.
  */
 app.post('/api/billing/checkout', requireAuth, async (req, res) => {
   try {
@@ -314,6 +445,15 @@ app.post('/api/billing/checkout', requireAuth, async (req, res) => {
     }
 
     const plan = getPlan(planId);
+    const { user } = await getCurrentUserPlan(req.user.sub);
+    const currentPlan = getPlan(user?.plan || 'trial');
+
+    if (user?.subscriptionStatus === 'active' && planRank(plan.id) <= planRank(currentPlan.id)) {
+      return res.status(409).json({
+        error: `Você já possui o plano ${currentPlan.name} ativo.`
+      });
+    }
+
     const preference = await createMercadoPagoPreference({ req, plan });
 
     if (preference) {
@@ -589,55 +729,53 @@ app.post('/api/billing/webhook', async (req, res) => {
       return res.status(200).json({ received: true, ignored: true });
     }
 
-    const payment = await fetchMercadoPagoPayment(paymentId);
-    const externalReference = String(payment.external_reference || '');
-    const [userIdFromRef, planFromRef] = externalReference.split(':');
-    const planId = payment.metadata?.plan_id || planFromRef;
-    const userId = payment.metadata?.user_id || userIdFromRef;
-
-    if (!userId || !['pro', 'agency'].includes(planId)) {
-      return res.status(200).json({ received: true, ignored: true, reason: 'metadata inválido' });
-    }
-
-    if (hasMongoUri()) {
-      await Payment.findOneAndUpdate(
-        { paymentId: String(payment.id) },
-        {
-          $set: {
-            userId,
-            plan: planId,
-            status: payment.status,
-            paymentId: String(payment.id),
-            externalReference,
-            amount: Number(payment.transaction_amount || 0),
-            raw: payment
-          }
-        },
-        { upsert: true, new: true }
-      );
-    }
-
-    if (payment.status === 'approved') {
-      const plan = await activatePaidPlan({
-        userId,
-        planId,
-        paymentId: payment.id,
-        raw: payment
-      });
-
-      return res.json({ received: true, upgraded: true, plan: plan.id });
-    }
-
-    return res.json({ received: true, status: payment.status });
+    const result = await reconcileMercadoPagoPayment(paymentId);
+    return res.json({ received: true, ...result, payment: undefined });
   } catch (error) {
     console.error('[Mercado Pago Webhook Error]', error);
     return res.status(200).json({ received: true, error: error.message });
   }
 });
 
+app.post('/api/billing/sync', requireAuth, async (req, res) => {
+  try {
+    const paymentId =
+      req.body?.paymentId ||
+      req.body?.payment_id ||
+      req.query?.payment_id ||
+      req.query?.collection_id;
+
+    if (!paymentId) {
+      return res.status(400).json({ error: 'Informe o payment_id para sincronizar.' });
+    }
+
+    const result = await reconcileMercadoPagoPayment(paymentId);
+    const user = hasMongoUri() ? await User.findById(req.user.sub).lean() : await findUserById(req.user.sub);
+    const plan = getPlan(user?.plan || 'trial');
+
+    res.json({
+      ok: true,
+      ...result,
+      payment: undefined,
+      user: {
+        plan: plan.id,
+        planName: plan.name,
+        dailyLeadLimit: Number(user?.dailyLeadLimit || plan.dailyLeadLimit),
+        totalLeadLimit: user?.totalLeadLimit ?? plan.totalLeadLimit ?? null,
+        subscriptionStatus: user?.subscriptionStatus || 'trial',
+        planActivatedAt: user?.planActivatedAt || null,
+        planExpiresAt: user?.planExpiresAt || null
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.get('/api/billing/status', requireAuth, async (req, res) => {
   try {
-    const user = hasMongoUri() ? await User.findById(req.user.sub).lean() : await findUserById(req.user.sub);
+    let user = hasMongoUri() ? await User.findById(req.user.sub).lean() : await findUserById(req.user.sub);
+    user = await downgradeExpiredUserIfNeeded(user);
     if (!user) return res.status(404).json({ error: 'Usuário não encontrado.' });
 
     const plan = getPlan(user.plan || 'trial');
@@ -652,7 +790,6 @@ app.get('/api/billing/status', requireAuth, async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-
 
 app.post('/api/campaigns/sequence', requireAuth, async (req, res) => {
   try {

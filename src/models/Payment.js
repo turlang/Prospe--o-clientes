@@ -11,6 +11,7 @@ const paymentSchema = new mongoose.Schema(
     externalReference: { type: String, index: true, default: '' },
     checkoutUrl: { type: String, default: '' },
     amount: { type: Number, default: 0 },
+    reconciledAt: { type: Date, default: null },
     raw: { type: Object, default: {} }
   },
   { timestamps: true }

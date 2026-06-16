@@ -1,7 +1,7 @@
 {
   "name": "agente-prospeccao-real",
-  "version": "11.1.0",
-  "description": "SaaS de prospecção com Mercado Pago real, MongoDB Atlas, Render e UI compacta",
+  "version": "11.2.0",
+  "description": "SaaS de prospecção com Mercado Pago real, webhooks robustos, MongoDB Atlas e UI compacta",
   "main": "src/server.js",
   "type": "commonjs",
   "scripts": {
