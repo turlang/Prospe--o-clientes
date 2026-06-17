@@ -208,7 +208,9 @@ function publicUser(user) {
     priceLabel: plan.priceLabel,
     dailyLeadLimit: Number(user.dailyLeadLimit || plan.dailyLeadLimit),
     totalLeadLimit: user.totalLeadLimit ?? plan.totalLeadLimit ?? null,
-    subscriptionStatus: user.subscriptionStatus || 'local'
+    subscriptionStatus: user.subscriptionStatus || 'local',
+    role: user.role || 'user',
+    isActive: user.isActive !== false
   };
 }
 
