@@ -17,6 +17,7 @@ const { connectDatabase, hasMongoUri, getMongoStatus, mustRequireMongo } = requi
 const User = require('./models/User');
 const Payment = require('./models/Payment');
 const TrialGuard = require('./models/TrialGuard');
+const PasswordReset = require('./models/PasswordReset');
 const { getAllPlans, getPlan, normalizePlan } = require('./planConfig');
 const { getDailyUsage, getTotalUsage, addDailyUsage } = require('./localUsageStore');
 const { findUserById, updateLocalUserPlan } = require('./localUserStore');
@@ -962,15 +963,17 @@ app.get('/api/admin/security', requireAuth, requireAdmin, async (_req, res) => {
   try {
     if (!hasMongoUri()) return res.json({ blocked: 0, allowed: 0, recent: [] });
 
-    const [blocked, allowed, recent] = await Promise.all([
+    const [blocked, allowed, passwordResets, recent] = await Promise.all([
       TrialGuard.countDocuments({ status: 'blocked' }),
       TrialGuard.countDocuments({ status: 'allowed' }),
+      PasswordReset.countDocuments({}),
       TrialGuard.find({}).sort({ createdAt: -1 }).limit(50).lean()
     ]);
 
     res.json({
       blocked,
       allowed,
+      passwordResets,
       recent: recent.map((item) => ({
         id: String(item._id),
         email: item.email,

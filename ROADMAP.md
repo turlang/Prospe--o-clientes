@@ -1,9 +1,9 @@
 # ROADMAP
 
-## Fase 15
-- Recuperação de Senha
-- E-mail transacional
-- Tokens de redefinição
+## Fase 15 ✅
+- Recuperação de Senha implementada
+- Tokens temporários de redefinição
+- E-mail transacional real fica como melhoria futura
 
 ## Fase 16
 - Analytics Comercial

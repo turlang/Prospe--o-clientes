@@ -1,5 +1,40 @@
 # CHANGELOG
 
+## v15.0.0 - Recuperação de Senha
+
+### Adicionado
+- Fluxo "Esqueci minha senha".
+- Endpoint `/api/auth/forgot-password`.
+- Endpoint `/api/auth/reset-password`.
+- Página `reset-password.html`.
+- Tokens temporários com expiração de 30 minutos.
+- Bloqueio de token já utilizado.
+- Collection `passwordresets`.
+- Log seguro do link de recuperação no Render para validação inicial.
+
+---
+
+
+## v14.1.1 - Correção do redirect admin
+
+### Corrigido
+- Resposta de login/cadastro agora envia `role`.
+- Frontend consegue identificar `role: "admin"` imediatamente após login.
+- Admin é redirecionado corretamente para `/admin`.
+
+---
+
+
+## v14.1.0 - UX Admin
+
+### Corrigido
+- Usuário administrador é redirecionado automaticamente para `/admin` após login.
+- Admin logado que tentar abrir `/app` é enviado para o Painel Master.
+- Botão do painel admin renomeado para "Abrir dashboard".
+
+---
+
+
 ## v14.0.0 - Segurança e Anti-Abuso
 
 ### Adicionado

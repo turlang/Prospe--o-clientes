@@ -1,11 +1,13 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const User = require('./models/User');
 const { createToken, requireAuth } = require('./middleware/auth');
 const { hasMongoUri } = require('./db');
 const { findUserByEmail, findUserById, createLocalUser } = require('./localUserStore');
 const { getPlan } = require('./planConfig');
 const TrialGuard = require('./models/TrialGuard');
+const PasswordReset = require('./models/PasswordReset');
 
 const router = express.Router();
 
@@ -91,6 +93,21 @@ async function validateTrialRegistration({ email, ip, deviceId, userAgent }) {
 }
 
 
+
+
+function hashResetToken(token) {
+  return crypto.createHash('sha256').update(String(token)).digest('hex');
+}
+
+function publicAppUrl(req) {
+  return process.env.PUBLIC_APP_URL || `${req.protocol}://${req.get('host')}`;
+}
+
+async function sendPasswordResetEmail({ email, resetUrl }) {
+  // Integração pronta para provedor transacional futuro.
+  // Por enquanto registra o link no log do Render para validação segura.
+  console.log('[PASSWORD_RESET_LINK]', email, resetUrl);
+}
 
 router.post('/register', async (req, res) => {
   try {
@@ -184,6 +201,98 @@ router.post('/login', async (req, res) => {
   }
 });
 
+
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const email = String(req.body.email || '').trim().toLowerCase();
+
+    // Resposta genérica para evitar enumeração de usuários.
+    const generic = {
+      ok: true,
+      message: 'Se o e-mail existir, enviaremos instruções para redefinir a senha.'
+    };
+
+    if (!email) return res.json(generic);
+
+    const user = hasMongoUri()
+      ? await User.findOne({ email })
+      : await findUserByEmail(email);
+
+    if (!user) return res.json(generic);
+
+    if (!hasMongoUri()) {
+      return res.json({
+        ...generic,
+        devMessage: 'Recuperação de senha requer MongoDB ativo.'
+      });
+    }
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const tokenHash = hashResetToken(token);
+    const expiresAt = new Date(Date.now() + 1000 * 60 * 30);
+    const resetUrl = `${publicAppUrl(req)}/reset-password.html?token=${token}`;
+
+    await PasswordReset.create({
+      userId: user._id,
+      email,
+      tokenHash,
+      expiresAt,
+      requestedIp: getClientIp(req),
+      userAgent: String(req.headers['user-agent'] || '')
+    });
+
+    await sendPasswordResetEmail({ email, resetUrl });
+
+    return res.json(generic);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/reset-password', async (req, res) => {
+  try {
+    const token = String(req.body.token || '').trim();
+    const password = String(req.body.password || '');
+
+    if (!token || !password) {
+      return res.status(400).json({ error: 'Informe o token e a nova senha.' });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ error: 'A senha deve ter pelo menos 6 caracteres.' });
+    }
+
+    if (!hasMongoUri()) {
+      return res.status(400).json({ error: 'Redefinição de senha requer MongoDB ativo.' });
+    }
+
+    const tokenHash = hashResetToken(token);
+    const reset = await PasswordReset.findOne({
+      tokenHash,
+      usedAt: null,
+      expiresAt: { $gt: new Date() }
+    });
+
+    if (!reset) {
+      return res.status(400).json({ error: 'Link inválido ou expirado.' });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 12);
+
+    await User.findByIdAndUpdate(reset.userId, { passwordHash });
+    reset.usedAt = new Date();
+    await reset.save();
+
+    return res.json({
+      ok: true,
+      message: 'Senha redefinida com sucesso. Faça login novamente.'
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
 router.get('/me', requireAuth, async (req, res) => {
   try {
     const user = hasMongoUri()
@@ -208,7 +317,9 @@ function publicUser(user) {
     priceLabel: plan.priceLabel,
     dailyLeadLimit: Number(user.dailyLeadLimit || plan.dailyLeadLimit),
     totalLeadLimit: user.totalLeadLimit ?? plan.totalLeadLimit ?? null,
-    subscriptionStatus: user.subscriptionStatus || 'local'
+    subscriptionStatus: user.subscriptionStatus || 'local',
+    role: user.role || 'user',
+    isActive: user.isActive !== false
   };
 }
 

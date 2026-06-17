@@ -167,6 +167,7 @@ async function loadSecurity() {
       <div class="admin-grid">
         <article class="admin-card"><small>Trials liberados</small><strong>${data.allowed}</strong></article>
         <article class="admin-card"><small>Bloqueios</small><strong>${data.blocked}</strong></article>
+        <article class="admin-card"><small>Reset de senha</small><strong>${data.passwordResets || 0}</strong></article>
       </div>
       <table class="admin-table">
         <thead><tr><th>Data</th><th>E-mail</th><th>IP</th><th>Status</th><th>Motivo</th></tr></thead>

@@ -65,6 +65,36 @@ loginForm.addEventListener('submit', async (event) => {
   });
 });
 
+const forgotPasswordLink = document.querySelector('#forgotPasswordLink');
+if (forgotPasswordLink) {
+  forgotPasswordLink.addEventListener('click', async (event) => {
+    event.preventDefault();
+
+    const email = document.querySelector('#loginEmail').value.trim();
+
+    if (!email) {
+      showError('Informe seu e-mail no campo de login para solicitar a recuperação.');
+      return;
+    }
+
+    try {
+      statusBox.innerHTML = '<p class="loading">Enviando instruções de recuperação...</p>';
+      const response = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+
+      const data = await readJson(response);
+      if (!response.ok) throw new Error(data.error || 'Erro ao solicitar recuperação.');
+
+      statusBox.innerHTML = `<p>${escapeHtml(data.message)}</p>`;
+    } catch (error) {
+      showError(error.message);
+    }
+  });
+}
+
 registerForm.addEventListener('submit', async (event) => {
   event.preventDefault();
   await authRequest('/api/auth/register', {
@@ -177,6 +207,13 @@ async function authRequest(url, payload) {
     currentUser = data.user;
     localStorage.setItem('authToken', authToken);
     localStorage.setItem('currentUser', JSON.stringify(currentUser));
+
+    if (currentUser?.role === 'admin') {
+      statusBox.innerHTML = '<p>Login administrativo realizado. Abrindo painel master...</p>';
+      window.location.replace('/admin');
+      return;
+    }
+
     await showDashboard();
     statusBox.innerHTML = '<p>Login realizado com sucesso.</p>';
   } catch (error) {
@@ -185,6 +222,11 @@ async function authRequest(url, payload) {
 }
 
 function bootAuth() {
+  if (authToken && currentUser?.role === 'admin') {
+    window.location.replace('/admin');
+    return;
+  }
+
   if (authToken && currentUser) showDashboard();
   else showAuth();
 }
