@@ -74,9 +74,20 @@ registerForm.addEventListener('submit', async (event) => {
 logoutButton.addEventListener('click', () => {
   localStorage.removeItem('authToken');
   localStorage.removeItem('currentUser');
+
   authToken = '';
   currentUser = null;
-  showAuth();
+  lastLeads = [];
+
+  if (dashboard) dashboard.hidden = true;
+  if (authCard) authCard.hidden = false;
+  if (results) {
+    results.innerHTML = '';
+    results.hidden = true;
+  }
+  if (statusBox) statusBox.innerHTML = '';
+
+  window.location.replace('/');
 });
 
 exportCsv.addEventListener('click', async () => {
@@ -159,7 +170,7 @@ async function authRequest(url, payload) {
     currentUser = data.user;
     localStorage.setItem('authToken', authToken);
     localStorage.setItem('currentUser', JSON.stringify(currentUser));
-    showDashboard();
+    await showDashboard();
     statusBox.innerHTML = '<p>Login realizado com sucesso.</p>';
   } catch (error) {
     showError(error.message);
@@ -936,31 +947,34 @@ function showPaymentReturnMessage() {
         }
 
         if (response.ok) {
-          const planData = data.user || data;
+          const source = data.user || data;
+          const plan = source.plan || {};
 
-          if (planData.plan) {
-            currentUser = {
-              ...currentUser,
-              plan: planData.plan.id || planData.plan,
-              planName: planData.plan.name || planData.planName,
-              dailyLeadLimit: planData.dailyLeadLimit || planData.plan?.dailyLeadLimit,
-              totalLeadLimit: planData.totalLeadLimit ?? planData.plan?.totalLeadLimit ?? null,
-              subscriptionStatus: planData.subscriptionStatus
-            };
+          currentUser = {
+            ...currentUser,
+            plan: plan.id || source.plan || currentUser?.plan,
+            planName: plan.name || source.planName || currentUser?.planName,
+            dailyLeadLimit: source.dailyLeadLimit || plan.dailyLeadLimit || currentUser?.dailyLeadLimit,
+            totalLeadLimit: source.totalLeadLimit ?? plan.totalLeadLimit ?? currentUser?.totalLeadLimit ?? null,
+            subscriptionStatus: source.subscriptionStatus || currentUser?.subscriptionStatus
+          };
 
-            localStorage.setItem('currentUser', JSON.stringify(currentUser));
-            await showDashboard();
-            switchView('planos');
+          localStorage.setItem('currentUser', JSON.stringify(currentUser));
 
-            if (currentUser.subscriptionStatus === 'active') {
-              statusBox.innerHTML = `<p>Pagamento confirmado. Plano ${escapeHtml(currentUser.planName || currentUser.plan)} ativado.</p>`;
-            }
+          await showDashboard();
+          switchView('planos');
+          await refreshUsage();
+
+          if (currentUser.subscriptionStatus === 'active') {
+            statusBox.innerHTML = `<p>Pagamento confirmado. Plano ${escapeHtml(currentUser.planName || currentUser.plan)} ativado.</p>`;
           }
         }
+
+        const cleanUrl = window.location.pathname || '/app';
+        window.history.replaceState({}, document.title, cleanUrl);
       } catch (error) {
-        statusBox.innerHTML = `<p class="error">Pagamento recebido, mas não foi possível sincronizar agora. Faça logout e login novamente em alguns instantes.</p>`;
+        statusBox.innerHTML = '<p class="error">Pagamento recebido, mas não foi possível sincronizar agora. Faça logout e login novamente em alguns instantes.</p>';
       }
-    }, 1500);
+    }, 1200);
   }
 }
-

@@ -11,6 +11,7 @@ const userSchema = new mongoose.Schema(
     trialStartedAt: { type: Date, default: Date.now },
     isActive: { type: Boolean, default: true },
     subscriptionStatus: { type: String, default: 'trial' },
+    role: { type: String, enum: ['user', 'admin'], default: 'user' },
     mercadoPagoCustomerId: { type: String, default: '' },
     mercadoPagoSubscriptionId: { type: String, default: '' },
     mercadoPagoLastPaymentId: { type: String, default: '' },
