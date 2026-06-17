@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## v15.1.0 - Correções Admin e Anti-Abuso
+
+### Corrigido
+- Admin não fica mais preso no Painel Master.
+- Botão "Abrir dashboard" abre `/app?adminDashboard=1`.
+- Dashboard comum mostra atalho para voltar ao Painel Master quando o usuário é admin.
+- Painel de segurança permite remover registro bloqueado.
+- Painel de segurança permite limpar registros por e-mail.
+- Promoção para admin limpa registros anti-abuso do usuário.
+
+---
+
+
 <<<<<<< HEAD
 ## v15.0.0 - Recuperação de Senha
 

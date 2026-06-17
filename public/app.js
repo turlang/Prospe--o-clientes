@@ -222,13 +222,26 @@ async function authRequest(url, payload) {
 }
 
 function bootAuth() {
-  if (authToken && currentUser?.role === 'admin') {
+  const params = new URLSearchParams(window.location.search);
+  const wantsUserDashboard = params.get('adminDashboard') === '1';
+
+  if (authToken && currentUser?.role === 'admin' && !wantsUserDashboard) {
     window.location.replace('/admin');
     return;
   }
 
-  if (authToken && currentUser) showDashboard();
-  else showAuth();
+  if (authToken && currentUser) {
+    showDashboard();
+
+    if (currentUser?.role === 'admin') {
+      addAdminShortcut();
+      window.history.replaceState({}, document.title, '/app');
+    }
+
+    return;
+  }
+
+  showAuth();
 }
 
 function showAuth() {
@@ -241,11 +254,28 @@ async function showDashboard() {
   dashboard.hidden = false;
   welcome.textContent = `Olá, ${currentUser?.name || 'usuário'}`;
   planInfo.innerHTML = `<strong>Plano ${String(currentUser?.planName || currentUser?.plan || 'TESTE GRATUITO').toUpperCase()}</strong><span>${currentUser?.plan === 'trial' ? '10 leads totais' : `${currentUser?.dailyLeadLimit || 10} leads/dia`}</span>`;
+  if (currentUser?.role === 'admin') addAdminShortcut();
+
   await refreshUsage();
   await renderPlans();
   await refreshStats();
   await loadSavedLeads(false);
   await loadHistory();
+}
+
+
+function addAdminShortcut() {
+  if (document.querySelector('#adminShortcut')) return;
+
+  const button = document.createElement('button');
+  button.id = 'adminShortcut';
+  button.type = 'button';
+  button.className = 'secondary full';
+  button.textContent = 'Painel Master';
+  button.addEventListener('click', () => window.location.replace('/admin'));
+
+  const nav = document.querySelector('.sidebar nav');
+  if (nav) nav.prepend(button);
 }
 
 function switchView(view) {

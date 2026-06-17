@@ -170,7 +170,7 @@ async function loadSecurity() {
         <article class="admin-card"><small>Reset de senha</small><strong>${data.passwordResets || 0}</strong></article>
       </div>
       <table class="admin-table">
-        <thead><tr><th>Data</th><th>E-mail</th><th>IP</th><th>Status</th><th>Motivo</th></tr></thead>
+        <thead><tr><th>Data</th><th>E-mail</th><th>IP</th><th>Status</th><th>Role</th><th>Motivo</th><th>Ações</th></tr></thead>
         <tbody>
           ${(data.recent || []).map((item) => `
             <tr>
@@ -178,7 +178,14 @@ async function loadSecurity() {
               <td>${escapeHtml(item.email)}</td>
               <td><small>${escapeHtml(item.ip)}</small></td>
               <td>${escapeHtml(item.status)}</td>
+              <td>${escapeHtml(item.userRole || 'none')}</td>
               <td>${escapeHtml(item.reason)}</td>
+              <td>
+                <div class="admin-actions">
+                  <button type="button" class="secondary" onclick="deleteSecurityRecord('${item.id}')">Remover</button>
+                  <button type="button" class="secondary" onclick="clearSecurityByEmail('${escapeHtml(item.email)}')">Limpar e-mail</button>
+                </div>
+              </td>
             </tr>
           `).join('')}
         </tbody>
@@ -186,5 +193,37 @@ async function loadSecurity() {
     `;
   } catch (error) {
     adminSecurity.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
+  }
+}
+
+
+async function deleteSecurityRecord(id) {
+  try {
+    const response = await adminFetch(`/api/admin/security/${id}`, { method: 'DELETE' });
+    const data = await readJson(response);
+    if (!response.ok) throw new Error(data.error || 'Erro ao remover registro.');
+
+    showStatus('Registro de segurança removido.');
+    await loadSecurity();
+  } catch (error) {
+    showStatus(error.message, true);
+  }
+}
+
+async function clearSecurityByEmail(email) {
+  try {
+    const response = await adminFetch('/api/admin/security/clear', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+
+    const data = await readJson(response);
+    if (!response.ok) throw new Error(data.error || 'Erro ao limpar registros.');
+
+    showStatus(`${data.deletedCount || 0} registro(s) removido(s).`);
+    await loadSecurity();
+  } catch (error) {
+    showStatus(error.message, true);
   }
 }

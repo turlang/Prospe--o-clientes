@@ -937,6 +937,16 @@ app.patch('/api/admin/users/:id', requireAuth, requireAdmin, async (req, res) =>
     if (subscriptionStatus && !plan) update.subscriptionStatus = subscriptionStatus;
 
     const user = await User.findByIdAndUpdate(req.params.id, update, { new: true }).lean();
+
+    if (user && role === 'admin') {
+      await TrialGuard.deleteMany({
+        $or: [
+          { email: user.email },
+          { deviceId: user.deviceId || '__none__' },
+          { ip: user.registrationIp || '__none__' }
+        ]
+      });
+    }
     if (!user) return res.status(404).json({ error: 'Usuário não encontrado.' });
 
     res.json({
@@ -974,21 +984,61 @@ app.get('/api/admin/security', requireAuth, requireAdmin, async (_req, res) => {
       blocked,
       allowed,
       passwordResets,
-      recent: recent.map((item) => ({
-        id: String(item._id),
-        email: item.email,
-        emailDomain: item.emailDomain,
-        ip: item.ip,
-        deviceId: item.deviceId,
-        status: item.status,
-        reason: item.reason,
-        createdAt: item.createdAt
+      recent: await Promise.all(recent.map(async (item) => {
+        const user = item.email ? await User.findOne({ email: item.email }).lean() : null;
+
+        return {
+          id: String(item._id),
+          email: item.email,
+          emailDomain: item.emailDomain,
+          ip: item.ip,
+          deviceId: item.deviceId,
+          status: item.status,
+          reason: item.reason,
+          userRole: user?.role || 'none',
+          createdAt: item.createdAt
+        };
       }))
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
+
+
+app.delete('/api/admin/security/:id', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    if (!hasMongoUri()) return res.status(400).json({ error: 'Admin requer MongoDB ativo.' });
+
+    const deleted = await TrialGuard.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ error: 'Registro não encontrado.' });
+
+    res.json({ ok: true, message: 'Registro de segurança removido.' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/admin/security/clear', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    if (!hasMongoUri()) return res.status(400).json({ error: 'Admin requer MongoDB ativo.' });
+
+    const { email, deviceId, ip } = req.body;
+    const filters = [];
+
+    if (email) filters.push({ email: String(email).trim().toLowerCase() });
+    if (deviceId) filters.push({ deviceId: String(deviceId).trim() });
+    if (ip) filters.push({ ip: String(ip).trim() });
+
+    if (!filters.length) return res.status(400).json({ error: 'Informe e-mail, IP ou dispositivo.' });
+
+    const result = await TrialGuard.deleteMany({ $or: filters });
+    res.json({ ok: true, deletedCount: result.deletedCount || 0 });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 
 app.get('/api/admin/payments', requireAuth, requireAdmin, async (_req, res) => {
   try {
