@@ -1,5 +1,6 @@
 # CHANGELOG
 
+<<<<<<< HEAD
 ## v14.1.1 - Correção do redirect admin
 
 ### Corrigido
@@ -10,6 +11,8 @@
 ---
 
 
+=======
+>>>>>>> 7019867f0aae28feca9d3d3415d07b05bbff440a
 ## v14.1.0 - UX Admin
 
 ### Corrigido
