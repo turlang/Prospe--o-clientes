@@ -1,5 +1,6 @@
 # CHANGELOG
 
+<<<<<<< HEAD
 ## v15.0.0 - Recuperação de Senha
 
 ### Adicionado
@@ -15,6 +16,9 @@
 ---
 
 
+=======
+<<<<<<< HEAD
+>>>>>>> c227331657d57b2b56a41444b3d5ed6f277556f3
 ## v14.1.1 - Correção do redirect admin
 
 ### Corrigido
@@ -25,6 +29,11 @@
 ---
 
 
+<<<<<<< HEAD
+=======
+=======
+>>>>>>> 7019867f0aae28feca9d3d3415d07b05bbff440a
+>>>>>>> c227331657d57b2b56a41444b3d5ed6f277556f3
 ## v14.1.0 - UX Admin
 
 ### Corrigido
