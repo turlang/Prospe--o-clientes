@@ -16,6 +16,7 @@ const { requireAuth } = require('./middleware/auth');
 const { connectDatabase, hasMongoUri, getMongoStatus, mustRequireMongo } = require('./db');
 const User = require('./models/User');
 const Payment = require('./models/Payment');
+const TrialGuard = require('./models/TrialGuard');
 const { getAllPlans, getPlan, normalizePlan } = require('./planConfig');
 const { getDailyUsage, getTotalUsage, addDailyUsage } = require('./localUsageStore');
 const { findUserById, updateLocalUserPlan } = require('./localUserStore');
@@ -786,6 +787,225 @@ app.get('/api/billing/status', requireAuth, async (req, res) => {
       planExpiresAt: user.planExpiresAt || null,
       mercadoPagoLastPaymentId: user.mercadoPagoLastPaymentId || ''
     });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+function requireAdmin(req, res, next) {
+  const fail = () => res.status(403).json({ error: 'Acesso restrito ao administrador.' });
+
+  if (!req.user?.sub) return fail();
+
+  const run = async () => {
+    const user = hasMongoUri() ? await User.findById(req.user.sub).lean() : await findUserById(req.user.sub);
+    if (!user || user.role !== 'admin') return fail();
+    req.adminUser = user;
+    return next();
+  };
+
+  run().catch((error) => res.status(500).json({ error: error.message }));
+}
+
+app.get('/admin', (_req, res) => {
+  res.sendFile(path.join(process.cwd(), 'public', 'admin.html'));
+});
+
+app.get('/api/admin/overview', requireAuth, requireAdmin, async (_req, res) => {
+  try {
+    if (!hasMongoUri()) {
+      return res.json({
+        users: { total: 0, trial: 0, pro: 0, agency: 0, active: 0, suspended: 0 },
+        payments: { total: 0, approved: 0, created: 0, revenue: 0 },
+        recentUsers: [],
+        recentPayments: []
+      });
+    }
+
+    const [users, payments] = await Promise.all([
+      User.find({}).sort({ createdAt: -1 }).limit(100).lean(),
+      Payment.find({}).sort({ createdAt: -1 }).limit(100).lean()
+    ]);
+
+    const userStats = {
+      total: users.length,
+      trial: users.filter((u) => u.plan === 'trial').length,
+      pro: users.filter((u) => u.plan === 'pro').length,
+      agency: users.filter((u) => u.plan === 'agency').length,
+      active: users.filter((u) => u.isActive !== false).length,
+      suspended: users.filter((u) => u.isActive === false).length
+    };
+
+    const approvedPayments = payments.filter((p) => p.status === 'approved');
+    const paymentStats = {
+      total: payments.length,
+      approved: approvedPayments.length,
+      created: payments.filter((p) => p.status === 'created').length,
+      revenue: approvedPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0)
+    };
+
+    res.json({
+      users: userStats,
+      payments: paymentStats,
+      recentUsers: users.slice(0, 20).map((u) => ({
+        id: String(u._id),
+        name: u.name,
+        email: u.email,
+        plan: u.plan,
+        role: u.role || 'user',
+        isActive: u.isActive !== false,
+        subscriptionStatus: u.subscriptionStatus,
+        dailyLeadLimit: u.dailyLeadLimit,
+        totalLeadLimit: u.totalLeadLimit,
+        createdAt: u.createdAt,
+        planExpiresAt: u.planExpiresAt
+      })),
+      recentPayments: payments.slice(0, 20).map((p) => ({
+        id: String(p._id),
+        userId: String(p.userId || ''),
+        plan: p.plan,
+        status: p.status,
+        amount: p.amount,
+        provider: p.provider,
+        paymentId: p.paymentId,
+        preferenceId: p.preferenceId,
+        createdAt: p.createdAt,
+        updatedAt: p.updatedAt
+      }))
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/admin/users', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const q = String(req.query.q || '').trim();
+    const filter = q
+      ? { $or: [
+          { name: new RegExp(q, 'i') },
+          { email: new RegExp(q, 'i') },
+          { plan: new RegExp(q, 'i') }
+        ] }
+      : {};
+
+    const users = hasMongoUri()
+      ? await User.find(filter).sort({ createdAt: -1 }).limit(200).lean()
+      : [];
+
+    res.json(users.map((u) => ({
+      id: String(u._id),
+      name: u.name,
+      email: u.email,
+      plan: u.plan,
+      role: u.role || 'user',
+      isActive: u.isActive !== false,
+      subscriptionStatus: u.subscriptionStatus,
+      dailyLeadLimit: u.dailyLeadLimit,
+      totalLeadLimit: u.totalLeadLimit,
+      createdAt: u.createdAt,
+      planActivatedAt: u.planActivatedAt,
+      planExpiresAt: u.planExpiresAt
+    })));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.patch('/api/admin/users/:id', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    if (!hasMongoUri()) return res.status(400).json({ error: 'Admin requer MongoDB ativo.' });
+
+    const { plan, isActive, role, subscriptionStatus } = req.body;
+    const update = {};
+
+    if (plan) {
+      const safePlan = normalizePlan(plan);
+      const planConfig = getPlan(safePlan);
+      update.plan = planConfig.id;
+      update.dailyLeadLimit = planConfig.dailyLeadLimit;
+      update.totalLeadLimit = planConfig.totalLeadLimit ?? null;
+      update.subscriptionStatus = subscriptionStatus || (safePlan === 'trial' ? 'trial' : 'active');
+      update.planActivatedAt = safePlan === 'trial' ? null : new Date();
+      update.planExpiresAt = safePlan === 'trial' ? null : getPlanExpirationDate();
+    }
+
+    if (typeof isActive === 'boolean') update.isActive = isActive;
+    if (['user', 'admin'].includes(role)) update.role = role;
+    if (subscriptionStatus && !plan) update.subscriptionStatus = subscriptionStatus;
+
+    const user = await User.findByIdAndUpdate(req.params.id, update, { new: true }).lean();
+    if (!user) return res.status(404).json({ error: 'Usuário não encontrado.' });
+
+    res.json({
+      ok: true,
+      user: {
+        id: String(user._id),
+        name: user.name,
+        email: user.email,
+        plan: user.plan,
+        role: user.role || 'user',
+        isActive: user.isActive !== false,
+        subscriptionStatus: user.subscriptionStatus,
+        dailyLeadLimit: user.dailyLeadLimit,
+        totalLeadLimit: user.totalLeadLimit
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+app.get('/api/admin/security', requireAuth, requireAdmin, async (_req, res) => {
+  try {
+    if (!hasMongoUri()) return res.json({ blocked: 0, allowed: 0, recent: [] });
+
+    const [blocked, allowed, recent] = await Promise.all([
+      TrialGuard.countDocuments({ status: 'blocked' }),
+      TrialGuard.countDocuments({ status: 'allowed' }),
+      TrialGuard.find({}).sort({ createdAt: -1 }).limit(50).lean()
+    ]);
+
+    res.json({
+      blocked,
+      allowed,
+      recent: recent.map((item) => ({
+        id: String(item._id),
+        email: item.email,
+        emailDomain: item.emailDomain,
+        ip: item.ip,
+        deviceId: item.deviceId,
+        status: item.status,
+        reason: item.reason,
+        createdAt: item.createdAt
+      }))
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/admin/payments', requireAuth, requireAdmin, async (_req, res) => {
+  try {
+    const payments = hasMongoUri()
+      ? await Payment.find({}).sort({ createdAt: -1 }).limit(200).lean()
+      : [];
+
+    res.json(payments.map((p) => ({
+      id: String(p._id),
+      userId: String(p.userId || ''),
+      plan: p.plan,
+      status: p.status,
+      amount: p.amount,
+      provider: p.provider,
+      preferenceId: p.preferenceId,
+      paymentId: p.paymentId,
+      externalReference: p.externalReference,
+      createdAt: p.createdAt,
+      updatedAt: p.updatedAt
+    })));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

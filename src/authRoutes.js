@@ -5,8 +5,92 @@ const { createToken, requireAuth } = require('./middleware/auth');
 const { hasMongoUri } = require('./db');
 const { findUserByEmail, findUserById, createLocalUser } = require('./localUserStore');
 const { getPlan } = require('./planConfig');
+const TrialGuard = require('./models/TrialGuard');
 
 const router = express.Router();
+
+const TEMP_EMAIL_DOMAINS = new Set([
+  '10minutemail.com',
+  'tempmail.com',
+  'temp-mail.org',
+  'guerrillamail.com',
+  'mailinator.com',
+  'yopmail.com',
+  'throwawaymail.com',
+  'fakeinbox.com',
+  'getnada.com',
+  'trashmail.com',
+  'dispostable.com'
+]);
+
+function getClientIp(req) {
+  const forwarded = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim();
+  return forwarded || req.ip || req.socket?.remoteAddress || 'unknown';
+}
+
+function normalizeDeviceId(value) {
+  return String(value || '').trim().slice(0, 160);
+}
+
+function getEmailDomain(email) {
+  return String(email || '').split('@').pop().toLowerCase();
+}
+
+async function registerTrialAttempt({ email, ip, deviceId, userAgent, status, reason }) {
+  try {
+    await TrialGuard.create({
+      email,
+      emailDomain: getEmailDomain(email),
+      ip,
+      deviceId,
+      userAgent,
+      status,
+      reason
+    });
+  } catch {}
+}
+
+async function validateTrialRegistration({ email, ip, deviceId, userAgent }) {
+  if (!email) return { allowed: false, reason: 'Informe um e-mail válido.' };
+
+  const domain = getEmailDomain(email);
+  if (TEMP_EMAIL_DOMAINS.has(domain)) {
+    return { allowed: false, reason: 'Use um e-mail permanente para criar sua conta.' };
+  }
+
+  const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const ipLimit = Number(process.env.REGISTER_IP_DAILY_LIMIT || 3);
+
+  const ipCount = await TrialGuard.countDocuments({
+    ip,
+    status: 'allowed',
+    createdAt: { $gte: dayAgo }
+  });
+
+  if (ipCount >= ipLimit) {
+    return { allowed: false, reason: 'Limite de cadastros por rede atingido. Tente novamente amanhã.' };
+  }
+
+  if (deviceId) {
+    const existingDeviceUser = await User.findOne({ deviceId });
+    if (existingDeviceUser) {
+      return { allowed: false, reason: 'Este dispositivo já utilizou o teste gratuito.' };
+    }
+
+    const deviceAttempt = await TrialGuard.findOne({
+      deviceId,
+      status: 'allowed'
+    });
+
+    if (deviceAttempt) {
+      return { allowed: false, reason: 'Este dispositivo já iniciou um teste gratuito.' };
+    }
+  }
+
+  return { allowed: true };
+}
+
+
 
 router.post('/register', async (req, res) => {
   try {
@@ -26,8 +110,43 @@ router.post('/register', async (req, res) => {
       const exists = await User.findOne({ email });
       if (exists) return res.status(409).json({ error: 'Este e-mail já está cadastrado.' });
 
+      const ip = getClientIp(req);
+      const deviceId = normalizeDeviceId(req.body.deviceId || req.headers['x-device-id']);
+      const userAgent = String(req.headers['user-agent'] || '');
+
+      const trialCheck = await validateTrialRegistration({ email, ip, deviceId, userAgent });
+
+      if (!trialCheck.allowed) {
+        await registerTrialAttempt({
+          email,
+          ip,
+          deviceId,
+          userAgent,
+          status: 'blocked',
+          reason: trialCheck.reason
+        });
+
+        return res.status(429).json({ error: trialCheck.reason });
+      }
+
       const passwordHash = await bcrypt.hash(password, 12);
-      const user = await User.create({ name, email, passwordHash });
+      const user = await User.create({
+        name,
+        email,
+        passwordHash,
+        deviceId,
+        registrationIp: ip
+      });
+
+      await registerTrialAttempt({
+        email,
+        ip,
+        deviceId,
+        userAgent,
+        status: 'allowed',
+        reason: 'trial_created'
+      });
+
       return res.status(201).json({ token: createToken(user), user: publicUser(user) });
     }
 

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Master — LeadHunter Pro</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .admin-shell { width: min(1500px, calc(100% - 28px)); margin: 0 auto; padding: 24px 0 60px; }
+    .admin-header { display:flex; justify-content:space-between; gap:16px; align-items:center; color:#fff; margin-bottom:18px; }
+    .admin-grid { display:grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap:14px; margin-bottom:18px; }
+    .admin-card { padding:18px; border-radius:20px; background:rgba(255,255,255,.94); box-shadow:var(--soft-shadow); }
+    .admin-card small { color:var(--muted); font-weight:900; text-transform:uppercase; }
+    .admin-card strong { display:block; font-size:2rem; margin-top:6px; }
+    .admin-panel { background:rgba(255,255,255,.94); border-radius:22px; padding:18px; margin-bottom:18px; overflow:auto; box-shadow:var(--soft-shadow); }
+    .admin-table { width:100%; border-collapse:collapse; min-width:900px; }
+    .admin-table th, .admin-table td { text-align:left; padding:12px; border-bottom:1px solid #dbe6f3; vertical-align:middle; }
+    .admin-table th { font-size:.8rem; color:#475569; text-transform:uppercase; letter-spacing:.06em; }
+    .admin-actions { display:flex; flex-wrap:wrap; gap:8px; }
+    .admin-actions button { padding:8px 10px; font-size:.8rem; }
+    .admin-search { display:flex; gap:10px; margin-bottom:12px; }
+    .admin-search input { max-width:420px; }
+    @media (max-width: 900px) { .admin-grid { grid-template-columns:1fr 1fr; } .admin-header { display:grid; } }
+  </style>
+</head>
+<body>
+  <main class="admin-shell">
+    <header class="admin-header">
+      <div>
+        <p class="tag">Painel Master</p>
+        <h1>Admin LeadHunter Pro</h1>
+        <p>Usuários, assinaturas, pagamentos e receita estimada.</p>
+      </div>
+      <div class="admin-actions">
+        <a class="tag" href="/app">← Voltar ao sistema</a>
+        <button id="adminLogout" class="secondary" type="button">Sair</button>
+      </div>
+    </header>
+
+    <section id="adminStats" class="admin-grid"></section>
+
+    <section class="admin-panel">
+      <h2>Usuários</h2>
+      <div class="admin-search">
+        <input id="adminSearch" placeholder="Buscar por nome, e-mail ou plano" />
+        <button id="adminSearchBtn" type="button">Buscar</button>
+        <button id="adminReloadBtn" type="button" class="secondary">Atualizar</button>
+      </div>
+      <div id="adminUsers"></div>
+    </section>
+
+    <section class="admin-panel">
+      <h2>Últimos pagamentos</h2>
+      <div id="adminPayments"></div>
+    </section>
+
+    <section class="admin-panel">
+      <h2>Segurança e anti-abuso</h2>
+      <div id="adminSecurity"></div>
+    </section>
+
+    <section id="adminStatus"></section>
+  </main>
+
+  <script src="admin.js?v=v13-admin"></script>
+</body>
+</html>
