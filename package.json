@@ -1,7 +1,7 @@
 {
   "name": "agente-prospeccao-real",
-  "version": "14.0.1",
-  "description": "SaaS de prospecção com segurança anti-abuso, Admin Master, Mercado Pago e MongoDB Atlas",
+  "version": "14.1.0",
+  "description": "SaaS de prospecção com redirecionamento automático para Painel Admin",
   "main": "src/server.js",
   "type": "commonjs",
   "scripts": {

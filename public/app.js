@@ -177,6 +177,13 @@ async function authRequest(url, payload) {
     currentUser = data.user;
     localStorage.setItem('authToken', authToken);
     localStorage.setItem('currentUser', JSON.stringify(currentUser));
+
+    if (currentUser?.role === 'admin') {
+      statusBox.innerHTML = '<p>Login administrativo realizado. Abrindo painel master...</p>';
+      window.location.replace('/admin');
+      return;
+    }
+
     await showDashboard();
     statusBox.innerHTML = '<p>Login realizado com sucesso.</p>';
   } catch (error) {
@@ -185,6 +192,11 @@ async function authRequest(url, payload) {
 }
 
 function bootAuth() {
+  if (authToken && currentUser?.role === 'admin') {
+    window.location.replace('/admin');
+    return;
+  }
+
   if (authToken && currentUser) showDashboard();
   else showAuth();
 }

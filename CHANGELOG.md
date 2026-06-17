@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## v14.1.0 - UX Admin
+
+### Corrigido
+- Usuário administrador é redirecionado automaticamente para `/admin` após login.
+- Admin logado que tentar abrir `/app` é enviado para o Painel Master.
+- Botão do painel admin renomeado para "Abrir dashboard".
+
+---
+
+
 ## v14.0.0 - Segurança e Anti-Abuso
 
 ### Adicionado
