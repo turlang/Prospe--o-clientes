@@ -1,7 +1,7 @@
 {
   "name": "agente-prospeccao-real",
-  "version": "16.1.0",
-  "description": "SaaS de prospecção com melhorias de acessibilidade, semântica e automações comerciais",
+  "version": "16.1.1",
+  "description": "SaaS de prospecção com melhorias de acessibilidade e SEO na landing",
   "main": "src/server.js",
   "type": "commonjs",
   "scripts": {
