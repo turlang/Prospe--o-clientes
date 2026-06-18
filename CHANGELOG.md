@@ -1,5 +1,31 @@
 # CHANGELOG
 
+## v16.1.2 - Refinamento de Acessibilidade Admin
+
+### Melhorado
+- Link "Abrir dashboard" com `aria-label` e foco visível.
+- Classe `.sr-only` reforçada com `!important`.
+- Botões administrativos com `aria-label`.
+- Tabelas do Admin com `<caption>`.
+- Cabeçalhos de tabela com `scope="col"` e `scope="row"`.
+
+---
+
+
+## v16.1.1 - Landing Acessível e SEO
+
+### Melhorado
+- Navegação da landing com `nav`, `ul` e `li`.
+- `aria-label` no menu principal.
+- Landmark `main` com `id="conteudo-principal"`.
+- CTA principal com `aria-label`.
+- FAQ e rodapé com rótulos acessíveis.
+- Metadados SEO e Open Graph.
+- Alt text automático em imagens sem descrição.
+
+---
+
+
 ## v16.1.0 - Acessibilidade e Semântica
 
 ### Melhorado
