@@ -90,20 +90,21 @@ async function loadUsers(q = '') {
 function renderUsers(users) {
   adminUsers.innerHTML = `
     <table class="admin-table">
-      <thead><tr><th>Usuário</th><th>Plano</th><th>Status</th><th>Role</th><th>Expira</th><th>Ações</th></tr></thead>
+      <caption>Lista de usuários cadastrados e ações administrativas</caption>
+      <thead><tr><th scope="col">Usuário</th><th scope="col">Plano</th><th scope="col">Status</th><th scope="col">Role</th><th scope="col">Expira</th><th scope="col">Ações</th></tr></thead>
       <tbody>
         ${users.map((user) => `
           <tr>
-            <td><strong>${escapeHtml(user.name)}</strong><br><small>${escapeHtml(user.email)}</small></td>
+            <th scope="row"><strong>${escapeHtml(user.name)}</strong><br><small>${escapeHtml(user.email)}</small></th>
             <td>${escapeHtml(user.plan)}<br><small>${user.dailyLeadLimit || 0} leads/dia</small></td>
             <td>${user.isActive ? 'Ativo' : 'Suspenso'}<br><small>${escapeHtml(user.subscriptionStatus)}</small></td>
             <td>${escapeHtml(user.role || 'user')}</td>
             <td>${date(user.planExpiresAt)}</td>
             <td>
               <div class="admin-actions">
-                <button type="button" onclick="updateUser('${user.id}', { plan: 'pro' })">Pro</button>
-                <button type="button" onclick="updateUser('${user.id}', { plan: 'agency' })">Agência</button>
-                <button type="button" class="secondary" onclick="updateUser('${user.id}', { plan: 'trial' })">Trial</button>
+                <button type="button" aria-label="Alterar plano de ${escapeHtml(user.email)} para Pro" onclick="updateUser('${user.id}', { plan: 'pro' })">Pro</button>
+                <button type="button" aria-label="Alterar plano de ${escapeHtml(user.email)} para Agência" onclick="updateUser('${user.id}', { plan: 'agency' })">Agência</button>
+                <button type="button" class="secondary" aria-label="Alterar plano de ${escapeHtml(user.email)} para Trial" onclick="updateUser('${user.id}', { plan: 'trial' })">Trial</button>
                 <button type="button" class="secondary" onclick="updateUser('${user.id}', { isActive: ${!user.isActive} })">${user.isActive ? 'Suspender' : 'Ativar'}</button>
                 <button type="button" class="secondary" onclick="updateUser('${user.id}', { role: '${user.role === 'admin' ? 'user' : 'admin'}' })">${user.role === 'admin' ? 'Remover admin' : 'Admin'}</button>
               </div>
@@ -118,11 +119,12 @@ function renderUsers(users) {
 function renderPayments(payments) {
   adminPayments.innerHTML = `
     <table class="admin-table">
-      <thead><tr><th>Data</th><th>Plano</th><th>Status</th><th>Valor</th><th>Pagamento</th></tr></thead>
+      <caption>Últimos pagamentos registrados no sistema</caption>
+      <thead><tr><th scope="col">Data</th><th scope="col">Plano</th><th scope="col">Status</th><th scope="col">Valor</th><th scope="col">Pagamento</th></tr></thead>
       <tbody>
         ${payments.map((payment) => `
           <tr>
-            <td>${date(payment.createdAt)}</td>
+            <th scope="row">${date(payment.createdAt)}</th>
             <td>${escapeHtml(payment.plan)}</td>
             <td>${escapeHtml(payment.status)}</td>
             <td>${money(payment.amount)}</td>
@@ -170,11 +172,12 @@ async function loadSecurity() {
         <article class="admin-card"><small>Reset de senha</small><strong>${data.passwordResets || 0}</strong></article>
       </div>
       <table class="admin-table">
-        <thead><tr><th>Data</th><th>E-mail</th><th>IP</th><th>Status</th><th>Role</th><th>Motivo</th><th>Ações</th></tr></thead>
+        <caption>Registros recentes de segurança e anti-abuso</caption>
+        <thead><tr><th scope="col">Data</th><th scope="col">E-mail</th><th scope="col">IP</th><th scope="col">Status</th><th scope="col">Role</th><th scope="col">Motivo</th><th scope="col">Ações</th></tr></thead>
         <tbody>
           ${(data.recent || []).map((item) => `
             <tr>
-              <td>${date(item.createdAt)}</td>
+              <th scope="row">${date(item.createdAt)}</th>
               <td>${escapeHtml(item.email)}</td>
               <td><small>${escapeHtml(item.ip)}</small></td>
               <td>${escapeHtml(item.status)}</td>
@@ -182,8 +185,8 @@ async function loadSecurity() {
               <td>${escapeHtml(item.reason)}</td>
               <td>
                 <div class="admin-actions">
-                  <button type="button" class="secondary" onclick="deleteSecurityRecord('${item.id}')">Remover</button>
-                  <button type="button" class="secondary" onclick="clearSecurityByEmail('${escapeHtml(item.email)}')">Limpar e-mail</button>
+                  <button type="button" class="secondary" aria-label="Remover registro de segurança de ${escapeHtml(item.email)}" onclick="deleteSecurityRecord('${item.id}')">Remover</button>
+                  <button type="button" class="secondary" aria-label="Limpar registros de segurança do e-mail ${escapeHtml(item.email)}" onclick="clearSecurityByEmail('${escapeHtml(item.email)}')">Limpar e-mail</button>
                 </div>
               </td>
             </tr>

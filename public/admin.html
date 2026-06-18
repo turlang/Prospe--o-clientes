@@ -32,7 +32,7 @@
         <p>Usuários, assinaturas, pagamentos e receita estimada.</p>
       </div>
       <div class="admin-actions">
-        <a class="tag" href="/app?adminDashboard=1">← Abrir dashboard</a>
+        <a class="tag admin-dashboard-link" href="/app?adminDashboard=1" aria-label="Abrir dashboard principal do sistema">← Abrir dashboard</a>
         <button id="adminLogout" class="secondary" type="button">Sair</button>
       </div>
     </header>
@@ -43,8 +43,8 @@
       <h2>Usuários</h2>
       <div class="admin-search">
         <label class="sr-only" for="adminSearch">Buscar usuário</label><input id="adminSearch" name="adminSearch" placeholder="Buscar por nome, e-mail ou plano" />
-        <button id="adminSearchBtn" type="button">Buscar</button>
-        <button id="adminReloadBtn" type="button" class="secondary">Atualizar</button>
+        <button id="adminSearchBtn" type="button" aria-label="Buscar usuários no painel administrativo">Buscar</button>
+        <button id="adminReloadBtn" type="button" class="secondary" aria-label="Atualizar dados do painel administrativo">Atualizar</button>
       </div>
       <div id="adminUsers"></div>
     </section>
