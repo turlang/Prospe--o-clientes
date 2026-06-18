@@ -55,6 +55,9 @@ async function registerTrialAttempt({ email, ip, deviceId, userAgent, status, re
 async function validateTrialRegistration({ email, ip, deviceId, userAgent }) {
   if (!email) return { allowed: false, reason: 'Informe um e-mail válido.' };
 
+  const existingAdmin = await User.findOne({ email: String(email).toLowerCase(), role: 'admin' });
+  if (existingAdmin) return { allowed: true, adminBypass: true };
+
   const domain = getEmailDomain(email);
   if (TEMP_EMAIL_DOMAINS.has(domain)) {
     return { allowed: false, reason: 'Use um e-mail permanente para criar sua conta.' };

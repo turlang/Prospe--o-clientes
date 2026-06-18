@@ -1,5 +1,47 @@
 # CHANGELOG
 
+## v16.1.0 - Acessibilidade e Semântica
+
+### Melhorado
+- Labels associados aos inputs com `for` e `id`.
+- Botões de formulário com `type` explícito.
+- Navegação principal com `nav`, `ul` e `li`.
+- Regiões de status com `aria-live`.
+- Autocomplete em campos de login, cadastro e senha.
+- Estilo de foco visível para teclado.
+- Labels acessíveis em campos administrativos.
+
+---
+
+
+## v16.0.0 - Automações Comerciais
+
+### Adicionado
+- Sequência automática de follow-ups por lead.
+- Endpoint `/api/automations/followup-sequence`.
+- Endpoint `/api/automations/next-actions`.
+- Próximas ações sugeridas.
+- Priorização automática de leads quentes.
+- Agenda com prioridade e tipo de automação.
+- Botão "Automatizar sequência" nos leads.
+- Nova área "Automações comerciais" em Campanhas.
+
+---
+
+
+## v15.1.0 - Correções Admin e Anti-Abuso
+
+### Corrigido
+- Admin não fica mais preso no Painel Master.
+- Botão "Abrir dashboard" abre `/app?adminDashboard=1`.
+- Dashboard comum mostra atalho para voltar ao Painel Master quando o usuário é admin.
+- Painel de segurança permite remover registro bloqueado.
+- Painel de segurança permite limpar registros por e-mail.
+- Promoção para admin limpa registros anti-abuso do usuário.
+
+---
+
+
 <<<<<<< HEAD
 ## v15.0.0 - Recuperação de Senha
 

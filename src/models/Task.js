@@ -8,6 +8,8 @@ const taskSchema = new mongoose.Schema(
     title: { type: String, default: 'Follow-up comercial' },
     dueAt: { type: Date, required: true },
     message: { type: String, default: '' },
+    priority: { type: String, default: 'MÉDIA', index: true },
+    automationType: { type: String, default: 'MANUAL', index: true },
     done: { type: Boolean, default: false },
     completedAt: { type: Date, default: null }
   },

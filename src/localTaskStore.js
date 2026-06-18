@@ -39,13 +39,15 @@ function publicTask(task) {
     title: task.title,
     dueAt: task.dueAt instanceof Date ? task.dueAt.toISOString() : task.dueAt,
     message: task.message,
+    priority: task.priority || 'MÉDIA',
+    automationType: task.automationType || 'MANUAL',
     done: Boolean(task.done),
     createdAt: task.createdAt instanceof Date ? task.createdAt.toISOString() : task.createdAt,
     completedAt: task.completedAt instanceof Date ? task.completedAt.toISOString() : task.completedAt
   };
 }
 
-async function createTask({ userId, leadId, leadName, title, dueAt, message }) {
+async function createTask({ userId, leadId, leadName, title, dueAt, message, priority = 'MÉDIA', automationType = 'MANUAL' }) {
   if (hasMongoUri()) {
     const task = await Task.create({
       userId,
@@ -54,6 +56,8 @@ async function createTask({ userId, leadId, leadName, title, dueAt, message }) {
       title: title || 'Follow-up comercial',
       dueAt: new Date(dueAt),
       message: message || '',
+      priority,
+      automationType,
       done: false
     });
 
@@ -69,6 +73,8 @@ async function createTask({ userId, leadId, leadName, title, dueAt, message }) {
     title,
     dueAt,
     message,
+    priority,
+    automationType,
     done: false,
     createdAt: new Date().toISOString()
   };

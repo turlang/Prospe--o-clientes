@@ -21,7 +21,7 @@ const PasswordReset = require('./models/PasswordReset');
 const { getAllPlans, getPlan, normalizePlan } = require('./planConfig');
 const { getDailyUsage, getTotalUsage, addDailyUsage } = require('./localUsageStore');
 const { findUserById, updateLocalUserPlan } = require('./localUserStore');
-const { buildCampaignSequence, nextFollowUpDate } = require('./campaignEngine');
+const { buildCampaignSequence, nextFollowUpDate, buildAutomationPlan, getPriorityFromLead } = require('./campaignEngine');
 const { createTask, listTasks, completeTask } = require('./localTaskStore');
 
 const app = express();
@@ -937,6 +937,16 @@ app.patch('/api/admin/users/:id', requireAuth, requireAdmin, async (req, res) =>
     if (subscriptionStatus && !plan) update.subscriptionStatus = subscriptionStatus;
 
     const user = await User.findByIdAndUpdate(req.params.id, update, { new: true }).lean();
+
+    if (user && role === 'admin') {
+      await TrialGuard.deleteMany({
+        $or: [
+          { email: user.email },
+          { deviceId: user.deviceId || '__none__' },
+          { ip: user.registrationIp || '__none__' }
+        ]
+      });
+    }
     if (!user) return res.status(404).json({ error: 'Usuário não encontrado.' });
 
     res.json({
@@ -974,21 +984,61 @@ app.get('/api/admin/security', requireAuth, requireAdmin, async (_req, res) => {
       blocked,
       allowed,
       passwordResets,
-      recent: recent.map((item) => ({
-        id: String(item._id),
-        email: item.email,
-        emailDomain: item.emailDomain,
-        ip: item.ip,
-        deviceId: item.deviceId,
-        status: item.status,
-        reason: item.reason,
-        createdAt: item.createdAt
+      recent: await Promise.all(recent.map(async (item) => {
+        const user = item.email ? await User.findOne({ email: item.email }).lean() : null;
+
+        return {
+          id: String(item._id),
+          email: item.email,
+          emailDomain: item.emailDomain,
+          ip: item.ip,
+          deviceId: item.deviceId,
+          status: item.status,
+          reason: item.reason,
+          userRole: user?.role || 'none',
+          createdAt: item.createdAt
+        };
       }))
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
+
+
+app.delete('/api/admin/security/:id', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    if (!hasMongoUri()) return res.status(400).json({ error: 'Admin requer MongoDB ativo.' });
+
+    const deleted = await TrialGuard.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ error: 'Registro não encontrado.' });
+
+    res.json({ ok: true, message: 'Registro de segurança removido.' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/admin/security/clear', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    if (!hasMongoUri()) return res.status(400).json({ error: 'Admin requer MongoDB ativo.' });
+
+    const { email, deviceId, ip } = req.body;
+    const filters = [];
+
+    if (email) filters.push({ email: String(email).trim().toLowerCase() });
+    if (deviceId) filters.push({ deviceId: String(deviceId).trim() });
+    if (ip) filters.push({ ip: String(ip).trim() });
+
+    if (!filters.length) return res.status(400).json({ error: 'Informe e-mail, IP ou dispositivo.' });
+
+    const result = await TrialGuard.deleteMany({ $or: filters });
+    res.json({ ok: true, deletedCount: result.deletedCount || 0 });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 
 app.get('/api/admin/payments', requireAuth, requireAdmin, async (_req, res) => {
   try {
@@ -1014,6 +1064,100 @@ app.get('/api/admin/payments', requireAuth, requireAdmin, async (_req, res) => {
   }
 });
 
+
+app.post('/api/automations/followup-sequence', requireAuth, async (req, res) => {
+  try {
+    const { leadId, objective } = req.body;
+    if (!leadId) return res.status(400).json({ error: 'Informe o leadId.' });
+
+    const leads = await readLeads(req.user.sub);
+    const lead = leads.find((item) => String(item.placeId || item.nome) === String(leadId));
+    if (!lead) return res.status(404).json({ error: 'Lead não encontrado.' });
+
+    const plan = buildAutomationPlan(lead, objective || 'vender website personalizado');
+    const createdTasks = [];
+
+    for (const step of plan) {
+      const task = await createTask({
+        userId: req.user.sub,
+        leadId,
+        leadName: lead.nome,
+        title: step.title,
+        dueAt: step.dueAt,
+        message: step.message,
+        priority: step.priority,
+        automationType: step.automationType
+      });
+
+      createdTasks.push(task);
+    }
+
+    await updateLeadStatus(leadId, 'CONTATADO', {
+      data: new Date().toISOString(),
+      tipo: 'AUTOMACAO_FOLLOWUP_CRIADA',
+      quantidade: createdTasks.length,
+      prioridade: plan[0]?.priority || 'MÉDIA'
+    }, req.user.sub);
+
+    res.status(201).json({
+      ok: true,
+      leadId,
+      leadName: lead.nome,
+      priority: plan[0]?.priority || 'MÉDIA',
+      tasks: createdTasks
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/automations/next-actions', requireAuth, async (req, res) => {
+  try {
+    const leads = await readLeads(req.user.sub);
+    const tasks = await listTasks(req.user.sub);
+    const pendingTasks = tasks.filter((task) => !task.done);
+    const today = new Date();
+
+    const hotLeads = leads
+      .map((lead) => ({ lead, profile: getPriorityFromLead(lead) }))
+      .filter((item) => item.profile.priority === 'ALTA')
+      .slice(0, 8)
+      .map(({ lead, profile }) => ({
+        type: 'HOT_LEAD',
+        title: 'Priorizar lead quente',
+        leadId: String(lead.placeId || lead.nome),
+        leadName: lead.nome,
+        priority: profile.priority,
+        message: `Lead com alta prioridade. Sugestão: enviar abordagem ainda hoje.`
+      }));
+
+    const dueTasks = pendingTasks
+      .filter((task) => new Date(task.dueAt) <= today)
+      .slice(0, 8)
+      .map((task) => ({
+        type: 'DUE_TASK',
+        title: task.title,
+        leadId: task.leadId,
+        leadName: task.leadName,
+        priority: task.priority || 'MÉDIA',
+        dueAt: task.dueAt,
+        message: task.message
+      }));
+
+    res.json({
+      dueTasks,
+      hotLeads,
+      summary: {
+        pendingTasks: pendingTasks.length,
+        dueToday: dueTasks.length,
+        hotLeads: hotLeads.length
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post('/api/campaigns/sequence', requireAuth, async (req, res) => {
   try {
     const { leadId, objective } = req.body;
@@ -1032,7 +1176,7 @@ app.post('/api/campaigns/sequence', requireAuth, async (req, res) => {
 
 app.post('/api/followups', requireAuth, async (req, res) => {
   try {
-    const { leadId, title, message, days } = req.body;
+    const { leadId, title, message, days, priority, automationType } = req.body;
     if (!leadId) return res.status(400).json({ error: 'Informe o leadId.' });
 
     const leads = await readLeads(req.user.sub);
@@ -1045,7 +1189,9 @@ app.post('/api/followups', requireAuth, async (req, res) => {
       leadName: lead.nome,
       title: title || 'Follow-up comercial',
       dueAt: nextFollowUpDate(days || 2),
-      message: message || 'Retomar contato com este lead.'
+      message: message || 'Retomar contato com este lead.',
+      priority: priority || 'MÉDIA',
+      automationType: automationType || 'MANUAL'
     });
 
     await updateLeadStatus(leadId, lead.status || 'CONTATADO', {

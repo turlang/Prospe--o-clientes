@@ -57,3 +57,36 @@ function nextFollowUpDate(days = 2) {
 }
 
 module.exports = { buildCampaignSequence, nextFollowUpDate };
+
+
+function getPriorityFromLead(lead) {
+  const score = Number(lead.score || lead.pontuacao || 0);
+  const status = String(lead.status || 'NOVO').toUpperCase();
+
+  if (score >= 85) return { priority: 'ALTA', days: [0, 1, 3], label: 'Lead quente' };
+  if (status === 'INTERESSADO' || status === 'PROPOSTA') return { priority: 'ALTA', days: [0, 1, 2], label: 'Lead engajado' };
+  if (score >= 65) return { priority: 'MÉDIA', days: [0, 2, 5], label: 'Boa oportunidade' };
+
+  return { priority: 'BAIXA', days: [1, 4, 8], label: 'Nutrição leve' };
+}
+
+function buildAutomationPlan(lead, objective = 'vender website personalizado') {
+  const profile = getPriorityFromLead(lead);
+  const sequence = buildCampaignSequence(lead, objective);
+
+  return sequence.map((step, index) => {
+    const due = new Date();
+    due.setDate(due.getDate() + Number(profile.days[index] ?? step.day ?? index + 1));
+
+    return {
+      ...step,
+      priority: profile.priority,
+      label: profile.label,
+      dueAt: due.toISOString(),
+      automationType: 'FOLLOWUP_SEQUENCE',
+      statusSuggestion: index === 0 ? 'CONTATADO' : 'INTERESSADO'
+    };
+  });
+}
+
+module.exports = { buildCampaignSequence, nextFollowUpDate, buildAutomationPlan, getPriorityFromLead };

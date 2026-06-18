@@ -5,11 +5,11 @@
 - Tokens temporários de redefinição
 - E-mail transacional real fica como melhoria futura
 
-## Fase 16
-- Analytics Comercial
-- Conversões
-- Receita
-- KPIs
+## Fase 16 ✅
+- Automações Comerciais
+- Sequências de follow-up
+- Próximas ações sugeridas
+- Priorização automática
 
 ## Fase 17
 - IA Comercial

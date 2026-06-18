@@ -23,23 +23,28 @@
         <p>Dashboard executivo, CRM Kanban, lead score visual e geração de abordagem comercial personalizada.</p>
       </div>
 
-      <form id="loginForm" class="auth-form">
-        <h3>Entrar</h3>
-        <label>E-mail<input id="loginEmail" type="email" required /></label>
-        <label>Senha<input id="loginPassword" type="password" required /></label>
-        <button>Entrar no dashboard</button>
+      <form id="loginForm" class="auth-form" aria-labelledby="loginTitle">
+        <h3 id="loginTitle">Entrar</h3>
+        <label for="loginEmail">E-mail</label>
+        <input id="loginEmail" name="email" type="email" autocomplete="email" required />
+        <label for="loginPassword">Senha</label>
+        <input id="loginPassword" name="password" type="password" autocomplete="current-password" required />
+        <button type="submit">Entrar no dashboard</button>
       </form>
 
-      <form id="registerForm" class="auth-form muted-form">
-        <h3>Criar conta</h3>
-        <label>Nome<input id="registerName" required /></label>
-        <label>E-mail<input id="registerEmail" type="email" required /></label>
-        <label>Senha<input id="registerPassword" type="password" minlength="6" required /></label>
+      <form id="registerForm" class="auth-form muted-form" aria-labelledby="registerTitle">
+        <h3 id="registerTitle">Criar conta</h3>
+        <label for="registerName">Nome</label>
+        <input id="registerName" name="name" autocomplete="name" required />
+        <label for="registerEmail">E-mail</label>
+        <input id="registerEmail" name="email" type="email" autocomplete="email" required />
+        <label for="registerPassword">Senha</label>
+        <input id="registerPassword" name="password" type="password" autocomplete="new-password" minlength="6" required />
         <button type="submit" class="secondary">Criar conta gratuita</button>
       </form>
     </section>
 
-    <section id="status"></section>
+    <section id="status" aria-live="polite"></section>
 
     <section id="dashboard" hidden class="app-shell">
       <aside class="sidebar card-panel">
@@ -52,14 +57,16 @@
           <button id="logout" type="button" class="secondary logout-top">Sair</button>
         </div>
         <div id="usageBox" class="usage-box"></div>
-        <nav>
-          <button class="nav-btn active" type="button" data-view="dashboard">Visão geral</button>
-          <button class="nav-btn" type="button" data-view="prospectar">Prospectar</button>
-          <button class="nav-btn" type="button" data-view="crm">CRM Kanban</button>
-          <button class="nav-btn" type="button" data-view="historico">Histórico</button>
-          <button class="nav-btn" type="button" data-view="planos">Planos</button>
-          <button class="nav-btn" type="button" data-view="sistema">Sistema</button>
-          <button class="nav-btn" type="button" data-view="campanhas">Campanhas</button>
+        <nav aria-label="Menu principal">
+          <ul class="nav-list">
+            <li><button class="nav-btn active" type="button" data-view="dashboard">Visão geral</button></li>
+            <li><button class="nav-btn" type="button" data-view="prospectar">Prospectar</button></li>
+            <li><button class="nav-btn" type="button" data-view="crm">CRM Kanban</button></li>
+            <li><button class="nav-btn" type="button" data-view="historico">Histórico</button></li>
+            <li><button class="nav-btn" type="button" data-view="planos">Planos</button></li>
+            <li><button class="nav-btn" type="button" data-view="sistema">Sistema</button></li>
+            <li><button class="nav-btn" type="button" data-view="campanhas">Campanhas</button></li>
+          </ul>
         </nav>
         <div class="upgrade-box">
           <strong>Preparado para Pro</strong>
@@ -92,20 +99,25 @@
 
         <section id="view-prospectar" class="view">
           <form id="form" class="card search-card">
-            <label>Segmento<input id="segmento" placeholder="Ex: clínica odontológica, imobiliária, estética" required /></label>
-            <label>Bairro ou região<input id="regiao" placeholder="Ex: Perus, São Paulo" required /></label>
-            <label>Quantidade<select id="limite"><option>5</option><option selected>10</option><option>20</option></select></label>
-            <label class="check"><input id="auditarSites" type="checkbox" checked /> Auditar sites</label>
-            <button>Prospectar</button>
+            <label for="segmento">Segmento</label>
+            <input id="segmento" name="segmento" placeholder="Ex: clínica odontológica, imobiliária, estética" required />
+            <label for="regiao">Bairro ou região</label>
+            <input id="regiao" name="regiao" placeholder="Ex: Perus, São Paulo" required />
+            <label for="limite">Quantidade</label>
+            <select id="limite" name="limite"><option>5</option><option selected>10</option><option>20</option></select>
+            <label class="check" for="auditarSites"><input id="auditarSites" name="auditarSites" type="checkbox" checked /> Auditar sites</label>
+            <button type="submit">Prospectar</button>
             <small>Usa Google Places API. A auditoria acessa apenas sites públicos.</small>
           </form>
         </section>
 
         <section id="view-crm" class="view">
           <div class="toolbar card-panel">
-            <label>Buscar<input id="searchLead" placeholder="Nome, endereço ou segmento" /></label>
-            <label>Status<select id="filterStatus"><option value="">Todos</option><option>NOVO</option><option>CONTATADO</option><option>INTERESSADO</option><option>PROPOSTA</option><option>FECHADO</option><option>SEM_INTERESSE</option></select></label>
-            <label class="check"><input id="filterFavorite" type="checkbox" /> Favoritos</label>
+            <label for="searchLead">Buscar</label>
+            <input id="searchLead" name="searchLead" placeholder="Nome, endereço ou segmento" />
+            <label for="filterStatus">Status</label>
+            <select id="filterStatus" name="filterStatus"><option value="">Todos</option><option>NOVO</option><option>CONTATADO</option><option>INTERESSADO</option><option>PROPOSTA</option><option>FECHADO</option><option>SEM_INTERESSE</option></select>
+            <label class="check" for="filterFavorite"><input id="filterFavorite" name="filterFavorite" type="checkbox" /> Favoritos</label>
             <button id="loadSaved" type="button" class="secondary" onclick="carregarLeadsCRM()">Carregar</button>
             <button id="exportCsv" type="button">Exportar CSV</button>
           </div>
@@ -152,19 +164,33 @@
         <section id="view-campanhas" class="view">
           <div class="dashboard-header card-panel">
             <div>
-              <p class="tag dark">Campanhas</p>
-              <h2>Campanhas e follow-ups</h2>
-              <p class="meta">Sequências comerciais, próximos contatos e lembretes manuais para aumentar conversão sem disparo automático.</p>
+              <p class="tag dark">Fase 16</p>
+              <h2>Automações comerciais</h2>
+              <p class="meta">Sequências de follow-up, próximas ações e lembretes inteligentes para aumentar conversão sem disparo automático.</p>
             </div>
-            <button type="button" onclick="loadFollowups()">Atualizar</button>
+            <div class="actions-row">
+              <button type="button" onclick="loadAutomationActions()">Próximas ações</button>
+              <button type="button" class="secondary" onclick="loadFollowups()">Atualizar agenda</button>
+            </div>
           </div>
-          <div id="followupList" class="history-list"></div>
+
+          <div class="stats-grid" id="automationSummary"></div>
+
+          <div class="card-panel">
+            <h3>Próximas ações sugeridas</h3>
+            <div id="automationActions" class="history-list"></div>
+          </div>
+
+          <div class="card-panel">
+            <h3>Agenda de follow-ups</h3>
+            <div id="followupList" class="history-list"></div>
+          </div>
         </section>
 
-        <section id="results" class="grid"></section>
+        <section id="results" class="grid" aria-live="polite"></section>
       </section>
     </section>
   </main>
-  <script src="app.js?v=v10-prod-final"></script>
+  <script src="app.js?v=v16-1-a11y"></script>
 </body>
 </html>

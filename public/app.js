@@ -33,6 +33,8 @@ const historyList = document.querySelector('#historyList');
 const activityTimeline = document.querySelector('#activityTimeline');
 const systemMetrics = document.querySelector('#systemMetrics');
 const followupList = document.querySelector('#followupList');
+const automationSummary = document.querySelector('#automationSummary');
+const automationActions = document.querySelector('#automationActions');
 const kanbanBoard = document.querySelector('#kanbanBoard');
 const filterStatus = document.querySelector('#filterStatus');
 const filterFavorite = document.querySelector('#filterFavorite');
@@ -222,13 +224,26 @@ async function authRequest(url, payload) {
 }
 
 function bootAuth() {
-  if (authToken && currentUser?.role === 'admin') {
+  const params = new URLSearchParams(window.location.search);
+  const wantsUserDashboard = params.get('adminDashboard') === '1';
+
+  if (authToken && currentUser?.role === 'admin' && !wantsUserDashboard) {
     window.location.replace('/admin');
     return;
   }
 
-  if (authToken && currentUser) showDashboard();
-  else showAuth();
+  if (authToken && currentUser) {
+    showDashboard();
+
+    if (currentUser?.role === 'admin') {
+      addAdminShortcut();
+      window.history.replaceState({}, document.title, '/app');
+    }
+
+    return;
+  }
+
+  showAuth();
 }
 
 function showAuth() {
@@ -241,11 +256,28 @@ async function showDashboard() {
   dashboard.hidden = false;
   welcome.textContent = `Olá, ${currentUser?.name || 'usuário'}`;
   planInfo.innerHTML = `<strong>Plano ${String(currentUser?.planName || currentUser?.plan || 'TESTE GRATUITO').toUpperCase()}</strong><span>${currentUser?.plan === 'trial' ? '10 leads totais' : `${currentUser?.dailyLeadLimit || 10} leads/dia`}</span>`;
+  if (currentUser?.role === 'admin') addAdminShortcut();
+
   await refreshUsage();
   await renderPlans();
   await refreshStats();
   await loadSavedLeads(false);
   await loadHistory();
+}
+
+
+function addAdminShortcut() {
+  if (document.querySelector('#adminShortcut')) return;
+
+  const button = document.createElement('button');
+  button.id = 'adminShortcut';
+  button.type = 'button';
+  button.className = 'secondary full';
+  button.textContent = 'Painel Master';
+  button.addEventListener('click', () => window.location.replace('/admin'));
+
+  const nav = document.querySelector('.sidebar nav');
+  if (nav) nav.prepend(button);
 }
 
 function switchView(view) {
@@ -257,7 +289,7 @@ function switchView(view) {
   if (view === 'historico') loadHistory();
   if (view === 'planos') renderPlans();
   if (view === 'sistema') loadSystemMetrics();
-  if (view === 'campanhas') loadFollowups();
+  if (view === 'campanhas') { loadAutomationActions(); loadFollowups(); }
 }
 
 function apiFetch(url, options = {}) {
@@ -793,6 +825,69 @@ async function generateCampaign(leadId) {
   }
 }
 
+
+async function startAutomationSequence(leadId) {
+  try {
+    const response = await apiFetch('/api/automations/followup-sequence', {
+      method: 'POST',
+      body: JSON.stringify({
+        leadId,
+        objective: 'vender website personalizado'
+      })
+    });
+
+    const data = await readJson(response);
+    if (!response.ok) throw new Error(data.error);
+
+    statusBox.innerHTML = `<p>Sequência automática criada para ${escapeHtml(data.leadName)} com ${data.tasks.length} follow-ups.</p>`;
+    await loadAutomationActions();
+    await loadFollowups();
+  } catch (error) {
+    showError(error.message);
+  }
+}
+
+async function loadAutomationActions() {
+  if (!automationActions || !authToken) return;
+
+  try {
+    const response = await apiFetch('/api/automations/next-actions');
+    const data = await readJson(response);
+    if (!response.ok) throw new Error(data.error);
+
+    if (automationSummary) {
+      automationSummary.innerHTML = `
+        <article><small>Follow-ups pendentes</small><strong>${data.summary.pendingTasks}</strong><span>tarefas abertas</span></article>
+        <article><small>Vencidos hoje</small><strong>${data.summary.dueToday}</strong><span>ações urgentes</span></article>
+        <article><small>Leads quentes</small><strong>${data.summary.hotLeads}</strong><span>alta prioridade</span></article>
+      `;
+    }
+
+    const items = [...(data.dueTasks || []), ...(data.hotLeads || [])];
+
+    if (!items.length) {
+      automationActions.innerHTML = '<p class="meta">Nenhuma ação urgente no momento.</p>';
+      return;
+    }
+
+    automationActions.innerHTML = items.map((item) => `
+      <article class="history-item">
+        <strong>${escapeHtml(item.title)}</strong>
+        <p>${escapeHtml(item.leadName || 'Lead')}</p>
+        <p class="meta">Prioridade: ${escapeHtml(item.priority || 'MÉDIA')}</p>
+        ${item.dueAt ? `<p class="meta">Vencimento: ${new Date(item.dueAt).toLocaleString('pt-BR')}</p>` : ''}
+        <p>${escapeHtml(item.message || '')}</p>
+        ${item.type === 'HOT_LEAD'
+          ? `<button type="button" onclick="startAutomationSequence('${escapeAttr(item.leadId)}')">Criar sequência</button>`
+          : ''
+        }
+      </article>
+    `).join('');
+  } catch (error) {
+    automationActions.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
+  }
+}
+
 async function scheduleFollowup(leadId) {
   try {
     const response = await apiFetch('/api/followups', {
@@ -832,7 +927,7 @@ async function loadFollowups() {
       <article class="history-item ${task.done ? 'done' : ''}">
         <strong>${escapeHtml(task.title)}</strong>
         <p>${escapeHtml(task.leadName || 'Lead')}</p>
-        <p class="meta">Vencimento: ${new Date(task.dueAt).toLocaleString('pt-BR')}</p>
+        <p class="meta">Vencimento: ${new Date(task.dueAt).toLocaleString('pt-BR')} · Prioridade: ${escapeHtml(task.priority || 'MÉDIA')} · ${escapeHtml(task.automationType || 'MANUAL')}</p>
         <p>${escapeHtml(task.message || '')}</p>
         ${task.done
           ? '<span class="tag">Concluído</span>'
