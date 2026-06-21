@@ -3,6 +3,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="LeadHunter Pro é uma plataforma SaaS de prospecção comercial com CRM, automações, geração de leads locais e gestão de oportunidades." />
+  <meta name="keywords" content="CRM, prospecção, leads, vendas, automação comercial, freelancer, agência, Mercado Pago" />
+  <meta name="author" content="LeadHunter Pro" />
+  <meta property="og:title" content="LeadHunter Pro — Prospecção comercial com CRM e automações" />
+  <meta property="og:description" content="Encontre leads locais, organize oportunidades e acompanhe follow-ups em uma plataforma SaaS comercial." />
+  <meta property="og:type" content="website" />
   <title>LeadHunter Pro — Prospecção para freelancers e agências</title>
   <link rel="icon" href="data:," />
   <link rel="stylesheet" href="landing.css" />
@@ -10,22 +16,24 @@
 <body>
   <header class="topbar">
     <a class="brand" href="/landing.html">LeadHunter Pro</a>
-    <nav>
-      <a href="#beneficios">Benefícios</a>
-      <a href="#planos">Planos</a>
-      <a href="#faq">FAQ</a>
-      <a class="login" href="/app">Entrar</a>
-    </nav>
+    <nav aria-label="Menu principal">
+    <ul class="landing-nav-list">
+      <li><a href="#beneficios">Benefícios</a></li>
+      <li><a href="#planos">Planos</a></li>
+      <li><a href="#faq">FAQ</a></li>
+      <li><a class="login" href="/app">Entrar</a></li>
+    </ul>
+  </nav>
   </header>
 
-  <main>
+  <main id="conteudo-principal">
     <section class="hero">
       <div class="hero-copy">
         <p class="eyebrow">SaaS de prospecção comercial</p>
         <h1>Encontre empresas com potencial de compra e organize tudo em um CRM simples.</h1>
         <p class="lead">Busque leads locais, analise presença digital, gere abordagens, acompanhe follow-ups e transforme prospecção em rotina comercial.</p>
         <div class="actions">
-          <a class="primary" href="/app">Começar agora</a>
+          <a class="primary" href="/app" aria-label="Acessar sistema LeadHunter Pro">Começar agora</a>
           <a class="secondary" href="#demo">Ver como funciona</a>
         </div>
         <div class="proof">
@@ -119,7 +127,7 @@
       </div>
     </section>
 
-    <section id="faq" class="section faq">
+    <section id="faq" class="section faq" aria-label="Perguntas frequentes">
       <p class="eyebrow">FAQ</p>
       <h2>Perguntas rápidas</h2>
       <details open><summary>O sistema envia WhatsApp automaticamente?</summary><p>Não. Ele gera mensagens e organiza follow-ups, mas o envio deve ser revisado pelo usuário.</p></details>
@@ -134,7 +142,7 @@
     </section>
   </main>
 
-  <footer>
+  <footer aria-label="Rodapé">
     <strong>LeadHunter Pro</strong>
     <span>SaaS de prospecção comercial local.</span>
   </footer>

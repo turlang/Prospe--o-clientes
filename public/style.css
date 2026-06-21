@@ -668,15 +668,15 @@ summary { cursor: pointer; font-weight: 900; }
 }
 
 .sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
 }
 
 button:focus-visible,
@@ -686,4 +686,43 @@ textarea:focus-visible,
 a:focus-visible {
   outline: 3px solid rgba(14, 165, 233, .45);
   outline-offset: 3px;
+}
+
+
+/* Landing - navegação semântica e acessível */
+.landing-nav-list {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  flex-wrap: wrap;
+}
+
+.landing-nav-list li {
+  margin: 0;
+}
+
+
+/* v16.1.2 - Acessibilidade refinada do Admin */
+.admin-dashboard-link {
+  border: 1px solid rgba(255,255,255,.36);
+  background: rgba(255,255,255,.14);
+}
+
+.admin-dashboard-link:focus-visible {
+  outline: 3px solid rgba(14, 165, 233, .65);
+  outline-offset: 4px;
+}
+
+.admin-table caption {
+  text-align: left;
+  font-weight: 900;
+  color: var(--muted);
+  padding: 0 0 12px;
+}
+
+.admin-table th[scope="row"] {
+  font-weight: inherit;
 }
