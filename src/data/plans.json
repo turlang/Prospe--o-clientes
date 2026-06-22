@@ -1,0 +1,18 @@
+{
+  "trial": {
+    "name": "Teste Gratuito",
+    "durationDays": 30,
+    "dailyLeadLimit": 20,
+    "totalLeadLimit": null
+  },
+  "pro": {
+    "name": "Pro",
+    "durationDays": 30,
+    "dailyLeadLimit": 500
+  },
+  "agency": {
+    "name": "Agência",
+    "durationDays": 30,
+    "dailyLeadLimit": 5000
+  }
+}
