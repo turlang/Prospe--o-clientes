@@ -13,11 +13,12 @@ const PLANS = {
     id: 'trial',
     name: 'Teste Gratuito',
     priceLabel: 'R$ 0',
-    dailyLeadLimit: 10,
-    totalLeadLimit: 10,
+    dailyLeadLimit: 20,
+    totalLeadLimit: null,
     isPaid: false,
     features: [
-      '10 leads totais para experimentar',
+      '30 dias de uso gratuito',
+      '20 leads por dia',
       'CRM Kanban básico',
       'Abordagens comerciais por templates',
       'Follow-ups manuais'
