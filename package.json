@@ -1,13 +1,14 @@
 {
   "name": "agente-prospeccao-real",
-  "version": "16.1.2",
-  "description": "SaaS de prospecção com refinamentos de acessibilidade no painel Admin",
+  "version": "17.0.0",
+  "description": "SaaS de prospecção com planos editáveis, auditoria administrativa e segurança reforçada",
   "main": "src/server.js",
   "type": "commonjs",
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "check": "node --check src/server.js && node --check public/app.js && node --check src/db.js"
+    "check": "node --check src/server.js && node --check src/adminPlansRoutes.js && node --check public/app.js && node --check public/admin.js && node --check src/db.js && npm test",
+    "test": "node --test tests/*.test.js"
   },
   "dependencies": {
     "@fast-csv/format": "^5.0.5",

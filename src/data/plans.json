@@ -1,18 +1,48 @@
 {
   "trial": {
+    "id": "trial",
     "name": "Teste Gratuito",
-    "durationDays": 30,
-    "dailyLeadLimit": 20,
-    "totalLeadLimit": null
+    "priceLabel": "R$ 0",
+    "durationDays": 0,
+    "dailyLeadLimit": 10,
+    "totalLeadLimit": 10,
+    "isPaid": false,
+    "features": [
+      "10 leads totais para experimentar",
+      "CRM Kanban básico",
+      "Abordagens comerciais por templates",
+      "Follow-ups manuais",
+      "Uso único por usuário/dispositivo"
+    ]
   },
   "pro": {
+    "id": "pro",
     "name": "Pro",
+    "priceLabel": "R$ 59/mês",
     "durationDays": 30,
-    "dailyLeadLimit": 500
+    "dailyLeadLimit": 500,
+    "totalLeadLimit": null,
+    "isPaid": true,
+    "features": [
+      "500 leads por dia",
+      "Dashboard executivo",
+      "Histórico completo",
+      "Campanhas e follow-ups"
+    ]
   },
   "agency": {
+    "id": "agency",
     "name": "Agência",
+    "priceLabel": "R$ 199/mês",
     "durationDays": 30,
-    "dailyLeadLimit": 5000
+    "dailyLeadLimit": 5000,
+    "totalLeadLimit": null,
+    "isPaid": true,
+    "features": [
+      "Até 5.000 leads por dia",
+      "Uso para times e agências",
+      "Pipeline comercial avançado",
+      "Preparado para white label"
+    ]
   }
 }

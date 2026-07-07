@@ -29,6 +29,7 @@ const usageBox = document.querySelector('#usageBox');
 const plansGrid = document.querySelector('#plansGrid');
 const statsBox = document.querySelector('#stats');
 const executiveStats = document.querySelector('#executiveStats');
+const onboardingBox = document.querySelector('#onboardingBox');
 const historyList = document.querySelector('#historyList');
 const activityTimeline = document.querySelector('#activityTimeline');
 const systemMetrics = document.querySelector('#systemMetrics');
@@ -175,6 +176,7 @@ form.addEventListener('submit', async (event) => {
     renderKanban(lastLeads);
     renderExecutiveStats(lastLeads);
     renderActivityTimeline(lastLeads);
+    renderOnboarding();
     await refreshStats();
     await refreshUsage();
     await loadHistory();
@@ -258,6 +260,7 @@ async function showDashboard() {
   planInfo.innerHTML = `<strong>Plano ${String(currentUser?.planName || currentUser?.plan || 'TESTE GRATUITO').toUpperCase()}</strong><span>${currentUser?.plan === 'trial' ? '10 leads totais' : `${currentUser?.dailyLeadLimit || 10} leads/dia`}</span>`;
   if (currentUser?.role === 'admin') addAdminShortcut();
 
+  renderOnboarding();
   await refreshUsage();
   await renderPlans();
   await refreshStats();
@@ -387,6 +390,7 @@ async function loadSavedLeads(showLoading = true) {
     renderExecutiveStats(lastLeads);
     renderKanban(lastLeads);
     renderActivityTimeline(lastLeads);
+    renderOnboarding();
 
     await refreshStats();
 
@@ -642,6 +646,30 @@ function formatDate(value) { if (!value) return '-'; return new Date(value).toLo
 function debounce(fn, wait) { let timeout; return (...args) => { clearTimeout(timeout); timeout = setTimeout(() => fn(...args), wait); }; }
 
 
+function renderOnboarding() {
+  if (!onboardingBox) return;
+
+  const total = Array.isArray(lastLeads) ? lastLeads.length : 0;
+  const contacted = total ? lastLeads.filter((lead) => ['CONTATADO', 'INTERESSADO', 'PROPOSTA', 'FECHADO'].includes(lead.status)).length : 0;
+  const closed = total ? lastLeads.filter((lead) => lead.status === 'FECHADO').length : 0;
+
+  onboardingBox.innerHTML = `
+    <div class="section-title">
+      <div>
+        <p class="tag dark">Primeiros passos</p>
+        <h3>Transforme busca em venda</h3>
+      </div>
+      <button type="button" class="secondary" onclick="switchView('prospectar')">Começar agora</button>
+    </div>
+    <div class="onboarding-steps">
+      <article class="${total ? 'done' : ''}"><strong>1</strong><span>Escolha segmento e região</span></article>
+      <article class="${total ? 'done' : ''}"><strong>2</strong><span>Gere e salve leads no CRM</span></article>
+      <article class="${contacted ? 'done' : ''}"><strong>3</strong><span>Envie abordagem e mova no funil</span></article>
+      <article class="${closed ? 'done' : ''}"><strong>4</strong><span>Feche vendas e acompanhe conversão</span></article>
+    </div>
+  `;
+}
+
 async function refreshUsage() {
   if (!usageBox || !authToken) return;
 
@@ -695,7 +723,7 @@ async function renderPlans() {
           <h3>${plan.name}</h3>
           <div class="plan-price">${plan.priceLabel}</div>
           <p class="meta">${limitLabel}</p>
-          <ul>${plan.features.map((feature) => `<li>${feature}</li>`).join('')}</ul>
+          <ul>${(plan.features || []).map((feature) => `<li>${escapeHtml(feature)}</li>`).join('')}</ul>
           ${isActive
             ? '<button class="secondary full" disabled>Plano atual</button>'
             : isTrial

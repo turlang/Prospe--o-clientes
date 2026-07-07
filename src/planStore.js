@@ -1,12 +1,7 @@
+const { getAllPlans, updatePlan, savePlans } = require('./planConfig');
 
-const fs=require('fs');
-const path=require('path');
-const file=path.join(__dirname,'data','plans.json');
+function getPlans() {
+  return Object.fromEntries(getAllPlans().map((plan) => [plan.id, plan]));
+}
 
-function getPlans(){
- return JSON.parse(fs.readFileSync(file,'utf8'));
-}
-function savePlans(plans){
- fs.writeFileSync(file,JSON.stringify(plans,null,2));
-}
-module.exports={getPlans,savePlans};
+module.exports = { getPlans, savePlans, updatePlan };

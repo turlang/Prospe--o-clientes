@@ -3,6 +3,8 @@ const adminStats = document.querySelector('#adminStats');
 const adminUsers = document.querySelector('#adminUsers');
 const adminPayments = document.querySelector('#adminPayments');
 const adminSecurity = document.querySelector('#adminSecurity');
+const adminPlans = document.querySelector('#adminPlans');
+const adminAudit = document.querySelector('#adminAudit');
 const adminStatus = document.querySelector('#adminStatus');
 const adminSearch = document.querySelector('#adminSearch');
 
@@ -64,11 +66,14 @@ async function loadAdmin() {
       <article class="admin-card"><small>Pro</small><strong>${data.users.pro}</strong><span>assinantes Pro</span></article>
       <article class="admin-card"><small>Agência</small><strong>${data.users.agency}</strong><span>assinantes Agência</span></article>
       <article class="admin-card"><small>Receita aprovada</small><strong>${money(data.payments.revenue)}</strong><span>${data.payments.approved} pagamentos</span></article>
+      <article class="admin-card"><small>Auditoria</small><strong>${data.audit?.total || 0}</strong><span>ações registradas</span></article>
     `;
 
     renderUsers(data.recentUsers || []);
     renderPayments(data.recentPayments || []);
     await loadSecurity();
+    await loadPlans();
+    await loadAuditLogs();
     showStatus('Painel carregado.');
   } catch (error) {
     showStatus(error.message, true);
@@ -154,8 +159,91 @@ async function updateUser(id, payload) {
   }
 }
 
-loadAdmin();
+async function loadPlans() {
+  if (!adminPlans) return;
 
+  try {
+    const response = await adminFetch('/api/admin/plans');
+    const plans = await readJson(response);
+    if (!response.ok) throw new Error(plans.error || 'Erro ao carregar planos.');
+
+    adminPlans.innerHTML = `<div class="plan-editor">${plans.map(renderPlanEditor).join('')}</div>`;
+  } catch (error) {
+    adminPlans.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
+  }
+}
+
+function renderPlanEditor(plan) {
+  const features = Array.isArray(plan.features) ? plan.features.join('\n') : '';
+  return `
+    <article>
+      <h3>${escapeHtml(plan.name)}</h3>
+      <label>Nome<input id="plan-name-${plan.id}" value="${escapeHtml(plan.name)}" /></label>
+      <label>Preço<input id="plan-price-${plan.id}" value="${escapeHtml(plan.priceLabel || '')}" /></label>
+      <label>Limite diário<input id="plan-daily-${plan.id}" type="number" min="0" value="${Number(plan.dailyLeadLimit || 0)}" /></label>
+      <label>Limite total<input id="plan-total-${plan.id}" type="number" min="0" placeholder="vazio = ilimitado" value="${plan.totalLeadLimit === null || plan.totalLeadLimit === undefined ? '' : Number(plan.totalLeadLimit)}" /></label>
+      <label>Dias de validade<input id="plan-duration-${plan.id}" type="number" min="0" value="${Number(plan.durationDays || 0)}" /></label>
+      <label>Benefícios<textarea id="plan-features-${plan.id}">${escapeHtml(features)}</textarea></label>
+      <button type="button" onclick="savePlan('${plan.id}')">Salvar plano</button>
+    </article>
+  `;
+}
+
+async function savePlan(id) {
+  try {
+    const payload = {
+      name: document.querySelector(`#plan-name-${id}`).value,
+      priceLabel: document.querySelector(`#plan-price-${id}`).value,
+      dailyLeadLimit: Number(document.querySelector(`#plan-daily-${id}`).value || 0),
+      totalLeadLimit: document.querySelector(`#plan-total-${id}`).value,
+      durationDays: Number(document.querySelector(`#plan-duration-${id}`).value || 0),
+      features: document.querySelector(`#plan-features-${id}`).value.split('\n').map((item) => item.trim()).filter(Boolean)
+    };
+
+    const response = await adminFetch(`/api/admin/plans/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await readJson(response);
+    if (!response.ok) throw new Error(data.error || 'Erro ao salvar plano.');
+
+    showStatus('Plano atualizado.');
+    await loadPlans();
+    await loadAuditLogs();
+  } catch (error) {
+    showStatus(error.message, true);
+  }
+}
+
+async function loadAuditLogs() {
+  if (!adminAudit) return;
+
+  try {
+    const response = await adminFetch('/api/admin/audit-logs');
+    const logs = await readJson(response);
+    if (!response.ok) throw new Error(logs.error || 'Erro ao carregar auditoria.');
+
+    adminAudit.innerHTML = logs.length ? `
+      <table class="admin-table">
+        <caption>Últimas ações executadas no painel administrativo</caption>
+        <thead><tr><th scope="col">Data</th><th scope="col">Ação</th><th scope="col">Alvo</th><th scope="col">IP</th></tr></thead>
+        <tbody>
+          ${logs.map((log) => `
+            <tr>
+              <th scope="row">${date(log.createdAt)}</th>
+              <td>${escapeHtml(log.action)}</td>
+              <td><small>${escapeHtml(log.targetUserId || '-')}</small></td>
+              <td><small>${escapeHtml(log.ip || '-')}</small></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    ` : '<p class="meta">Nenhuma ação administrativa registrada ainda.</p>';
+  } catch (error) {
+    adminAudit.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
+  }
+}
 
 async function loadSecurity() {
   if (!adminSecurity) return;
@@ -199,7 +287,6 @@ async function loadSecurity() {
   }
 }
 
-
 async function deleteSecurityRecord(id) {
   try {
     const response = await adminFetch(`/api/admin/security/${id}`, { method: 'DELETE' });
@@ -208,6 +295,7 @@ async function deleteSecurityRecord(id) {
 
     showStatus('Registro de segurança removido.');
     await loadSecurity();
+    await loadAuditLogs();
   } catch (error) {
     showStatus(error.message, true);
   }
@@ -226,7 +314,10 @@ async function clearSecurityByEmail(email) {
 
     showStatus(`${data.deletedCount || 0} registro(s) removido(s).`);
     await loadSecurity();
+    await loadAuditLogs();
   } catch (error) {
     showStatus(error.message, true);
   }
 }
+
+loadAdmin();

@@ -20,6 +20,11 @@
     .admin-actions button { padding:8px 10px; font-size:.8rem; }
     .admin-search { display:flex; gap:10px; margin-bottom:12px; }
     .admin-search input { max-width:420px; }
+    .plan-editor { display:grid; grid-template-columns: repeat(3, minmax(220px, 1fr)); gap:14px; }
+    .plan-editor article { border:1px solid #dbe6f3; border-radius:18px; padding:14px; background:#fff; }
+    .plan-editor label { display:block; margin:8px 0; font-weight:800; color:#334155; }
+    .plan-editor textarea { min-height:96px; }
+    @media (max-width: 1000px) { .plan-editor { grid-template-columns:1fr; } }
     @media (max-width: 900px) { .admin-grid { grid-template-columns:1fr 1fr; } .admin-header { display:grid; } }
   </style>
 </head>
@@ -50,6 +55,12 @@
     </section>
 
     <section class="admin-panel">
+      <h2>Planos comerciais</h2>
+      <p class="meta">Edite preços, limites e benefícios sem alterar o código.</p>
+      <div id="adminPlans"></div>
+    </section>
+
+    <section class="admin-panel">
       <h2>Últimos pagamentos</h2>
       <div id="adminPayments"></div>
     </section>
@@ -57,6 +68,11 @@
     <section class="admin-panel">
       <h2>Segurança e anti-abuso</h2>
       <div id="adminSecurity"></div>
+    </section>
+
+    <section class="admin-panel">
+      <h2>Auditoria administrativa</h2>
+      <div id="adminAudit"></div>
     </section>
 
     <section id="adminStatus" aria-live="polite"></section>

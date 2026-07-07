@@ -12,13 +12,16 @@ const { readLeads, saveLeads, updateLeadStatus, updateLeadMeta, getLeadStats } =
 const SearchHistory = require('./models/SearchHistory');
 const { analyzeLeadResponse } = require('./conversationEngine');
 const authRoutes = require('./authRoutes');
-const { requireAuth } = require('./middleware/auth');
+const { requireAuth, assertSecurityEnv } = require('./middleware/auth');
+const { requestLogger, requestCounters } = require('./middleware/requestLogger');
+const { simpleRateLimit } = require('./middleware/rateLimit');
 const { connectDatabase, hasMongoUri, getMongoStatus, mustRequireMongo } = require('./db');
 const User = require('./models/User');
 const Payment = require('./models/Payment');
+const AdminAuditLog = require('./models/AdminAuditLog');
 const TrialGuard = require('./models/TrialGuard');
 const PasswordReset = require('./models/PasswordReset');
-const { getAllPlans, getPlan, normalizePlan } = require('./planConfig');
+const { getAllPlans, getPlan, normalizePlan, updatePlan } = require('./planConfig');
 const { getDailyUsage, getTotalUsage, addDailyUsage } = require('./localUsageStore');
 const { findUserById, updateLocalUserPlan } = require('./localUserStore');
 const { buildCampaignSequence, nextFollowUpDate, buildAutomationPlan, getPriorityFromLead } = require('./campaignEngine');
@@ -27,6 +30,7 @@ const { createTask, listTasks, completeTask } = require('./localTaskStore');
 const app = express();
 app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
+assertSecurityEnv();
 
 async function getCurrentUserPlan(userId) {
   let user = hasMongoUri() ? await User.findById(userId) : await findUserById(userId);
@@ -40,12 +44,6 @@ async function getCurrentUserPlan(userId) {
 }
 
 const startedAt = new Date();
-const requestCounters = {
-  total: 0,
-  prospectar: 0,
-  errors: 0
-};
-
 function publicBaseUrl(req) {
   return process.env.PUBLIC_APP_URL || `${req.protocol}://${req.get('host')}`;
 }
@@ -54,13 +52,14 @@ function getPlanPrice(planId) {
   return planId === 'agency' ? 199 : 59;
 }
 
-function getPlanDurationDays() {
-  return Number(process.env.PLAN_DURATION_DAYS || 30);
+function getPlanDurationDays(planId = 'pro') {
+  const plan = getPlan(planId);
+  return Number(process.env.PLAN_DURATION_DAYS || plan.durationDays || 30);
 }
 
-function getPlanExpirationDate() {
+function getPlanExpirationDate(planId = 'pro') {
   const date = new Date();
-  date.setDate(date.getDate() + getPlanDurationDays());
+  date.setDate(date.getDate() + getPlanDurationDays(planId));
   return date;
 }
 
@@ -97,7 +96,7 @@ async function activatePaidPlan({ userId, planId, paymentId = '', externalRefere
     subscriptionStatus: 'active',
     mercadoPagoLastPaymentId: String(paymentId || ''),
     planActivatedAt: new Date(),
-    planExpiresAt: getPlanExpirationDate()
+    planExpiresAt: getPlanExpirationDate(plan.id)
   };
 
   if (hasMongoUri()) {
@@ -249,42 +248,6 @@ async function reconcileMercadoPagoPayment(paymentId) {
   return { received: true, status: payment.status, payment };
 }
 
-function requestLogger(req, res, next) {
-  requestCounters.total += 1;
-  const started = Date.now();
-  res.on('finish', () => {
-    if (res.statusCode >= 500) requestCounters.errors += 1;
-    console.log(`[HTTP] ${req.method} ${req.originalUrl} ${res.statusCode} ${Date.now() - started}ms`);
-  });
-  next();
-}
-
-function simpleRateLimit({ windowMs = 60_000, max = 90 } = {}) {
-  const bucket = new Map();
-
-  return (req, res, next) => {
-    const key = req.ip || req.headers['x-forwarded-for'] || 'local';
-    const now = Date.now();
-    const current = bucket.get(key) || { count: 0, resetAt: now + windowMs };
-
-    if (now > current.resetAt) {
-      current.count = 0;
-      current.resetAt = now + windowMs;
-    }
-
-    current.count += 1;
-    bucket.set(key, current);
-
-    if (current.count > max) {
-      return res.status(429).json({
-        error: 'Muitas requisições em pouco tempo. Aguarde alguns instantes e tente novamente.'
-      });
-    }
-
-    next();
-  };
-}
-
 async function createMercadoPagoPreference({ req, plan }) {
   const token = process.env.MERCADO_PAGO_ACCESS_TOKEN;
   if (!token) return null;
@@ -355,7 +318,41 @@ async function createMercadoPagoPreference({ req, plan }) {
   };
 }
 
-app.use(helmet({ contentSecurityPolicy: false }));
+function getClientIp(req) {
+  return String(req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip || req.socket?.remoteAddress || '';
+}
+
+async function writeAdminAudit(req, action, { targetUserId = null, before = {}, after = {} } = {}) {
+  if (!hasMongoUri()) return null;
+  try {
+    return AdminAuditLog.create({
+      adminId: req.adminUser?._id || req.user?.sub,
+      targetUserId,
+      action,
+      before,
+      after,
+      ip: getClientIp(req),
+      userAgent: String(req.headers['user-agent'] || '')
+    });
+  } catch (error) {
+    console.warn('[ADMIN_AUDIT_FAILED]', action, error.message);
+    return null;
+  }
+}
+
+app.use(helmet({
+  contentSecurityPolicy: {
+    useDefaults: true,
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", 'data:', 'https:'],
+      connectSrc: ["'self'", 'https://api.mercadopago.com'],
+      frameAncestors: ["'self'"]
+    }
+  }
+}));
 app.use(cors());
 app.use(express.json());
 app.use(requestLogger);
@@ -824,9 +821,10 @@ app.get('/api/admin/overview', requireAuth, requireAdmin, async (_req, res) => {
       });
     }
 
-    const [users, payments] = await Promise.all([
+    const [users, payments, auditCount] = await Promise.all([
       User.find({}).sort({ createdAt: -1 }).limit(100).lean(),
-      Payment.find({}).sort({ createdAt: -1 }).limit(100).lean()
+      Payment.find({}).sort({ createdAt: -1 }).limit(100).lean(),
+      AdminAuditLog.countDocuments({})
     ]);
 
     const userStats = {
@@ -849,6 +847,7 @@ app.get('/api/admin/overview', requireAuth, requireAdmin, async (_req, res) => {
     res.json({
       users: userStats,
       payments: paymentStats,
+      audit: { total: auditCount },
       recentUsers: users.slice(0, 20).map((u) => ({
         id: String(u._id),
         name: u.name,
@@ -919,6 +918,8 @@ app.patch('/api/admin/users/:id', requireAuth, requireAdmin, async (req, res) =>
     if (!hasMongoUri()) return res.status(400).json({ error: 'Admin requer MongoDB ativo.' });
 
     const { plan, isActive, role, subscriptionStatus } = req.body;
+    const beforeUser = await User.findById(req.params.id).lean();
+    if (!beforeUser) return res.status(404).json({ error: 'Usuário não encontrado.' });
     const update = {};
 
     if (plan) {
@@ -929,7 +930,7 @@ app.patch('/api/admin/users/:id', requireAuth, requireAdmin, async (req, res) =>
       update.totalLeadLimit = planConfig.totalLeadLimit ?? null;
       update.subscriptionStatus = subscriptionStatus || (safePlan === 'trial' ? 'trial' : 'active');
       update.planActivatedAt = safePlan === 'trial' ? null : new Date();
-      update.planExpiresAt = safePlan === 'trial' ? null : getPlanExpirationDate();
+      update.planExpiresAt = safePlan === 'trial' ? null : getPlanExpirationDate(safePlan);
     }
 
     if (typeof isActive === 'boolean') update.isActive = isActive;
@@ -948,6 +949,12 @@ app.patch('/api/admin/users/:id', requireAuth, requireAdmin, async (req, res) =>
       });
     }
     if (!user) return res.status(404).json({ error: 'Usuário não encontrado.' });
+
+    await writeAdminAudit(req, 'ADMIN_USER_UPDATED', {
+      targetUserId: user._id,
+      before: { plan: beforeUser.plan, role: beforeUser.role, isActive: beforeUser.isActive, subscriptionStatus: beforeUser.subscriptionStatus, dailyLeadLimit: beforeUser.dailyLeadLimit, totalLeadLimit: beforeUser.totalLeadLimit },
+      after: { plan: user.plan, role: user.role, isActive: user.isActive, subscriptionStatus: user.subscriptionStatus, dailyLeadLimit: user.dailyLeadLimit, totalLeadLimit: user.totalLeadLimit }
+    });
 
     res.json({
       ok: true,
@@ -1013,6 +1020,8 @@ app.delete('/api/admin/security/:id', requireAuth, requireAdmin, async (req, res
     const deleted = await TrialGuard.findByIdAndDelete(req.params.id);
     if (!deleted) return res.status(404).json({ error: 'Registro não encontrado.' });
 
+    await writeAdminAudit(req, 'ADMIN_SECURITY_RECORD_DELETED', { before: deleted.toObject ? deleted.toObject() : deleted });
+
     res.json({ ok: true, message: 'Registro de segurança removido.' });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -1033,12 +1042,64 @@ app.post('/api/admin/security/clear', requireAuth, requireAdmin, async (req, res
     if (!filters.length) return res.status(400).json({ error: 'Informe e-mail, IP ou dispositivo.' });
 
     const result = await TrialGuard.deleteMany({ $or: filters });
+    await writeAdminAudit(req, 'ADMIN_SECURITY_RECORDS_CLEARED', { before: { filters }, after: { deletedCount: result.deletedCount || 0 } });
     res.json({ ok: true, deletedCount: result.deletedCount || 0 });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
+
+
+app.get('/api/admin/plans', requireAuth, requireAdmin, async (_req, res) => {
+  try {
+    res.json(getAllPlans());
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.patch('/api/admin/plans/:id', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const before = getPlan(req.params.id);
+    const updated = updatePlan(req.params.id, {
+      name: req.body.name,
+      priceLabel: req.body.priceLabel,
+      durationDays: req.body.durationDays,
+      dailyLeadLimit: req.body.dailyLeadLimit,
+      totalLeadLimit: req.body.totalLeadLimit === '' ? null : req.body.totalLeadLimit,
+      features: req.body.features
+    });
+
+    await writeAdminAudit(req, 'ADMIN_PLAN_UPDATED', {
+      before,
+      after: updated
+    });
+
+    res.json({ ok: true, plan: updated });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+app.get('/api/admin/audit-logs', requireAuth, requireAdmin, async (_req, res) => {
+  try {
+    if (!hasMongoUri()) return res.json([]);
+    const logs = await AdminAuditLog.find({}).sort({ createdAt: -1 }).limit(80).lean();
+    res.json(logs.map((log) => ({
+      id: String(log._id),
+      adminId: String(log.adminId || ''),
+      targetUserId: String(log.targetUserId || ''),
+      action: log.action,
+      before: log.before,
+      after: log.after,
+      ip: log.ip,
+      createdAt: log.createdAt
+    })));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 app.get('/api/admin/payments', requireAuth, requireAdmin, async (_req, res) => {
   try {
@@ -1237,7 +1298,7 @@ app.post('/api/auditar-site', requireAuth, async (req, res) => {
 });
 
 
-app.get('/api/diagnostico-env', (_req, res) => {
+app.get('/api/diagnostico-env', requireAuth, requireAdmin, (_req, res) => {
   const envPath = path.join(process.cwd(), '.env');
   const envTxtPath = path.join(process.cwd(), '.env.txt');
   const key = process.env.GOOGLE_PLACES_API_KEY || '';
@@ -1254,7 +1315,7 @@ app.get('/api/diagnostico-env', (_req, res) => {
   });
 });
 
-app.get('/api/testar-google', async (_req, res) => {
+app.get('/api/testar-google', requireAuth, requireAdmin, async (_req, res) => {
   try {
     const resultado = await testGoogleConnection();
     res.json(resultado);

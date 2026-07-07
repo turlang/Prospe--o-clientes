@@ -1,33 +1,39 @@
 /**
  * planConfig.js
  * -----------------------------------------------------------------------------
- * Planos: configuração centralizada dos planos comerciais.
+ * Fonte única dos planos comerciais.
  *
- * A ideia é deixar o produto pronto para monetização mesmo antes de conectar
- * Mercado Pago ou Stripe de verdade. O backend passa a respeitar limites por
- * plano, e a interface já mostra a página de assinatura.
+ * A configuração padrão fica neste arquivo, mas pode ser sobrescrita por
+ * src/data/plans.json quando o Admin edita os planos pelo painel Master.
  */
 
-const PLANS = {
+const fs = require('fs');
+const path = require('path');
+
+const PLANS_PATH = path.join(__dirname, 'data', 'plans.json');
+
+const DEFAULT_PLANS = {
   trial: {
     id: 'trial',
     name: 'Teste Gratuito',
     priceLabel: 'R$ 0',
-    dailyLeadLimit: 20,
-    totalLeadLimit: null,
+    durationDays: 0,
+    dailyLeadLimit: 10,
+    totalLeadLimit: 10,
     isPaid: false,
     features: [
-      '30 dias de uso gratuito',
-      '20 leads por dia',
+      '10 leads totais para experimentar',
       'CRM Kanban básico',
       'Abordagens comerciais por templates',
-      'Follow-ups manuais'
+      'Follow-ups manuais',
+      'Uso único por usuário/dispositivo'
     ]
   },
   pro: {
     id: 'pro',
     name: 'Pro',
     priceLabel: 'R$ 59/mês',
+    durationDays: 30,
     dailyLeadLimit: 500,
     totalLeadLimit: null,
     isPaid: true,
@@ -42,6 +48,7 @@ const PLANS = {
     id: 'agency',
     name: 'Agência',
     priceLabel: 'R$ 199/mês',
+    durationDays: 30,
     dailyLeadLimit: 5000,
     totalLeadLimit: null,
     isPaid: true,
@@ -54,16 +61,77 @@ const PLANS = {
   }
 };
 
+function readPlansFromDisk() {
+  try {
+    const parsed = JSON.parse(fs.readFileSync(PLANS_PATH, 'utf8'));
+    return mergePlans(parsed);
+  } catch {
+    return mergePlans(DEFAULT_PLANS);
+  }
+}
+
+function mergePlans(source = {}) {
+  return Object.fromEntries(
+    Object.entries(DEFAULT_PLANS).map(([id, defaults]) => {
+      const incoming = source[id] || {};
+      return [id, normalizePlanConfig({ ...defaults, ...incoming, id })];
+    })
+  );
+}
+
+function normalizePlanConfig(plan) {
+  const totalLeadLimit = plan.totalLeadLimit === '' || plan.totalLeadLimit === undefined
+    ? null
+    : plan.totalLeadLimit;
+
+  return {
+    ...plan,
+    dailyLeadLimit: Math.max(0, Number(plan.dailyLeadLimit || 0)),
+    totalLeadLimit: totalLeadLimit === null ? null : Math.max(0, Number(totalLeadLimit || 0)),
+    durationDays: Math.max(0, Number(plan.durationDays || 0)),
+    isPaid: Boolean(plan.isPaid),
+    features: Array.isArray(plan.features)
+      ? plan.features.filter(Boolean).map(String)
+      : String(plan.features || '').split('\n').map((item) => item.trim()).filter(Boolean)
+  };
+}
+
+function savePlans(plans) {
+  fs.mkdirSync(path.dirname(PLANS_PATH), { recursive: true });
+  fs.writeFileSync(PLANS_PATH, JSON.stringify(mergePlans(plans), null, 2));
+}
+
 function normalizePlan(plan) {
-  return PLANS[String(plan || '').toLowerCase()] ? String(plan).toLowerCase() : 'trial';
+  const id = String(plan || '').toLowerCase();
+  return readPlansFromDisk()[id] ? id : 'trial';
 }
 
 function getPlan(plan) {
-  return PLANS[normalizePlan(plan)];
+  const plans = readPlansFromDisk();
+  return plans[normalizePlan(plan)];
 }
 
 function getAllPlans() {
-  return Object.values(PLANS);
+  return Object.values(readPlansFromDisk());
 }
 
-module.exports = { PLANS, normalizePlan, getPlan, getAllPlans };
+function updatePlan(id, payload = {}) {
+  const planId = normalizePlan(id);
+  if (!['trial', 'pro', 'agency'].includes(planId)) throw new Error('Plano inválido.');
+
+  const cleanPayload = Object.fromEntries(
+    Object.entries(payload).filter(([, value]) => value !== undefined)
+  );
+
+  const current = readPlansFromDisk();
+  current[planId] = normalizePlanConfig({
+    ...current[planId],
+    ...cleanPayload,
+    id: planId,
+    isPaid: planId !== 'trial'
+  });
+  savePlans(current);
+  return current[planId];
+}
+
+module.exports = { PLANS: DEFAULT_PLANS, normalizePlan, getPlan, getAllPlans, updatePlan, savePlans };
