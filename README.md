@@ -4,13 +4,20 @@ SaaS de prospecção comercial, geração de leads, CRM, pipeline de vendas e ge
 
 ## Visão geral
 
+<<<<<<< HEAD
 O LeadHunter Pro ajuda negócios a organizar a prospecção comercial, controlar leads, acompanhar oportunidades e transformar contatos em vendas.
 
 O projeto demonstra uma aplicação SaaS com autenticação, CRM, planos editáveis, integração de pagamento, painel administrativo, auditoria e regras de segurança anti-abuso.
+=======
+O LeadHunter Pro foi criado para ajudar negócios a organizar a prospecção comercial, controlar leads, acompanhar oportunidades e transformar contatos em vendas.
+
+O projeto demonstra construção de uma aplicação SaaS com autenticação, CRM, planos, integração de pagamento, painel administrativo e regras de segurança anti-abuso.
+>>>>>>> b462723b37e2e73930366a168c776337ae7889f4
 
 ## Principais funcionalidades
 
 - Cadastro e login de usuários.
+<<<<<<< HEAD
 - CRM de leads com pipeline Kanban.
 - Histórico de prospecções.
 - Exportação CSV.
@@ -23,6 +30,21 @@ O projeto demonstra uma aplicação SaaS com autenticação, CRM, planos editáv
 - Controle de assinaturas e limites por plano.
 - Segurança anti-abuso, bloqueio de e-mails temporários e limite de cadastros por IP.
 - Recuperação de senha preparada para envio real por e-mail via Resend.
+=======
+- CRM de leads.
+- Pipeline comercial.
+- Histórico de prospecções.
+- Exportação CSV.
+- Planos Trial, Pro e Agência.
+- Integração com Mercado Pago.
+- Painel administrativo.
+- Controle de assinaturas.
+- Limite de uso por plano.
+- Segurança anti-abuso.
+- Bloqueio de e-mails temporários.
+- Auditoria de tentativas.
+- Limite de cadastros por IP.
+>>>>>>> b462723b37e2e73930366a168c776337ae7889f4
 
 ## Stack
 
@@ -33,7 +55,11 @@ O projeto demonstra uma aplicação SaaS com autenticação, CRM, planos editáv
 - MongoDB Atlas
 - Mongoose
 - JWT
+<<<<<<< HEAD
 - Helmet com CSP
+=======
+- Helmet
+>>>>>>> b462723b37e2e73930366a168c776337ae7889f4
 - CORS
 - Mercado Pago
 
@@ -56,6 +82,7 @@ O projeto demonstra uma aplicação SaaS com autenticação, CRM, planos editáv
 src/
   server.js
   db.js
+<<<<<<< HEAD
   authRoutes.js
   planConfig.js
   planStore.js
@@ -68,6 +95,15 @@ public/
   admin.html
   app.js
   admin.js
+=======
+  routes/
+  models/
+  services/
+
+public/
+  index.html
+  app.js
+>>>>>>> b462723b37e2e73930366a168c776337ae7889f4
   style.css
 
 README.md
@@ -88,6 +124,7 @@ Aplicação local:
 http://localhost:3000
 ```
 
+<<<<<<< HEAD
 ## Scripts
 
 ```bash
@@ -137,12 +174,28 @@ Uso único por usuário/dispositivo
 
 ## Painel administrativo
 
+=======
+## Variáveis de ambiente
+
+```env
+DATABASE_URL=
+JWT_SECRET=
+PUBLIC_APP_URL=
+MERCADO_PAGO_PUBLIC_KEY=
+MERCADO_PAGO_ACCESS_TOKEN=
+REGISTER_IP_DAILY_LIMIT=3
+```
+
+## Painel administrativo
+
+>>>>>>> b462723b37e2e73930366a168c776337ae7889f4
 Acesso:
 
 ```text
 /admin
 ```
 
+<<<<<<< HEAD
 Recursos do Admin:
 
 - Listar usuários.
@@ -154,6 +207,8 @@ Recursos do Admin:
 - Ver segurança anti-abuso.
 - Consultar auditoria administrativa.
 
+=======
+>>>>>>> b462723b37e2e73930366a168c776337ae7889f4
 Usuário administrador esperado:
 
 ```json
@@ -168,10 +223,14 @@ Usuário administrador esperado:
 - Trial único por usuário/dispositivo.
 - Bloqueio de e-mails temporários.
 - Auditoria de tentativas.
+<<<<<<< HEAD
 - Auditoria de ações administrativas.
 - Uso controlado por plano.
 - Rotas de diagnóstico protegidas por autenticação admin.
 - CSP ativa pelo Helmet.
+=======
+- Uso controlado por plano.
+>>>>>>> b462723b37e2e73930366a168c776337ae7889f4
 
 ## Diferenciais técnicos
 
@@ -180,15 +239,35 @@ Usuário administrador esperado:
 - Controle de planos e assinaturas.
 - Integração com pagamento real.
 - Backend com MongoDB e autenticação JWT.
+<<<<<<< HEAD
 - Painel administrativo completo.
 - Regras anti-abuso.
 - Onboarding de uso no dashboard.
 - Testes automatizados de regras críticas.
+=======
+- Painel administrativo.
+- Regras anti-abuso.
+>>>>>>> b462723b37e2e73930366a168c776337ae7889f4
 
 ## Status
 
 Projeto em estágio avançado para demonstração comercial, validação de mercado e portfólio profissional.
 
+<<<<<<< HEAD
 ## Posicionamento no portfólio
 
 Este projeto deve ser apresentado como um case Full Stack SaaS com foco em vendas, CRM, assinatura, pagamentos, segurança, auditoria e gestão comercial.
+=======
+## Próximas melhorias
+
+- Adicionar screenshots ao README.
+- Criar vídeo curto de demonstração.
+- Melhorar testes automatizados.
+- Criar documentação de API.
+- Adicionar métricas de conversão e funil.
+- Melhorar onboarding do usuário.
+
+## Posicionamento no portfólio
+
+Este projeto deve ser apresentado como um case Full Stack SaaS com foco em vendas, CRM, assinatura, pagamentos e gestão comercial.
+>>>>>>> b462723b37e2e73930366a168c776337ae7889f4
