@@ -12,22 +12,26 @@ const path = require('path');
 
 const PLANS_PATH = path.join(__dirname, 'data', 'plans.json');
 
+const OFFICIAL_TRIAL_RULE = {
+  durationDays: 0,
+  dailyLeadLimit: 10,
+  totalLeadLimit: 10,
+  isPaid: false,
+  features: [
+    '10 leads totais para experimentar',
+    'CRM Kanban básico',
+    'Abordagens comerciais por templates',
+    'Follow-ups manuais',
+    'Uso único por usuário/dispositivo'
+  ]
+};
+
 const DEFAULT_PLANS = {
   trial: {
     id: 'trial',
     name: 'Teste Gratuito',
     priceLabel: 'R$ 0',
-    durationDays: 0,
-    dailyLeadLimit: 10,
-    totalLeadLimit: 10,
-    isPaid: false,
-    features: [
-      '10 leads totais para experimentar',
-      'CRM Kanban básico',
-      'Abordagens comerciais por templates',
-      'Follow-ups manuais',
-      'Uso único por usuário/dispositivo'
-    ]
+    ...OFFICIAL_TRIAL_RULE
   },
   pro: {
     id: 'pro',
@@ -70,11 +74,22 @@ function readPlansFromDisk() {
   }
 }
 
+function enforceOfficialTrial(plan) {
+  return {
+    ...plan,
+    ...OFFICIAL_TRIAL_RULE,
+    id: 'trial',
+    name: 'Teste Gratuito',
+    priceLabel: 'R$ 0'
+  };
+}
+
 function mergePlans(source = {}) {
   return Object.fromEntries(
     Object.entries(DEFAULT_PLANS).map(([id, defaults]) => {
       const incoming = source[id] || {};
-      return [id, normalizePlanConfig({ ...defaults, ...incoming, id })];
+      const merged = normalizePlanConfig({ ...defaults, ...incoming, id });
+      return [id, id === 'trial' ? normalizePlanConfig(enforceOfficialTrial(merged)) : merged];
     })
   );
 }
@@ -124,12 +139,14 @@ function updatePlan(id, payload = {}) {
   );
 
   const current = readPlansFromDisk();
-  current[planId] = normalizePlanConfig({
+  const nextPlan = normalizePlanConfig({
     ...current[planId],
     ...cleanPayload,
     id: planId,
     isPaid: planId !== 'trial'
   });
+
+  current[planId] = planId === 'trial' ? normalizePlanConfig(enforceOfficialTrial(nextPlan)) : nextPlan;
   savePlans(current);
   return current[planId];
 }

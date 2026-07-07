@@ -175,16 +175,23 @@ async function loadPlans() {
 
 function renderPlanEditor(plan) {
   const features = Array.isArray(plan.features) ? plan.features.join('\n') : '';
+  const isTrial = plan.id === 'trial';
+  const lockHint = isTrial
+    ? '<p class="meta">O Trial é fixo por regra comercial: 10 leads totais e uso único por usuário/dispositivo.</p>'
+    : '';
+  const disabled = isTrial ? 'disabled' : '';
+
   return `
     <article>
       <h3>${escapeHtml(plan.name)}</h3>
-      <label>Nome<input id="plan-name-${plan.id}" value="${escapeHtml(plan.name)}" /></label>
-      <label>Preço<input id="plan-price-${plan.id}" value="${escapeHtml(plan.priceLabel || '')}" /></label>
-      <label>Limite diário<input id="plan-daily-${plan.id}" type="number" min="0" value="${Number(plan.dailyLeadLimit || 0)}" /></label>
-      <label>Limite total<input id="plan-total-${plan.id}" type="number" min="0" placeholder="vazio = ilimitado" value="${plan.totalLeadLimit === null || plan.totalLeadLimit === undefined ? '' : Number(plan.totalLeadLimit)}" /></label>
-      <label>Dias de validade<input id="plan-duration-${plan.id}" type="number" min="0" value="${Number(plan.durationDays || 0)}" /></label>
-      <label>Benefícios<textarea id="plan-features-${plan.id}">${escapeHtml(features)}</textarea></label>
-      <button type="button" onclick="savePlan('${plan.id}')">Salvar plano</button>
+      ${lockHint}
+      <label>Nome<input id="plan-name-${plan.id}" value="${escapeHtml(plan.name)}" ${disabled} /></label>
+      <label>Preço<input id="plan-price-${plan.id}" value="${escapeHtml(plan.priceLabel || '')}" ${disabled} /></label>
+      <label>Limite diário<input id="plan-daily-${plan.id}" type="number" min="0" value="${Number(plan.dailyLeadLimit || 0)}" ${disabled} /></label>
+      <label>Limite total<input id="plan-total-${plan.id}" type="number" min="0" placeholder="vazio = ilimitado" value="${plan.totalLeadLimit === null || plan.totalLeadLimit === undefined ? '' : Number(plan.totalLeadLimit)}" ${disabled} /></label>
+      <label>Dias de validade<input id="plan-duration-${plan.id}" type="number" min="0" value="${Number(plan.durationDays || 0)}" ${disabled} /></label>
+      <label>Benefícios<textarea id="plan-features-${plan.id}" ${disabled}>${escapeHtml(features)}</textarea></label>
+      ${isTrial ? '<button type="button" disabled>Trial fixo</button>' : `<button type="button" onclick="savePlan('${plan.id}')">Salvar plano</button>`}
     </article>
   `;
 }

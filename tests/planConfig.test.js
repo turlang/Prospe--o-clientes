@@ -30,3 +30,24 @@ test('getAllPlans retorna trial, pro e agency', () => {
   const ids = getAllPlans().map((plan) => plan.id).sort();
   assert.deepEqual(ids, ['agency', 'pro', 'trial']);
 });
+
+
+test('trial oficial prevalece mesmo se o arquivo editável estiver antigo', () => {
+  const { updatePlan, getPlan } = require('../src/planConfig');
+  const updated = updatePlan('trial', {
+    dailyLeadLimit: 20,
+    totalLeadLimit: null,
+    durationDays: 30,
+    features: ['30 dias de uso gratuito', '20 leads por dia']
+  });
+
+  assert.equal(updated.dailyLeadLimit, 10);
+  assert.equal(updated.totalLeadLimit, 10);
+  assert.equal(updated.durationDays, 0);
+  assert.ok(updated.features.includes('10 leads totais para experimentar'));
+  assert.ok(!updated.features.includes('20 leads por dia'));
+
+  const trial = getPlan('trial');
+  assert.equal(trial.dailyLeadLimit, 10);
+  assert.equal(trial.totalLeadLimit, 10);
+});
