@@ -1,7 +1,7 @@
 {
   "name": "agente-prospeccao-real",
-  "version": "18.0.0",
-  "description": "SaaS de prospecção modularizado com planos editáveis, auditoria administrativa e segurança reforçada",
+  "version": "18.2.0",
+  "description": "SaaS de prospecção com abas reorganizadas por função e histórico de contatos",
   "main": "src/server.js",
   "type": "commonjs",
   "scripts": {

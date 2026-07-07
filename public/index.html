@@ -64,7 +64,6 @@
             <li><button class="nav-btn" type="button" data-view="crm">CRM Kanban</button></li>
             <li><button class="nav-btn" type="button" data-view="historico">Histórico</button></li>
             <li><button class="nav-btn" type="button" data-view="planos">Planos</button></li>
-            <li><button class="nav-btn" type="button" data-view="sistema">Sistema</button></li>
             <li><button class="nav-btn" type="button" data-view="campanhas">Campanhas</button></li>
           </ul>
         </nav>
@@ -82,23 +81,34 @@
           <div class="dashboard-header card-panel">
             <div>
               <p class="tag dark">Visão geral</p>
-              <h2>Central executiva de prospecção</h2>
-              <p class="meta">Acompanhe potencial de receita, prioridade dos leads, status do funil e atividades recentes.</p>
+              <h2>Dashboard informativo</h2>
+              <p class="meta">Resumo simples do desempenho: leads salvos, oportunidades quentes, contatos iniciados e potencial estimado.</p>
             </div>
-            <button type="button" onclick="switchView('prospectar')">Buscar novos leads</button>
+            <button type="button" onclick="switchView('prospectar')">Prospectar agora</button>
           </div>
           <div id="executiveStats" class="executive-grid"></div>
-          <section class="kanban-preview card-panel">
-            <div class="section-title"><h3>Pipeline comercial</h3><p class="meta">Arraste os cards para atualizar o status do lead.</p></div>
-            <div id="kanbanBoard" class="kanban-board"></div>
-          </section>
-          <section class="card-panel">
-            <div class="section-title"><h3>Atividades recentes</h3><p class="meta">Histórico gerado por mudanças de status e análises de resposta.</p></div>
-            <div id="activityTimeline" class="timeline"></div>
+          <section class="card-panel dashboard-info">
+            <div class="section-title">
+              <h3>Como interpretar este painel</h3>
+              <p class="meta">Esta tela é apenas informativa. A operação fica nas abas Prospectar, CRM, Histórico e Campanhas.</p>
+            </div>
+            <div class="info-grid">
+              <article><strong>Prospectar</strong><span>Buscar novos negócios por segmento e região.</span></article>
+              <article><strong>CRM</strong><span>Organizar leads, status, notas, abordagem e follow-up.</span></article>
+              <article><strong>Histórico</strong><span>Ver somente leads que tiveram tentativa real de contato.</span></article>
+              <article><strong>Campanhas</strong><span>Criar sequências e acompanhar retornos comerciais.</span></article>
+            </div>
           </section>
         </section>
 
         <section id="view-prospectar" class="view">
+          <div class="dashboard-header card-panel">
+            <div>
+              <p class="tag dark">Prospectar</p>
+              <h2>Buscar novos leads</h2>
+              <p class="meta">Esta aba mostra somente a busca feita agora e os leads encontrados nessa prospecção.</p>
+            </div>
+          </div>
           <form id="form" class="card search-card">
             <label for="segmento">Segmento</label>
             <input id="segmento" name="segmento" placeholder="Ex: clínica odontológica, imobiliária, estética" required />
@@ -110,28 +120,42 @@
             <button type="submit">Prospectar</button>
             <small>Usa Google Places API. A auditoria acessa apenas sites públicos.</small>
           </form>
+          <section id="results" class="grid" aria-live="polite"></section>
         </section>
 
         <section id="view-crm" class="view">
+          <div class="dashboard-header card-panel">
+            <div>
+              <p class="tag dark">CRM</p>
+              <h2>Gestão dos leads salvos</h2>
+              <p class="meta">Use esta aba para acompanhar cada oportunidade depois da prospecção: status, abordagem, notas e próximos contatos.</p>
+            </div>
+          </div>
+          <div class="info-grid crm-purpose">
+            <article><strong>NOVO</strong><span>Lead encontrado, mas ainda sem contato.</span></article>
+            <article><strong>CONTATADO</strong><span>Você já tentou contato por WhatsApp, ligação ou e-mail.</span></article>
+            <article><strong>INTERESSADO / PROPOSTA</strong><span>O lead respondeu ou recebeu uma oferta.</span></article>
+            <article><strong>FECHADO</strong><span>Virou cliente.</span></article>
+          </div>
           <div class="toolbar card-panel">
             <label for="searchLead">Buscar</label>
             <input id="searchLead" name="searchLead" placeholder="Nome, endereço ou segmento" />
             <label for="filterStatus">Status</label>
             <select id="filterStatus" name="filterStatus"><option value="">Todos</option><option>NOVO</option><option>CONTATADO</option><option>INTERESSADO</option><option>PROPOSTA</option><option>FECHADO</option><option>SEM_INTERESSE</option></select>
             <label class="check" for="filterFavorite"><input id="filterFavorite" name="filterFavorite" type="checkbox" /> Favoritos</label>
-            <button id="loadSaved" type="button" class="secondary" onclick="carregarLeadsCRM()">Carregar</button>
+            <button id="loadSaved" type="button" class="secondary" onclick="carregarLeadsCRM()">Carregar CRM</button>
             <button id="exportCsv" type="button">Exportar CSV</button>
           </div>
           <div class="kanban-preview card-panel">
-            <div class="section-title"><h3>CRM Kanban</h3><p class="meta">Arraste os leads entre as etapas do funil.</p></div>
-            <div class="crm-help"><p class="meta">Clique em Carregar para listar os leads salvos abaixo.</p></div><div id="crmLoadedLeads" class="grid"></div>
+            <div class="section-title"><h3>Leads salvos</h3><p class="meta">Aqui ficam os leads já salvos para trabalho comercial. Use os botões do card para marcar contato, gerar abordagem ou agendar retorno.</p></div>
+            <div id="crmLoadedLeads" class="grid"></div>
           </div>
         </section>
 
         <section id="view-historico" class="view">
           <div class="card-panel">
-            <h2>Histórico de buscas</h2>
-            <p class="meta">Últimas pesquisas feitas pelo usuário logado.</p>
+            <h2>Histórico de contatos</h2>
+            <p class="meta">Mostra somente leads que tiveram pelo menos uma tentativa real de contato ou mudança de status comercial.</p>
             <div id="historyList" class="history-list"></div>
           </div>
         </section>
@@ -149,36 +173,29 @@
         </section>
 
 
-        <section id="view-sistema" class="view">
-          <div class="dashboard-header card-panel">
-            <div>
-              <p class="tag dark">Produção</p>
-              <h2>Produção e observabilidade</h2>
-              <p class="meta">Health check, métricas básicas, preparação para Render e checkout real via Mercado Pago.</p>
-            </div>
-            <button type="button" onclick="loadSystemMetrics()">Atualizar métricas</button>
-          </div>
-          <div id="systemMetrics" class="executive-grid"></div>
-        </section>
-
-
         <section id="view-campanhas" class="view">
           <div class="dashboard-header card-panel">
             <div>
-              <p class="tag dark">Fase 16</p>
-              <h2>Automações comerciais</h2>
-              <p class="meta">Sequências de follow-up, próximas ações e lembretes inteligentes para aumentar conversão sem disparo automático.</p>
+              <p class="tag dark">Campanhas</p>
+              <h2>Sequências e follow-ups</h2>
+              <p class="meta">Esta aba serve para organizar retornos comerciais: próximas ações, leads quentes e agenda de follow-ups. Nenhuma mensagem é enviada automaticamente.</p>
             </div>
             <div class="actions-row">
-              <button type="button" onclick="loadAutomationActions()">Próximas ações</button>
-              <button type="button" class="secondary" onclick="loadFollowups()">Atualizar agenda</button>
+              <button type="button" onclick="loadAutomationActions()">Ver ações</button>
+              <button type="button" class="secondary" onclick="loadFollowups()">Atualizar follow-ups</button>
             </div>
+          </div>
+
+          <div class="info-grid">
+            <article><strong>Quando usar?</strong><span>Depois que um lead foi marcado como contatado ou demonstrou interesse.</span></article>
+            <article><strong>O que aparece aqui?</strong><span>Tarefas de follow-up, leads quentes e retornos pendentes.</span></article>
+            <article><strong>O que não faz?</strong><span>Não dispara WhatsApp ou e-mail sozinho; você copia e envia manualmente.</span></article>
           </div>
 
           <div class="stats-grid" id="automationSummary"></div>
 
           <div class="card-panel">
-            <h3>Próximas ações sugeridas</h3>
+            <h3>Ações comerciais sugeridas</h3>
             <div id="automationActions" class="history-list"></div>
           </div>
 
@@ -187,11 +204,9 @@
             <div id="followupList" class="history-list"></div>
           </div>
         </section>
-
-        <section id="results" class="grid" aria-live="polite"></section>
       </section>
     </section>
   </main>
-  <script src="app.js?v=v18-1-tabs-fix"></script>
+  <script src="app.js?v=v18-2-ux-abas"></script>
 </body>
 </html>

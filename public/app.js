@@ -286,23 +286,33 @@ function addAdminShortcut() {
 function switchView(view) {
   document.querySelectorAll('.nav-btn').forEach((button) => button.classList.toggle('active', button.dataset.view === view));
   document.querySelectorAll('.view').forEach((section) => section.classList.remove('active-view'));
-  document.querySelector(`#view-${view}`).classList.add('active-view');
-  // A lista de resultados não é mais global em todas as abas.
-  // Ela só aparece na tela de prospecção; no CRM usamos #crmLoadedLeads.
-  results.hidden = view !== 'prospectar';
+
+  const target = document.querySelector(`#view-${view}`);
+  if (!target) return;
+
+  target.classList.add('active-view');
+
+  // Resultado de prospecção só aparece na aba Prospectar.
+  // CRM, Histórico e Campanhas têm seus próprios containers.
+  if (results) results.hidden = view !== 'prospectar';
+
   if (view === 'crm') carregarLeadsCRM();
   if (view === 'dashboard') loadSavedLeads(false, { renderCards: false });
   if (view === 'historico') loadHistory();
   if (view === 'planos') renderPlans();
-  if (view === 'sistema') loadSystemMetrics();
   if (view === 'campanhas') { loadAutomationActions(); loadFollowups(); }
 }
 
 function apiFetch(url, options = {}) {
+  const headers = { ...(options.headers || {}) };
+  if (options.body && !headers['Content-Type']) {
+    headers['Content-Type'] = 'application/json';
+  }
+
   return fetch(url, {
     ...options,
     headers: {
-      ...(options.headers || {}),
+      ...headers,
       Authorization: `Bearer ${authToken}`
     }
   });
@@ -332,19 +342,48 @@ async function refreshStats() {
 }
 
 async function loadHistory() {
+  if (!historyList || !authToken) return;
+
   try {
-    const response = await apiFetch('/api/historico-buscas');
-    const items = await readJson(response);
-    if (!response.ok) throw new Error(items.error);
-    historyList.innerHTML = items.length ? items.map((item) => `
-      <article class="history-item">
-        <div>
-          <strong>${escapeHtml(item.segmento)}</strong>
-          <p class="meta">${escapeHtml(item.regiao)} · ${item.total} leads · ${formatDate(item.criadoEm)}</p>
-        </div>
-        <button type="button" class="secondary" onclick="repeatSearch('${escapeAttr(item.segmento)}','${escapeAttr(item.regiao)}','${escapeAttr(item.limite)}')">Repetir</button>
-      </article>
-    `).join('') : '<p class="meta">Nenhuma busca registrada ainda.</p>';
+    const response = await apiFetch('/api/leads');
+    const leads = await readJson(response);
+    if (!response.ok) throw new Error(leads.error || 'Erro ao carregar histórico.');
+
+    const contactedStatuses = new Set(['CONTATADO', 'INTERESSADO', 'PROPOSTA', 'FECHADO', 'SEM_INTERESSE']);
+    const contactedLeads = (Array.isArray(leads) ? leads : [])
+      .filter((lead) => {
+        const status = normalizeStatus(lead.status);
+        const interactions = Array.isArray(lead.interacoes) ? lead.interacoes : [];
+        return contactedStatuses.has(status) || interactions.some((item) => {
+          const tipo = String(item.tipo || '').toUpperCase();
+          return tipo.includes('STATUS') || tipo.includes('RESPOSTA') || tipo.includes('FOLLOWUP') || tipo.includes('CONTATO');
+        });
+      })
+      .sort((a, b) => {
+        const lastA = Array.isArray(a.interacoes) && a.interacoes.length ? a.interacoes[a.interacoes.length - 1]?.data : a.coletadoEm;
+        const lastB = Array.isArray(b.interacoes) && b.interacoes.length ? b.interacoes[b.interacoes.length - 1]?.data : b.coletadoEm;
+        return new Date(lastB || 0) - new Date(lastA || 0);
+      });
+
+    historyList.innerHTML = contactedLeads.length ? contactedLeads.map((lead) => {
+      const leadId = getLeadId(lead);
+      const interactions = Array.isArray(lead.interacoes) ? lead.interacoes : [];
+      const last = interactions.length ? interactions[interactions.length - 1] : null;
+      return `
+        <article class="history-item contact-history-item">
+          <div>
+            <strong>${escapeHtml(lead.nome || 'Lead sem nome')}</strong>
+            <p class="meta">${escapeHtml(lead.telefone || 'Telefone não informado')} · Status: ${escapeHtml(normalizeStatus(lead.status))}</p>
+            <p>${escapeHtml(last?.proximoPasso || last?.status || last?.tipo || 'Contato registrado no funil comercial.')}</p>
+            <small>${formatDate(last?.data || lead.coletadoEm)}</small>
+          </div>
+          <div class="actions-row compact">
+            <button type="button" class="secondary" onclick="focusLead('${escapeAttr(leadId)}')">Abrir no CRM</button>
+            <button type="button" class="secondary" onclick="scheduleFollowup('${escapeAttr(leadId)}')">Agendar retorno</button>
+          </div>
+        </article>
+      `;
+    }).join('') : '<p class="meta">Nenhum histórico de contato ainda. Quando você marcar um lead como CONTATADO, INTERESSADO, PROPOSTA ou FECHADO, ele aparecerá aqui.</p>';
   } catch (error) {
     historyList.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
   }
@@ -412,6 +451,8 @@ async function loadSavedLeads(showLoading = true, options = {}) {
 }
 
 function renderExecutiveStats(leads) {
+  if (!executiveStats) return;
+  leads = Array.isArray(leads) ? leads : [];
   const total = leads.length;
   const hot = leads.filter((lead) => Number(lead.score || 0) >= 80).length;
   const contacted = leads.filter((lead) => ['CONTATADO', 'INTERESSADO', 'REUNIAO', 'PROPOSTA', 'FECHADO'].includes(lead.status)).length;
@@ -427,6 +468,8 @@ function renderExecutiveStats(leads) {
 }
 
 function renderKanban(leads) {
+  if (!kanbanBoard) return;
+  leads = Array.isArray(leads) ? leads : [];
   const grouped = PIPELINE.reduce((acc, column) => ({ ...acc, [column.key]: [] }), {});
   leads.forEach((lead) => {
     const status = normalizeStatus(lead.status);
@@ -484,6 +527,8 @@ function focusLead(leadId) {
 }
 
 function renderActivityTimeline(leads) {
+  if (!activityTimeline) return;
+  leads = Array.isArray(leads) ? leads : [];
   const activities = leads.flatMap((lead) => {
     const interacoes = Array.isArray(lead.interacoes) ? lead.interacoes : [];
     return interacoes.map((item) => ({ ...item, leadNome: lead.nome }));
@@ -499,6 +544,8 @@ function renderActivityTimeline(leads) {
 
 function renderList(leads, message) {
   statusBox.innerHTML = `<p>${escapeHtml(message)}</p>`;
+  if (!results) return;
+  results.hidden = false;
   results.innerHTML = leads.length ? leads.map(renderLead).join('') : '<p class="empty">Nenhum lead encontrado.</p>';
 }
 
@@ -1061,9 +1108,11 @@ async function carregarLeadsCRM() {
 
           <div class="links">
             <button type="button" class="secondary" onclick="updateStatus('${leadId}', 'CONTATADO')">Marcar contatado</button>
+            <button type="button" class="secondary" onclick="updateStatus('${leadId}', 'INTERESSADO')">Marcar interessado</button>
             <button type="button" class="secondary" onclick="generateApproach('${leadId}')">Gerar abordagem</button>
             <button type="button" class="secondary" onclick="scheduleFollowup('${leadId}')">Agendar follow-up</button>
           </div>
+          <pre id="approach-${leadId}" class="msg crm-approach-output"></pre>
         </article>
       `;
     }).join('');
@@ -1092,6 +1141,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+
+async function updateStatus(leadId, status) {
+  try {
+    await markStatus(leadId, status);
+    statusBox.innerHTML = `<p>Status atualizado para ${escapeHtml(status)}.</p>`;
+    await carregarLeadsCRM();
+    await refreshStats();
+    await loadHistory();
+  } catch (error) {
+    showError(error.message);
+  }
+}
+
+window.updateStatus = updateStatus;
 
 
 function showPaymentReturnMessage() {
