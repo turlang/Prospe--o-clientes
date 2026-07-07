@@ -264,7 +264,7 @@ async function showDashboard() {
   await refreshUsage();
   await renderPlans();
   await refreshStats();
-  await loadSavedLeads(false);
+  await loadSavedLeads(false, { renderCards: false });
   await loadHistory();
 }
 
@@ -287,8 +287,11 @@ function switchView(view) {
   document.querySelectorAll('.nav-btn').forEach((button) => button.classList.toggle('active', button.dataset.view === view));
   document.querySelectorAll('.view').forEach((section) => section.classList.remove('active-view'));
   document.querySelector(`#view-${view}`).classList.add('active-view');
-  results.hidden = view !== 'prospectar' && view !== 'crm';
-  if (view === 'crm' || view === 'dashboard') loadSavedLeads(false);
+  // A lista de resultados não é mais global em todas as abas.
+  // Ela só aparece na tela de prospecção; no CRM usamos #crmLoadedLeads.
+  results.hidden = view !== 'prospectar';
+  if (view === 'crm') carregarLeadsCRM();
+  if (view === 'dashboard') loadSavedLeads(false, { renderCards: false });
   if (view === 'historico') loadHistory();
   if (view === 'planos') renderPlans();
   if (view === 'sistema') loadSystemMetrics();
@@ -355,7 +358,9 @@ function repeatSearch(segmento, regiao, limite) {
   statusBox.innerHTML = '<p>Busca preenchida. Clique em Prospectar para executar novamente.</p>';
 }
 
-async function loadSavedLeads(showLoading = true) {
+async function loadSavedLeads(showLoading = true, options = {}) {
+  const { renderCards = true } = options;
+
   if (showLoading) {
     statusBox.innerHTML = '<p class="loading">Carregando leads salvos...</p>';
   }
@@ -385,8 +390,12 @@ async function loadSavedLeads(showLoading = true) {
 
     lastLeads = Array.isArray(leads) ? leads : [];
 
-    results.hidden = false;
-    renderList(lastLeads, `${lastLeads.length} leads carregados.`);
+    if (renderCards) {
+      results.hidden = false;
+      renderList(lastLeads, `${lastLeads.length} leads carregados.`);
+    } else {
+      results.hidden = true;
+    }
     renderExecutiveStats(lastLeads);
     renderKanban(lastLeads);
     renderActivityTimeline(lastLeads);
