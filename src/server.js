@@ -13,6 +13,7 @@ const SearchHistory = require('./models/SearchHistory');
 const { analyzeLeadResponse } = require('./conversationEngine');
 const authRoutes = require('./authRoutes');
 const { requireAuth, assertSecurityEnv } = require('./middleware/auth');
+const { requireAdmin } = require('./middleware/admin');
 const { requestLogger, requestCounters } = require('./middleware/requestLogger');
 const { simpleRateLimit } = require('./middleware/rateLimit');
 const { connectDatabase, hasMongoUri, getMongoStatus, mustRequireMongo } = require('./db');
@@ -26,318 +27,23 @@ const { getDailyUsage, getTotalUsage, addDailyUsage } = require('./localUsageSto
 const { findUserById, updateLocalUserPlan } = require('./localUserStore');
 const { buildCampaignSequence, nextFollowUpDate, buildAutomationPlan, getPriorityFromLead } = require('./campaignEngine');
 const { createTask, listTasks, completeTask } = require('./localTaskStore');
+const {
+  createMercadoPagoPreference,
+  downgradeExpiredUserIfNeeded,
+  getCurrentUserPlan,
+  getPlanExpirationDate,
+  reconcileMercadoPagoPayment
+} = require('./services/billingService');
+const { writeAdminAudit } = require('./services/adminAuditService');
 
 const app = express();
 app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
 assertSecurityEnv();
 
-async function getCurrentUserPlan(userId) {
-  let user = hasMongoUri() ? await User.findById(userId) : await findUserById(userId);
-  user = await downgradeExpiredUserIfNeeded(user);
-  const plan = getPlan(user?.plan || 'trial');
-  return {
-    user,
-    plan,
-    dailyLeadLimit: Number(user?.dailyLeadLimit || plan.dailyLeadLimit)
-  };
-}
-
 const startedAt = new Date();
 function publicBaseUrl(req) {
   return process.env.PUBLIC_APP_URL || `${req.protocol}://${req.get('host')}`;
-}
-
-function getPlanPrice(planId) {
-  return planId === 'agency' ? 199 : 59;
-}
-
-function getPlanDurationDays(planId = 'pro') {
-  const plan = getPlan(planId);
-  return Number(process.env.PLAN_DURATION_DAYS || plan.durationDays || 30);
-}
-
-function getPlanExpirationDate(planId = 'pro') {
-  const date = new Date();
-  date.setDate(date.getDate() + getPlanDurationDays(planId));
-  return date;
-}
-
-function planRank(planId) {
-  return ({ trial: 0, pro: 1, agency: 2 })[planId] ?? 0;
-}
-
-async function downgradeExpiredUserIfNeeded(user) {
-  if (!user || user.plan === 'trial' || !user.planExpiresAt) return user;
-
-  const expiresAt = new Date(user.planExpiresAt);
-  if (Number.isNaN(expiresAt.getTime()) || expiresAt > new Date()) return user;
-
-  const update = {
-    plan: 'trial',
-    dailyLeadLimit: 10,
-    totalLeadLimit: 10,
-    subscriptionStatus: 'expired'
-  };
-
-  if (hasMongoUri()) {
-    return User.findByIdAndUpdate(user._id || user.id, update, { new: true });
-  }
-
-  return { ...user, ...update };
-}
-
-async function activatePaidPlan({ userId, planId, paymentId = '', externalReference = '', raw = {} }) {
-  const plan = getPlan(planId);
-  const update = {
-    plan: plan.id,
-    dailyLeadLimit: plan.dailyLeadLimit,
-    totalLeadLimit: plan.totalLeadLimit ?? null,
-    subscriptionStatus: 'active',
-    mercadoPagoLastPaymentId: String(paymentId || ''),
-    planActivatedAt: new Date(),
-    planExpiresAt: getPlanExpirationDate(plan.id)
-  };
-
-  if (hasMongoUri()) {
-    await User.findByIdAndUpdate(userId, update);
-  } else {
-    await updateLocalUserPlan(userId, plan.id, plan.dailyLeadLimit, plan.totalLeadLimit ?? null);
-  }
-
-  if (hasMongoUri()) {
-    const filters = [];
-    if (paymentId) filters.push({ paymentId: String(paymentId) });
-    if (externalReference) filters.push({ externalReference: String(externalReference) });
-
-    await Payment.findOneAndUpdate(
-      filters.length ? { $or: filters } : { userId, plan: plan.id, status: 'created' },
-      {
-        $set: {
-          userId,
-          plan: plan.id,
-          status: 'approved',
-          paymentId: String(paymentId || ''),
-          externalReference: String(externalReference || ''),
-          amount: Number(raw.transaction_amount || getPlanPrice(plan.id)),
-          raw,
-          reconciledAt: new Date()
-        }
-      },
-      { upsert: true, new: true }
-    );
-  }
-
-  return plan;
-}
-
-async function expirePaidPlan({ userId, paymentId = '', externalReference = '', raw = {} }) {
-  const update = {
-    plan: 'trial',
-    dailyLeadLimit: 10,
-    totalLeadLimit: 10,
-    subscriptionStatus: raw?.status === 'cancelled' ? 'cancelled' : 'expired'
-  };
-
-  if (hasMongoUri()) {
-    await User.findByIdAndUpdate(userId, update);
-    const filters = [];
-    if (paymentId) filters.push({ paymentId: String(paymentId) });
-    if (externalReference) filters.push({ externalReference: String(externalReference) });
-
-    await Payment.findOneAndUpdate(
-      filters.length ? { $or: filters } : { userId },
-      {
-        $set: {
-          status: raw?.status || 'expired',
-          paymentId: String(paymentId || ''),
-          externalReference: String(externalReference || ''),
-          raw,
-          reconciledAt: new Date()
-        }
-      },
-      { upsert: true, new: true }
-    );
-  }
-
-  return getPlan('trial');
-}
-
-async function fetchMercadoPagoPayment(paymentId) {
-  const token = process.env.MERCADO_PAGO_ACCESS_TOKEN;
-  if (!token) throw new Error('MERCADO_PAGO_ACCESS_TOKEN não configurado.');
-
-  const response = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
-
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.message || 'Não foi possível consultar pagamento no Mercado Pago.');
-  }
-
-  return data;
-}
-
-function extractPaymentContext(payment) {
-  const externalReference = String(payment.external_reference || '');
-  const [userIdFromRef, planFromRef] = externalReference.split(':');
-
-  return {
-    externalReference,
-    userId: payment.metadata?.user_id || userIdFromRef,
-    planId: payment.metadata?.plan_id || planFromRef
-  };
-}
-
-async function reconcileMercadoPagoPayment(paymentId) {
-  const payment = await fetchMercadoPagoPayment(paymentId);
-  const { externalReference, userId, planId } = extractPaymentContext(payment);
-
-  if (!userId || !['pro', 'agency'].includes(planId)) {
-    return { ignored: true, reason: 'metadata inválido', payment };
-  }
-
-  if (hasMongoUri()) {
-    await Payment.findOneAndUpdate(
-      {
-        $or: [
-          { paymentId: String(payment.id) },
-          { externalReference: String(externalReference) }
-        ]
-      },
-      {
-        $set: {
-          userId,
-          plan: planId,
-          status: payment.status,
-          paymentId: String(payment.id),
-          externalReference,
-          amount: Number(payment.transaction_amount || getPlanPrice(planId)),
-          raw: payment,
-          reconciledAt: new Date()
-        }
-      },
-      { upsert: true, new: true }
-    );
-  }
-
-  if (payment.status === 'approved') {
-    const plan = await activatePaidPlan({
-      userId,
-      planId,
-      paymentId: payment.id,
-      externalReference,
-      raw: payment
-    });
-
-    return { upgraded: true, status: payment.status, plan, payment };
-  }
-
-  if (['cancelled', 'refunded', 'charged_back', 'rejected'].includes(payment.status)) {
-    const plan = await expirePaidPlan({
-      userId,
-      paymentId: payment.id,
-      externalReference,
-      raw: payment
-    });
-
-    return { downgraded: true, status: payment.status, plan, payment };
-  }
-
-  return { received: true, status: payment.status, payment };
-}
-
-async function createMercadoPagoPreference({ req, plan }) {
-  const token = process.env.MERCADO_PAGO_ACCESS_TOKEN;
-  if (!token) return null;
-
-  const monthlyPrice = getPlanPrice(plan.id);
-  const baseUrl = publicBaseUrl(req);
-  const externalReference = `${req.user.sub}:${plan.id}:${Date.now()}`;
-
-  const response = await fetch('https://api.mercadopago.com/checkout/preferences', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      items: [
-        {
-          id: `plan_${plan.id}`,
-          title: `Plano ${plan.name} - LeadHunter Pro`,
-          description: `${plan.dailyLeadLimit} leads por dia por ${getPlanDurationDays()} dias`,
-          quantity: 1,
-          currency_id: 'BRL',
-          unit_price: monthlyPrice
-        }
-      ],
-      payer: {
-        email: req.user.email
-      },
-      back_urls: {
-        success: process.env.MERCADO_PAGO_SUCCESS_URL || `${baseUrl}/app?pagamento=sucesso`,
-        failure: process.env.MERCADO_PAGO_FAILURE_URL || `${baseUrl}/app?pagamento=falha`,
-        pending: process.env.MERCADO_PAGO_PENDING_URL || `${baseUrl}/app?pagamento=pendente`
-      },
-      auto_return: 'approved',
-      external_reference: externalReference,
-      notification_url: process.env.MERCADO_PAGO_WEBHOOK_URL || `${baseUrl}/api/billing/webhook`,
-      metadata: {
-        user_id: req.user.sub,
-        plan_id: plan.id
-      }
-    })
-  });
-
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.message || 'Não foi possível criar checkout no Mercado Pago.');
-  }
-
-  if (hasMongoUri()) {
-    await Payment.create({
-      userId: req.user.sub,
-      plan: plan.id,
-      status: 'created',
-      provider: 'mercado_pago',
-      preferenceId: data.id,
-      externalReference,
-      checkoutUrl: data.init_point,
-      amount: monthlyPrice,
-      raw: data
-    });
-  }
-
-  return {
-    checkoutUrl: data.init_point,
-    sandboxCheckoutUrl: data.sandbox_init_point,
-    preferenceId: data.id,
-    externalReference
-  };
-}
-
-function getClientIp(req) {
-  return String(req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip || req.socket?.remoteAddress || '';
-}
-
-async function writeAdminAudit(req, action, { targetUserId = null, before = {}, after = {} } = {}) {
-  if (!hasMongoUri()) return null;
-  try {
-    return AdminAuditLog.create({
-      adminId: req.adminUser?._id || req.user?.sub,
-      targetUserId,
-      action,
-      before,
-      after,
-      ip: getClientIp(req),
-      userAgent: String(req.headers['user-agent'] || '')
-    });
-  } catch (error) {
-    console.warn('[ADMIN_AUDIT_FAILED]', action, error.message);
-    return null;
-  }
 }
 
 app.use(helmet({
@@ -790,21 +496,6 @@ app.get('/api/billing/status', requireAuth, async (req, res) => {
   }
 });
 
-
-function requireAdmin(req, res, next) {
-  const fail = () => res.status(403).json({ error: 'Acesso restrito ao administrador.' });
-
-  if (!req.user?.sub) return fail();
-
-  const run = async () => {
-    const user = hasMongoUri() ? await User.findById(req.user.sub).lean() : await findUserById(req.user.sub);
-    if (!user || user.role !== 'admin') return fail();
-    req.adminUser = user;
-    return next();
-  };
-
-  run().catch((error) => res.status(500).json({ error: error.message }));
-}
 
 app.get('/admin', (_req, res) => {
   res.sendFile(path.join(process.cwd(), 'public', 'admin.html'));

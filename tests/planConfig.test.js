@@ -38,14 +38,14 @@ test('trial oficial prevalece mesmo se o arquivo editável estiver antigo', () =
     dailyLeadLimit: 20,
     totalLeadLimit: null,
     durationDays: 30,
-    features: ['30 dias de uso gratuito', '20 leads por dia']
+    features: ['regra antiga de teste', 'limite antigo por dia']
   });
 
   assert.equal(updated.dailyLeadLimit, 10);
   assert.equal(updated.totalLeadLimit, 10);
   assert.equal(updated.durationDays, 0);
   assert.ok(updated.features.includes('10 leads totais para experimentar'));
-  assert.ok(!updated.features.includes('20 leads por dia'));
+  assert.ok(!updated.features.includes('limite antigo por dia'));
 
   const trial = getPlan('trial');
   assert.equal(trial.dailyLeadLimit, 10);

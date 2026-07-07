@@ -1,19 +1,17 @@
 const jwt = require('jsonwebtoken');
 
-const DEFAULT_JWT_SECRET = 'troque-este-segredo-em-producao';
+const DEVELOPMENT_JWT_SECRET = 'dev-local-secret-change-before-deploy';
 
 function isProduction() {
   return String(process.env.NODE_ENV || '').toLowerCase() === 'production';
 }
 
 function getJwtSecret() {
-  const secret = process.env.JWT_SECRET || DEFAULT_JWT_SECRET;
-
-  if (isProduction() && (!process.env.JWT_SECRET || secret === DEFAULT_JWT_SECRET)) {
+  if (!process.env.JWT_SECRET && isProduction()) {
     throw new Error('JWT_SECRET obrigatório em produção. Configure uma chave forte nas variáveis de ambiente.');
   }
 
-  return secret;
+  return process.env.JWT_SECRET || DEVELOPMENT_JWT_SECRET;
 }
 
 function assertSecurityEnv() {
@@ -44,4 +42,4 @@ function requireAuth(req, res, next) {
   }
 }
 
-module.exports = { createToken, requireAuth, assertSecurityEnv };
+module.exports = { createToken, requireAuth, assertSecurityEnv, getJwtSecret };

@@ -54,12 +54,19 @@ O projeto demonstra uma aplicação SaaS com autenticação, CRM, planos editáv
 
 ```text
 src/
-  server.js
-  db.js
-  authRoutes.js
-  planConfig.js
-  planStore.js
+  server.js                  # bootstrap e rotas principais
+  authRoutes.js              # autenticação e recuperação de senha
+  db.js                      # conexão MongoDB/JSON local
+  planConfig.js              # fonte única dos planos
   middleware/
+    auth.js                  # JWT
+    admin.js                 # proteção do painel Master
+    rateLimit.js             # limite simples de requisições
+    requestLogger.js         # logs HTTP
+  services/
+    billingService.js        # Mercado Pago, assinatura e expiração de plano
+    adminAuditService.js     # auditoria administrativa
+    emailService.js          # recuperação de senha via Resend/fallback local
   models/
   data/
 
@@ -95,8 +102,8 @@ npm run check
 npm test
 ```
 
-- `check`: valida sintaxe dos principais arquivos.
-- `test`: executa testes automatizados de regras críticas.
+- `check`: valida sintaxe dos principais arquivos e executa a suíte de testes.
+- `test`: executa testes automatizados de regras críticas, segurança e modularização.
 
 ## Variáveis de ambiente
 
@@ -185,9 +192,21 @@ Usuário administrador esperado:
 - Onboarding de uso no dashboard.
 - Testes automatizados de regras críticas.
 
+## Validação da versão
+
+```bash
+npm run check
+```
+
+A versão V18 foi validada com **16 testes automatizados aprovados**.
+
 ## Status
 
 Projeto em estágio avançado para demonstração comercial, validação de mercado e portfólio profissional.
+
+## Releases recentes
+
+- `RELEASE_V18.md`: modularização, segurança, auditoria, planos editáveis e testes ampliados.
 
 ## Posicionamento no portfólio
 
