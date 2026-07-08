@@ -1118,3 +1118,15 @@ body.modal-open {
 }
 .engine-details strong { font-size: .9rem; }
 .engine-details span { color: var(--muted); font-size: .85rem; }
+
+
+.approach-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 12px 0 18px;
+}
+
+.approach-actions button {
+  width: auto;
+}

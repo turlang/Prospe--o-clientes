@@ -49,6 +49,7 @@ const leadDetailPanel = document.querySelector('#leadDetailPanel');
 let authToken = localStorage.getItem('authToken') || '';
 let currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
 let lastLeads = [];
+const approachHistory = {};
 
 const PIPELINE = [
   { key: 'NOVO', label: 'Novo lead', hint: 'Encontrado, ainda sem contato' },
@@ -668,7 +669,7 @@ function openLeadDetail(leadId) {
       <button type="button" class="secondary" onclick="updateStatus('${escapeAttr(leadId)}','CONTATADO')">Contato feito</button>
       <button type="button" class="secondary" onclick="updateStatus('${escapeAttr(leadId)}','INTERESSADO')">Interessado</button>
       <button type="button" class="secondary" onclick="updateStatus('${escapeAttr(leadId)}','PROPOSTA')">Proposta</button>
-      <button type="button" class="secondary" onclick="generateApproach('${escapeAttr(leadId)}')">🧠 Gerar melhor abordagem</button>
+      <button type="button" class="secondary" onclick="generateApproach('${escapeAttr(leadId)}', 'new')">🧠 Gerar melhor abordagem</button>
       <button type="button" class="secondary" onclick="scheduleFollowup('${escapeAttr(leadId)}')">Agendar retorno</button>
     </div>
     <pre id="approach-modal-${escapeAttr(leadId)}" class="msg crm-approach-output"></pre>
@@ -764,7 +765,7 @@ function renderLead(lead) {
       <label>Notas comerciais<textarea id="notes-${escapeAttr(leadId)}" placeholder="Ex: respondeu rápido, pedir orçamento, retornar sexta...">${escapeHtml(lead.notas || '')}</textarea></label>
       <div class="links">
         <button type="button" class="secondary" onclick="saveLeadMeta('${escapeAttr(leadId)}')">Salvar CRM</button>
-        <button type="button" class="approach-btn" onclick="generateApproach('${escapeAttr(leadId)}')">🧠 Gerar melhor abordagem</button>
+        <button type="button" class="approach-btn" onclick="generateApproach('${escapeAttr(leadId)}', 'new')">🧠 Gerar melhor abordagem</button>
         <button type="button" class="secondary" onclick="generateCampaign('${escapeAttr(leadId)}')">Sequência</button>
         <button type="button" class="secondary" onclick="scheduleFollowup('${escapeAttr(leadId)}')">Agendar follow-up</button>
       </div>
@@ -815,7 +816,7 @@ async function saveLeadMeta(leadId) {
   } catch (error) { showError(error.message); }
 }
 
-async function generateApproach(leadId) {
+async function generateApproach(leadId, mode = 'new') {
   const outputs = [
     document.getElementById(`approach-${leadId}`),
     document.getElementById(`approach-modal-${leadId}`)
@@ -829,12 +830,17 @@ async function generateApproach(leadId) {
     const response = await apiFetch('/api/gerar-abordagem', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ leadId, regenerateKey: `${Date.now()}-${Math.random().toString(36).slice(2)}` })
+      body: JSON.stringify({
+        leadId,
+        regenerateKey: `${mode}-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        previousApproach: approachHistory[leadId] || ''
+      })
     });
     const data = await readJson(response);
     if (!response.ok) throw new Error(data.error);
 
-    const html = renderSalesApproach(data);
+    approachHistory[leadId] = data.abordagem || approachHistory[leadId] || '';
+    const html = renderSalesApproach(data, leadId);
     outputs.forEach((output) => {
       output.innerHTML = html;
     });
@@ -859,8 +865,10 @@ function renderEngineDetails(data) {
   const status = data.aiStatus || {};
   const provider = data.providerLabel || status.providerLabel || engineLabel(data);
   const model = data.model || status.model || 'local';
+  const resolved = data.resolvedModelInfo || status.resolvedModelInfo || null;
+  const autoModelNote = resolved?.note ? ` ${resolved.note}` : '';
   const reason = data.source === 'ai'
-    ? `Gerado por ${provider}. Modelo: ${model}.`
+    ? `Gerado por ${provider}. Modelo usado: ${model}.${autoModelNote}`
     : (status.reason || 'Nenhuma IA externa configurada; foi usado o motor local.');
 
   return `
@@ -871,7 +879,7 @@ function renderEngineDetails(data) {
   `;
 }
 
-function renderSalesApproach(data) {
+function renderSalesApproach(data, leadId = '') {
   const diagnostics = data.diagnostics || {};
   const tags = Array.isArray(diagnostics.opportunityTags) ? diagnostics.opportunityTags : [];
   const followUps = Array.isArray(data.followUps) ? data.followUps : [];
@@ -905,7 +913,11 @@ function renderSalesApproach(data) {
 
       <h4>Mensagem pronta para enviar</h4>
       <pre class="msg strategy-message">${escapeHtml(data.abordagem || '')}</pre>
-      <button type="button" class="copy" onclick='copyText(${JSON.stringify(data.abordagem || '')})'>Copiar abordagem</button>
+      <div class="approach-actions">
+        <button type="button" class="copy" onclick='copyText(${JSON.stringify(data.abordagem || '')})'>Copiar abordagem</button>
+        ${leadId ? `<button type="button" class="secondary" onclick="generateApproach('${escapeAttr(leadId)}','variant')">🔄 Gerar outra versão</button>` : ''}
+        ${leadId ? `<button type="button" class="secondary" onclick="generateApproach('${escapeAttr(leadId)}','improve')">✨ Melhorar esta abordagem</button>` : ''}
+      </div>
 
       ${followUps.length ? `
         <h4>Sequência sugerida</h4>

@@ -412,7 +412,7 @@ app.post('/api/leads/status', requireAuth, async (req, res) => {
  */
 app.post('/api/gerar-abordagem', requireAuth, async (req, res) => {
   try {
-    const { leadId, regenerateKey } = req.body;
+    const { leadId, regenerateKey, previousApproach } = req.body;
     if (!leadId) return res.status(400).json({ error: 'Informe o leadId.' });
 
     const leads = await readLeads(req.user.sub);
@@ -423,7 +423,8 @@ app.post('/api/gerar-abordagem', requireAuth, async (req, res) => {
     const recommendation = await generateAiEnhancedApproach({
       leadContext: localRecommendation.leadContext,
       localRecommendation,
-      regenerateKey
+      regenerateKey,
+      previousApproach
     });
 
     res.json({
@@ -433,6 +434,7 @@ app.post('/api/gerar-abordagem', requireAuth, async (req, res) => {
       model: recommendation.model || null,
       aiStatus: recommendation.aiStatus || getAiProviderStatus(),
       aiError: recommendation.aiError || null,
+      resolvedModelInfo: recommendation.resolvedModelInfo || null,
       abordagem: recommendation.abordagem,
       strategy: recommendation.strategy,
       diagnostics: recommendation.diagnostics,

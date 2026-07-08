@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { safeJsonParse, buildPrompt, getAiProviderStatus, normalizeProvider } = require('../src/services/aiApproachService');
+const { safeJsonParse, buildPrompt, getAiProviderStatus, normalizeProvider, normalizeGeminiModelName, pickBestGeminiModel } = require('../src/services/aiApproachService');
 const { buildSalesApproach } = require('../src/services/salesStrategyEngine');
 
 test('safeJsonParse extrai JSON válido mesmo com texto ao redor', () => {
@@ -52,4 +52,21 @@ test('status da IA informa Gemini quando chave estiver configurada', () => {
   if (oldProvider === undefined) delete process.env.AI_PROVIDER; else process.env.AI_PROVIDER = oldProvider;
   if (oldGeminiKey === undefined) delete process.env.GEMINI_API_KEY; else process.env.GEMINI_API_KEY = oldGeminiKey;
   if (oldModel === undefined) delete process.env.GEMINI_MODEL; else process.env.GEMINI_MODEL = oldModel;
+});
+
+
+test('normalizeGeminiModelName aceita nomes com prefixo models/', () => {
+  assert.equal(normalizeGeminiModelName('models/gemini-2.0-flash'), 'gemini-2.0-flash');
+  assert.equal(normalizeGeminiModelName('gemini-2.0-flash'), 'gemini-2.0-flash');
+});
+
+test('pickBestGeminiModel troca modelo configurado indisponivel por flash compativel', () => {
+  const result = pickBestGeminiModel([
+    { name: 'models/gemini-2.0-flash', supportedGenerationMethods: ['generateContent'] },
+    { name: 'models/text-embedding-004', supportedGenerationMethods: ['embedContent'] }
+  ], 'gemini-1.5-flash');
+
+  assert.equal(result.model, 'gemini-2.0-flash');
+  assert.equal(result.source, 'auto-selected');
+  assert.equal(result.available, true);
 });
