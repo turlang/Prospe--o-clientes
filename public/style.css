@@ -1006,3 +1006,75 @@ body.modal-open {
     max-height: 92vh;
   }
 }
+
+/* v20 — Motor de Estratégias Comerciais */
+.strategy-output {
+  display: grid;
+  gap: 12px;
+  white-space: normal;
+}
+
+.strategy-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.strategy-head small,
+.strategy-output .meta,
+.strategy-output small {
+  color: var(--muted, #94a3b8);
+}
+
+.strategy-head strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 1rem;
+}
+
+.strategy-diagnostics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.strategy-diagnostics span {
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: rgba(59, 130, 246, 0.12);
+  border: 1px solid rgba(59, 130, 246, 0.18);
+  font-size: .82rem;
+}
+
+.strategy-reasons {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--muted, #94a3b8);
+}
+
+.strategy-message {
+  white-space: pre-wrap;
+  font-family: inherit;
+  line-height: 1.55;
+}
+
+.followup-sequence {
+  display: grid;
+  gap: 8px;
+}
+
+.followup-sequence article {
+  padding: 10px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.42);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.followup-sequence article p {
+  margin: 4px 0;
+}

@@ -11,7 +11,8 @@ O projeto demonstra uma aplicação SaaS com autenticação, CRM, planos editáv
 ## Principais funcionalidades
 
 - Cadastro e login de usuários.
-- CRM de leads com pipeline Kanban.
+- CRM de leads com pipeline Kanban compacto.
+- Motor de Estratégias Comerciais para gerar a melhor abordagem por tipo de lead.
 - Histórico de prospecções.
 - Exportação CSV.
 - Planos Trial, Pro e Agência.
@@ -67,6 +68,7 @@ src/
     billingService.js        # Mercado Pago, assinatura e expiração de plano
     adminAuditService.js     # auditoria administrativa
     emailService.js          # recuperação de senha via Resend/fallback local
+    salesStrategyEngine.js    # diagnóstico do lead, estratégia e abordagem comercial
   models/
   data/
 
@@ -79,7 +81,9 @@ public/
 
 README.md
 CHANGELOG.md
-ROADMAP.md
+docs/RELEASE_NOTES.md
+docs/ROADMAP.md
+docs/ARQUITETURA.md
 ```
 
 ## Como executar
@@ -190,6 +194,7 @@ Usuário administrador esperado:
 - Painel administrativo completo.
 - Regras anti-abuso.
 - Onboarding de uso no dashboard.
+- Abordagens baseadas em estratégia consultiva, PAS, prova social, curiosidade ou diagnóstico.
 - Testes automatizados de regras críticas.
 
 ## Validação da versão
@@ -198,16 +203,19 @@ Usuário administrador esperado:
 npm run check
 ```
 
-A versão V18 foi validada com **16 testes automatizados aprovados**.
+A versão V20 foi validada com `npm run check` e testes automatizados.
 
 ## Status
 
 Projeto em estágio avançado para demonstração comercial, validação de mercado e portfólio profissional.
 
-## Releases recentes
+## Documentação
 
-- `RELEASE_V18.md`: modularização, segurança, auditoria, planos editáveis e testes ampliados.
+- `docs/RELEASE_NOTES.md`: histórico consolidado das releases antigas.
+- `docs/ROADMAP.md`: próximas sprints do CRM Comercial Inteligente.
+- `docs/ARQUITETURA.md`: organização técnica e direção de evolução.
+- `CHANGELOG.md`: mudanças técnicas por versão.
 
 ## Posicionamento no portfólio
 
-Este projeto deve ser apresentado como um case Full Stack SaaS com foco em vendas, CRM, assinatura, pagamentos, segurança, auditoria e gestão comercial.
+Este projeto deve ser apresentado como um case Full Stack SaaS com foco em prospecção, CRM, assinatura, pagamentos, segurança, auditoria e inteligência comercial aplicada à venda consultiva.

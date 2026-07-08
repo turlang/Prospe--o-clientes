@@ -645,7 +645,7 @@ function openLeadDetail(leadId) {
       <button type="button" class="secondary" onclick="updateStatus('${escapeAttr(leadId)}','CONTATADO')">Contato feito</button>
       <button type="button" class="secondary" onclick="updateStatus('${escapeAttr(leadId)}','INTERESSADO')">Interessado</button>
       <button type="button" class="secondary" onclick="updateStatus('${escapeAttr(leadId)}','PROPOSTA')">Proposta</button>
-      <button type="button" class="secondary" onclick="generateApproach('${escapeAttr(leadId)}')">Gerar abordagem</button>
+      <button type="button" class="secondary" onclick="generateApproach('${escapeAttr(leadId)}')">🧠 Gerar melhor abordagem</button>
       <button type="button" class="secondary" onclick="scheduleFollowup('${escapeAttr(leadId)}')">Agendar retorno</button>
     </div>
     <pre id="approach-modal-${escapeAttr(leadId)}" class="msg crm-approach-output"></pre>
@@ -741,7 +741,7 @@ function renderLead(lead) {
       <label>Notas comerciais<textarea id="notes-${escapeAttr(leadId)}" placeholder="Ex: respondeu rápido, pedir orçamento, retornar sexta...">${escapeHtml(lead.notas || '')}</textarea></label>
       <div class="links">
         <button type="button" class="secondary" onclick="saveLeadMeta('${escapeAttr(leadId)}')">Salvar CRM</button>
-        <button type="button" class="approach-btn" onclick="generateApproach('${escapeAttr(leadId)}')">Gerar abordagem</button>
+        <button type="button" class="approach-btn" onclick="generateApproach('${escapeAttr(leadId)}')">🧠 Gerar melhor abordagem</button>
         <button type="button" class="secondary" onclick="generateCampaign('${escapeAttr(leadId)}')">Sequência</button>
         <button type="button" class="secondary" onclick="scheduleFollowup('${escapeAttr(leadId)}')">Agendar follow-up</button>
       </div>
@@ -793,20 +793,82 @@ async function saveLeadMeta(leadId) {
 }
 
 async function generateApproach(leadId) {
-  const output = document.getElementById(`approach-${leadId}`);
-  if (output) output.textContent = 'Gerando abordagem personalizada...';
+  const outputs = [
+    document.getElementById(`approach-${leadId}`),
+    document.getElementById(`approach-modal-${leadId}`)
+  ].filter(Boolean);
+
+  outputs.forEach((output) => {
+    output.textContent = 'Gerando melhor abordagem comercial...';
+  });
+
   try {
     const response = await apiFetch('/api/gerar-abordagem', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ leadId })
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ leadId })
     });
     const data = await readJson(response);
     if (!response.ok) throw new Error(data.error);
-    if (output) output.textContent = data.abordagem;
-    statusBox.innerHTML = '<p>Abordagem personalizada gerada.</p>';
+
+    const html = renderSalesApproach(data);
+    outputs.forEach((output) => {
+      output.innerHTML = html;
+    });
+
+    statusBox.innerHTML = `<p>Melhor abordagem gerada com estratégia ${escapeHtml(data.strategy?.name || 'comercial')}.</p>`;
   } catch (error) {
-    if (output) output.textContent = error.message;
+    outputs.forEach((output) => {
+      output.textContent = error.message;
+    });
     showError(error.message);
   }
+}
+
+function renderSalesApproach(data) {
+  const diagnostics = data.diagnostics || {};
+  const tags = Array.isArray(diagnostics.opportunityTags) ? diagnostics.opportunityTags : [];
+  const followUps = Array.isArray(data.followUps) ? data.followUps : [];
+  const explanation = Array.isArray(data.explanation) ? data.explanation : [];
+
+  return `
+    <section class="strategy-output">
+      <header class="strategy-head">
+        <div>
+          <small>Estratégia recomendada</small>
+          <strong>${escapeHtml(data.strategy?.name || 'Abordagem consultiva')}</strong>
+        </div>
+        <span class="tag dark">Prioridade ${escapeHtml(diagnostics.priority || '-')}</span>
+      </header>
+
+      <div class="strategy-diagnostics">
+        <span>${diagnostics.hasWebsite ? 'Site ✔' : 'Sem site próprio'}</span>
+        <span>${diagnostics.hasWhatsapp ? 'WhatsApp/telefone ✔' : 'Contato pouco claro'}</span>
+        <span>${diagnostics.hasSocialPresence ? 'Presença social ✔' : 'Social fraco'}</span>
+        <span>Score ${Number(diagnostics.score || 0)}/100</span>
+      </div>
+
+      ${tags.length ? `<p class="meta"><strong>Oportunidades:</strong> ${tags.map(escapeHtml).join(' · ')}</p>` : ''}
+      ${explanation.length ? `<ul class="strategy-reasons">${explanation.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>` : ''}
+
+      <h4>Mensagem pronta para enviar</h4>
+      <pre class="msg strategy-message">${escapeHtml(data.abordagem || '')}</pre>
+      <button type="button" class="copy" onclick='copyText(${JSON.stringify(data.abordagem || '')})'>Copiar abordagem</button>
+
+      ${followUps.length ? `
+        <h4>Sequência sugerida</h4>
+        <div class="followup-sequence">
+          ${followUps.map((step) => `
+            <article>
+              <strong>Dia ${Number(step.day || 1)} — ${escapeHtml(step.title || 'Follow-up')}</strong>
+              <p>${escapeHtml(step.objective || '')}</p>
+              <small>${escapeHtml(step.message || '')}</small>
+            </article>
+          `).join('')}
+        </div>
+      ` : ''}
+    </section>
+  `;
 }
 
 function renderAuditSummary(audit) {
@@ -1303,7 +1365,7 @@ async function carregarLeadsCRM() {
             <button type="button" class="secondary" onclick="openLeadDetail('${leadId}')">Abrir ficha</button>
             <button type="button" class="secondary" onclick="updateStatus('${leadId}', 'CONTATADO')">Marcar contatado</button>
             <button type="button" class="secondary" onclick="updateStatus('${leadId}', 'INTERESSADO')">Marcar interessado</button>
-            <button type="button" class="secondary" onclick="generateApproach('${leadId}')">Gerar abordagem</button>
+            <button type="button" class="secondary" onclick="generateApproach('${leadId}')">🧠 Gerar melhor abordagem</button>
             <button type="button" class="secondary" onclick="scheduleFollowup('${leadId}')">Agendar follow-up</button>
           </div>
           <pre id="approach-${leadId}" class="msg crm-approach-output"></pre>

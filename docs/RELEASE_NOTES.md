@@ -1,0 +1,695 @@
+# Release Notes — LeadHunter Pro
+
+Histórico consolidado das versões antigas. Os arquivos `RELEASE_V*.md` foram unificados aqui para manter a raiz do projeto limpa.
+
+
+---
+
+## RELEASE.V10
+
+# Release v10.0.0 — Produção
+
+Versão validada para uso em produção com Render + MongoDB Atlas.
+
+## Validado
+
+- Landing page pública.
+- Cadastro em produção.
+- Login em produção.
+- JWT.
+- MongoDB Atlas conectado.
+- Health check público.
+- Planos Trial, Pro e Agência.
+- Trial de 10 leads.
+- Bloqueio após limite.
+- Prospecção.
+- CRM.
+- Kanban.
+- Histórico.
+- Campanhas.
+- Follow-ups.
+- Exportação CSV.
+- Botão Carregar leads.
+- Botão Sair no topo.
+- Deploy Render.
+- Correção DNS para MongoDB Atlas via `DNS_SERVERS`.
+
+## Variáveis obrigatórias no Render
+
+```env
+NODE_ENV=production
+REQUIRE_MONGODB=true
+DNS_SERVERS=8.8.8.8,1.1.1.1
+JWT_SECRET=sua_chave
+MONGODB_URI=sua_string_atlas
+GOOGLE_PLACES_API_KEY=sua_chave_google
+PUBLIC_APP_URL=https://seu-app.onrender.com
+```
+
+## Testes pós-deploy
+
+```text
+/api/health
+/api/plans
+cadastro
+login
+prospecção
+CRM
+exportação CSV
+```
+
+
+## Patch v10 — Rota inicial corrigida
+
+- `/` abre a landing page.
+- `/app` abre o sistema.
+- `express.static` configurado com `{ index: false }` para não abrir `index.html` automaticamente.
+
+
+---
+
+## RELEASE.V11
+
+# Release v11.0.0 — Mercado Pago Real
+
+## Incluído
+
+- Checkout Pro real do Mercado Pago.
+- Redirecionamento automático para pagamento.
+- Webhook em `/api/billing/webhook`.
+- Consulta real do pagamento no Mercado Pago.
+- Upgrade automático para Pro ou Agência quando o pagamento for aprovado.
+- Auditoria de pagamentos em collection `payments`.
+- Endpoint `/api/billing/status`.
+- Retorno visual em `/app?pagamento=sucesso`, `/app?pagamento=pendente` e `/app?pagamento=falha`.
+
+## Variáveis obrigatórias no Render
+
+```env
+MERCADO_PAGO_PUBLIC_KEY=APP_USR-...
+MERCADO_PAGO_ACCESS_TOKEN=APP_USR-...
+PUBLIC_APP_URL=https://prospe-o-clientes.onrender.com
+MERCADO_PAGO_SUCCESS_URL=https://prospe-o-clientes.onrender.com/app?pagamento=sucesso
+MERCADO_PAGO_FAILURE_URL=https://prospe-o-clientes.onrender.com/app?pagamento=falha
+MERCADO_PAGO_PENDING_URL=https://prospe-o-clientes.onrender.com/app?pagamento=pendente
+MERCADO_PAGO_WEBHOOK_URL=https://prospe-o-clientes.onrender.com/api/billing/webhook
+```
+
+## Teste
+
+1. Faça login.
+2. Abra Planos.
+3. Clique em Ativar Pro.
+4. Conclua o checkout.
+5. Aguarde o webhook atualizar o plano.
+6. Verifique o usuário no MongoDB Atlas.
+
+
+---
+
+## RELEASE.V11.1
+
+# Release v11.1.0 — Ajuste visual compacto
+
+## Objetivo
+
+Reduzir a sensação de zoom exagerado no dashboard e na landing/app em telas desktop e notebook.
+
+## Alterações
+
+- Redução visual aproximada de 15% a 20% em telas desktop.
+- Sidebar mais estreita.
+- Cards de métricas menores.
+- Kanban mais compacto.
+- Espaçamentos internos reduzidos.
+- Hero do app menos alto.
+- Inputs e botões com altura menor.
+- Mantida a responsividade para celular.
+
+## Rotas mantidas
+
+- `/` abre a landing page.
+- `/app` abre o sistema.
+- `/api/health` health check.
+
+
+---
+
+## RELEASE.V11.2
+
+# Release v11.2.0 — Fechamento da Fase 12
+
+## Objetivo
+
+Fechar os pontos pendentes do fluxo de pagamento antes do Painel Master.
+
+## Ajustes
+
+- Webhook Mercado Pago mais robusto.
+- Sincronização manual/automática em `/api/billing/sync`.
+- Retorno do Mercado Pago agora sincroniza `payment_id` quando disponível.
+- Status do pagamento passa a ser reconciliado no MongoDB.
+- Pagamento aprovado atualiza o documento existente em `payments`.
+- Usuário ativo recebe:
+  - `plan: pro` ou `agency`
+  - `subscriptionStatus: active`
+  - `dailyLeadLimit`
+  - `planActivatedAt`
+  - `planExpiresAt`
+- Pagamentos cancelados, recusados, estornados ou chargeback retornam o usuário para trial/expired.
+- Verificação de expiração do plano ao consultar uso/status.
+- Evita recriar checkout para plano igual ou inferior quando o usuário já está ativo.
+
+## Endpoints
+
+```text
+POST /api/billing/checkout
+POST /api/billing/webhook
+POST /api/billing/sync
+GET  /api/billing/status
+```
+
+## Validação
+
+1. Ativar Pro.
+2. Pagar pelo Mercado Pago.
+3. Voltar para `/app?pagamento=sucesso`.
+4. Confirmar usuário como `plan: pro`.
+5. Confirmar `payments.status: approved`.
+
+
+---
+
+## RELEASE.V11.2.1
+
+# Release v11.2.1 — Estabilização de sessão e plano
+
+## Correções
+
+- Botão Sair limpa sessão e volta imediatamente para a landing page.
+- Não precisa mais apertar F5 após logout.
+- Retorno de pagamento limpa a URL após sincronização.
+- Sincronização de plano após pagamento reforçada.
+- Sidebar atualiza plano/limite após login e retorno do Mercado Pago.
+
+## Validação
+
+1. Faça login.
+2. Clique em Sair.
+3. Deve voltar para `/` imediatamente.
+4. Faça login novamente.
+5. O plano deve aparecer correto na sidebar.
+
+
+---
+
+## RELEASE.V13
+
+# Release v13.0.0 — Painel Master Admin
+
+## Incluído
+
+- Rota `/admin`.
+- Página `public/admin.html`.
+- Script `public/admin.js`.
+- Campo `role` no usuário.
+- Middleware `requireAdmin`.
+- Endpoint `/api/admin/overview`.
+- Endpoint `/api/admin/users`.
+- Endpoint `/api/admin/payments`.
+- Alteração manual de plano.
+- Suspender/reativar usuário.
+- Promover/remover administrador.
+- Métricas de usuários e receita aprovada.
+
+## Como liberar o primeiro admin
+
+No MongoDB Atlas, edite seu usuário principal e adicione:
+
+```json
+"role": "admin"
+```
+
+Depois acesse:
+
+```text
+https://seu-app.onrender.com/admin
+```
+
+
+---
+
+## RELEASE.V14
+
+# Release v14.0.0 — Segurança e Anti-abuso
+
+## Incluído
+
+- Proteção contra criação indefinida de usuários.
+- Limite de cadastros por IP em 24h.
+- 1 teste gratuito por dispositivo.
+- Bloqueio de domínios de e-mail temporários.
+- Registro de tentativas permitidas e bloqueadas na collection `trialguards`.
+- Campos `deviceId` e `registrationIp` no usuário.
+- `REGISTER_IP_DAILY_LIMIT=3`.
+- Painel Admin com seção de Segurança e Anti-abuso.
+
+## Como funciona
+
+- Cada navegador recebe um `deviceId` salvo no `localStorage`.
+- No cadastro, o frontend envia esse `deviceId`.
+- O backend bloqueia novo trial se o dispositivo já tiver usado o teste.
+- O backend limita o número de contas por IP em 24h.
+- O backend bloqueia domínios de e-mail descartáveis conhecidos.
+
+## Variável de ambiente
+
+```env
+REGISTER_IP_DAILY_LIMIT=3
+```
+
+
+---
+
+## RELEASE.V14.1
+
+# Release v14.1.0 — UX Admin
+
+## Ajuste principal
+
+Administradores agora são enviados automaticamente para o Painel Master.
+
+## Fluxo
+
+- Usuário comum faz login → permanece em `/app`
+- Usuário admin faz login → redireciona para `/admin`
+- Admin logado tentando abrir `/app` → redireciona para `/admin`
+
+## Validação
+
+1. Faça logout.
+2. Faça login com usuário que possui `"role": "admin"`.
+3. O sistema deve abrir `/admin` automaticamente.
+
+
+---
+
+## RELEASE.V14.1.1
+
+# Release v14.1.1 — Correção do redirect admin
+
+## Problema
+
+O frontend verificava `currentUser.role === "admin"`, mas o backend não enviava o campo `role` na resposta de login.
+
+## Correção
+
+A função `publicUser()` agora retorna:
+
+```json
+{
+  "role": "admin"
+}
+```
+
+quando o usuário possui esse campo no MongoDB.
+
+## Validação
+
+1. Faça logout.
+2. Faça login com o usuário admin.
+3. Deve redirecionar automaticamente para `/admin`.
+
+
+---
+
+## RELEASE.V15
+
+# Release v15.0.0 — Recuperação de Senha
+
+## Incluído
+
+- Botão **Esqueci minha senha** na tela de login.
+- Geração de token seguro.
+- Token com expiração de 30 minutos.
+- Página `/reset-password.html`.
+- Redefinição de senha com `bcrypt`.
+- Token inutilizado após o uso.
+- Collection `passwordresets`.
+- Contador de resets no painel de segurança.
+
+## Validação
+
+1. Na tela de login, preencha o e-mail.
+2. Clique em **Esqueci minha senha**.
+3. No Render Logs, procure por `[PASSWORD_RESET_LINK]`.
+4. Abra o link.
+5. Defina uma nova senha.
+6. Faça login com a nova senha.
+
+## Observação
+
+O envio por e-mail real está preparado como próxima melhoria.
+Nesta versão, o link é exibido nos logs do Render para validação segura.
+
+
+---
+
+## RELEASE.V15.1
+
+# Release v15.1.0 — Correções Admin e Anti-Abuso
+
+## Problemas corrigidos
+
+### Admin preso no Painel Master
+
+Agora o admin pode:
+
+- Entrar automaticamente em `/admin`.
+- Clicar em **Abrir dashboard** e acessar `/app?adminDashboard=1`.
+- Usar o dashboard comum.
+- Voltar ao Painel Master pelo botão **Painel Master** no menu.
+
+### Registro BLOCKED no anti-abuso
+
+Agora o painel de segurança possui ações para:
+
+- Remover registro individual.
+- Limpar registros por e-mail.
+- Limpar registros anti-abuso automaticamente quando um usuário é promovido para admin.
+
+## Validação
+
+1. Faça login como admin.
+2. Confirme que abre `/admin`.
+3. Clique em **Abrir dashboard**.
+4. Confirme que abre o dashboard comum.
+5. Volte pelo botão **Painel Master**.
+6. Na seção Segurança, clique em **Remover** ou **Limpar e-mail** em um registro bloqueado.
+
+
+---
+
+## RELEASE.V16
+
+# Release v16.0.0 — Automações Comerciais
+
+## Incluído
+
+- Sequência automática de follow-ups por lead.
+- Priorização automática de leads quentes.
+- Próximas ações sugeridas.
+- Agenda de follow-ups com prioridade.
+- Botão **Automatizar sequência** nos leads.
+- Nova área na aba **Campanhas**.
+
+## Endpoints
+
+```text
+POST /api/automations/followup-sequence
+GET  /api/automations/next-actions
+```
+
+## Validação
+
+1. Faça login.
+2. Busque/carregue leads.
+3. Clique em **Automatizar sequência** em um lead.
+4. Abra **Campanhas**.
+5. Confira as próximas ações e a agenda de follow-ups.
+
+
+---
+
+## RELEASE.V16.1
+
+# Release v16.1.0 — Acessibilidade e Semântica
+
+## Aplicado
+
+- Uso de `label for` associado ao `id` dos inputs.
+- `type="submit"` explícito nos botões de formulário.
+- Menu principal com estrutura `nav > ul > li > button`.
+- Regiões dinâmicas com `aria-live`.
+- `autocomplete` em campos de e-mail, senha e nome.
+- Foco visível para navegação por teclado.
+- Melhorias semânticas no admin e reset de senha.
+
+## Objetivo
+
+Melhorar acessibilidade, usabilidade e organização semântica do HTML sem alterar a lógica principal do sistema.
+
+
+---
+
+## RELEASE.V16.1.1
+
+# Release v16.1.1 — Landing Acessível e SEO
+
+## Aplicado
+
+- Navegação da landing convertida para lista semântica.
+- `aria-label="Menu principal"` no menu.
+- `main id="conteudo-principal"`.
+- CTA principal com `aria-label`.
+- FAQ e footer com rótulos acessíveis.
+- Metadados SEO e Open Graph.
+- `alt` em imagens sem texto alternativo.
+
+## Objetivo
+
+Melhorar acessibilidade, SEO e estrutura semântica da landing sem alterar o visual principal.
+
+
+---
+
+## RELEASE.V16.1.2
+
+# Release v16.1.2 — Refinamento de Acessibilidade Admin
+
+## Aplicado
+
+- Link **Abrir dashboard** com `aria-label`.
+- Foco visível reforçado no link principal do Admin.
+- `.sr-only` atualizada com padrão acessível.
+- Botões de busca/atualização com `aria-label`.
+- Botões dinâmicos do Admin com rótulos acessíveis.
+- Tabelas com `<caption>`.
+- Cabeçalhos de coluna e linha com `scope`.
+
+## Objetivo
+
+Melhorar acessibilidade do Painel Master para leitores de tela e navegação por teclado.
+
+
+---
+
+## RELEASE.V17
+
+# Release V17 — Hardening SaaS, Planos Editáveis e Auditoria
+
+## Correções aplicadas
+
+- Trial padronizado em todo o sistema para 10 leads totais.
+- `src/data/plans.json` alinhado com `src/planConfig.js`.
+- README atualizado com `MONGODB_URI`, `RESEND_API_KEY`, `MAIL_FROM` e demais variáveis reais.
+- `JWT_SECRET` padrão bloqueado quando `NODE_ENV=production`.
+- Helmet agora usa CSP ativa em vez de `contentSecurityPolicy: false`.
+- Rotas `/api/diagnostico-env` e `/api/testar-google` agora exigem autenticação e perfil Admin.
+- Painel Admin ganhou editor de planos comerciais.
+- Alterações administrativas passam a ser registradas em `AdminAuditLog`.
+- Painel Admin ganhou visualização de auditoria.
+- Recuperação de senha agora envia e-mail real via Resend quando `RESEND_API_KEY` estiver configurada; em desenvolvimento mantém fallback por log.
+- Dashboard ganhou onboarding de primeiros passos.
+- Adicionados testes automatizados com `node:test`.
+- Middleware de logger e rate limit extraídos para `src/middleware/`.
+
+## Validação
+
+Executado com sucesso:
+
+```bash
+npm run check
+```
+
+Resultado:
+
+- `node --check src/server.js`
+- `node --check public/app.js`
+- `node --check public/admin.js`
+- `node --check src/db.js`
+- `node --test tests/*.test.js`
+- 7 testes aprovados
+
+
+---
+
+## RELEASE.V18
+
+# Release V18 — Modularização, Segurança e Auditoria
+
+## Entrega
+
+Esta versão consolida o LeadHunter Pro como um SaaS mais organizado, seguro e pronto para evolução comercial.
+
+## Principais alterações
+
+- Modularização parcial do `server.js`:
+  - `src/services/billingService.js`
+  - `src/services/adminAuditService.js`
+  - `src/services/emailService.js`
+  - `src/middleware/admin.js`
+- Trial mantido como regra fixa e oficial:
+  - R$ 0
+  - 10 leads totais
+  - uso único por usuário/dispositivo
+- Segurança reforçada:
+  - `JWT_SECRET` obrigatório em produção
+  - CSP ativa pelo Helmet
+  - rotas de diagnóstico protegidas por autenticação admin
+- Planos comerciais editáveis pelo Admin, com Trial bloqueado para preservar a regra comercial.
+- Auditoria administrativa para alterações de usuários, segurança e planos.
+- Recuperação de senha com integração preparada para Resend.
+- Testes automatizados ampliados para arquitetura, billing, e-mail, planos e segurança.
+
+## Validação
+
+```bash
+npm run check
+```
+
+Resultado esperado:
+
+```text
+16 testes aprovados
+```
+
+
+---
+
+## RELEASE.V18.1
+
+# Release V18.1 — Correção de abas e resultados
+
+## Correção principal
+
+- Corrige o comportamento em que a lista de leads/buscas aparecia em todas as abas.
+- A listagem global `#results` agora aparece apenas na aba **Prospectar**.
+- A aba **CRM** usa sua própria área `#crmLoadedLeads`.
+- O Dashboard carrega dados para estatísticas, Kanban e timeline sem exibir a lista completa de resultados.
+- Atualizado o cache-buster do `app.js` para forçar o navegador a carregar a versão corrigida.
+
+## Validação
+
+Executado:
+
+```bash
+npm run check
+```
+
+Resultado esperado: 16 testes aprovados.
+
+
+---
+
+## RELEASE.V19
+
+# Release V19 — CRM profissional e agenda comercial
+
+## Objetivo
+
+Evoluir o produto de uma ferramenta de prospecção para uma experiência mais próxima de um CRM comercial profissional.
+
+## Principais melhorias
+
+- Dashboard executivo com funil comercial visual.
+- Indicadores de conversão, propostas, clientes fechados e potencial estimado.
+- Painel de prioridades da semana para leads quentes e leads parados.
+- CRM com pipeline Kanban real em 6 etapas.
+- Ficha lateral do lead com telefone, endereço, links, score, ações e timeline.
+- Nova aba Agenda para tarefas comerciais e follow-ups.
+- Campanhas mantidas focadas em sequências e retornos comerciais.
+- Listagem do CRM preservada para edição detalhada de status, tags, notas e abordagem.
+
+## Fluxo recomendado
+
+1. Prospectar novos leads.
+2. Abrir o CRM e mover os leads no pipeline.
+3. Abrir a ficha do lead para consultar detalhes e histórico.
+4. Agendar follow-ups na Agenda.
+5. Acompanhar conversão e prioridades na Visão geral.
+
+## Validação
+
+Executar:
+
+```bash
+npm run check
+```
+
+
+---
+
+## RELEASE.V19.1
+
+# Release V19.1 — Correção dos botões do CRM
+
+## Correção principal
+
+Os botões do painel, CRM, campanhas, WhatsApp, ficha do lead, follow-up e ações rápidas voltaram a funcionar.
+
+## Causa
+
+A Release V19 ativou CSP no Helmet, mas o frontend ainda usa alguns handlers inline (`onclick`). O navegador bloqueava esses eventos.
+
+## Ajuste
+
+A CSP continua ativa, mas `script-src` agora permite `unsafe-inline` temporariamente para preservar compatibilidade com o frontend atual.
+
+## Próximo passo técnico
+
+Migrar gradualmente os handlers inline para `addEventListener`/delegação de eventos e remover `unsafe-inline` depois.
+
+
+---
+
+## RELEASE.V19.2
+
+# Release V19.2 — Correção CSP dos botões
+
+## Correção principal
+
+- Ajustada a configuração do Helmet/CSP para liberar `script-src-attr` durante a fase atual do frontend legado.
+- Corrige bloqueio de botões que usam `onclick`, `ondrop` e `ondragstart` no CRM, Campanhas, Agenda e cards de leads.
+
+## Observação técnica
+
+O frontend ainda possui handlers inline em alguns componentes renderizados dinamicamente. A correção definitiva futura é migrar todos para `addEventListener`, mas esta release resolve imediatamente o erro:
+
+```text
+Executing inline event handler violates Content Security Policy directive script-src-attr 'none'
+```
+
+
+---
+
+## RELEASE.V19.3
+
+# Release V19.3 — Pipeline compacto e ficha em popup
+
+## Ajustes
+
+- Reduzi a altura visual do pipeline comercial para evitar colunas muito longas na tela.
+- Cada coluna do Kanban agora tem rolagem interna quando houver muitos leads.
+- Os cards do pipeline ficaram mais compactos e clicáveis.
+- Ao clicar em um lead no pipeline, a ficha completa agora abre em popup/modal.
+- O painel lateral foi simplificado para orientar o usuário a clicar nos cards.
+- O popup mostra telefone, endereço, ticket, probabilidade, links, ações comerciais, abordagem, timeline e notas.
+
+## Validação
+
+```bash
+npm run check
+```
+
+Resultado: 17 testes aprovados.

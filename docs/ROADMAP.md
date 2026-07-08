@@ -1,0 +1,72 @@
+# Roadmap — LeadHunter Pro
+
+## Sprint 1 — Organização e estratégia comercial
+- Consolidar release notes em um único arquivo.
+- Criar motor de estratégias comerciais para abordagens personalizadas.
+- Preparar documentação para evolução do CRM Comercial Inteligente.
+
+## Sprint 2 — CRM Profissional
+- Ficha completa do lead.
+- Timeline avançada.
+- Tarefas e agenda comercial.
+
+## Sprint 3 — Inteligência Comercial
+- Recomendações de quem contatar hoje.
+- Priorização de leads parados.
+- Métricas por segmento e região.
+
+## Sprint 4 — Integrações
+- WhatsApp com provedor oficial.
+- E-mail transacional em produção.
+- Relatórios e exportações avançadas.
+
+---
+
+## Conteúdo legado de `ROADMAP.md`
+
+# ROADMAP
+
+## Fase 15 ✅
+- Recuperação de Senha implementada
+- Tokens temporários de redefinição
+- E-mail transacional real fica como melhoria futura
+
+## Fase 16 ✅
+- Automações Comerciais
+- Sequências de follow-up
+- Próximas ações sugeridas
+- Priorização automática
+
+## Fase 17
+- IA Comercial
+- Geração automática de abordagem
+- Score inteligente
+- Sugestões de follow-up
+
+## Fase 18
+- White Label
+- Domínio próprio
+- Personalização visual
+
+## Fase 19
+- Equipes
+- Multiempresa
+- Permissões avançadas
+
+---
+
+## Conteúdo legado de `CRUD_PLANOS_ROADMAP.md`
+
+Backend preparado para evolução do CRUD de planos.
+
+Rotas sugeridas:
+GET /api/admin/plans
+POST /api/admin/plans
+PUT /api/admin/plans/:id
+DELETE /api/admin/plans/:id
+
+Persistência:
+src/data/plans.json
+
+Módulo:
+src/planStore.js

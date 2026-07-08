@@ -1,4 +1,20 @@
-# CHANGELOG
+# Changelog
+
+## 20.0.0 — CRM Comercial Inteligente — Sprint 1
+
+### Adicionado
+- Motor de Estratégias Comerciais em `src/services/salesStrategyEngine.js`.
+- Botão de abordagem agora gera diagnóstico, estratégia recomendada, mensagem pronta e sequência de follow-ups.
+- Documentação consolidada em `docs/RELEASE_NOTES.md`, `docs/ROADMAP.md` e `docs/ARQUITETURA.md`.
+- Testes automatizados do motor de estratégias comerciais.
+
+### Alterado
+- Mensagens de abordagem deixam de ser genéricas e passam a considerar site, WhatsApp, presença social, score e segmento do lead.
+- README atualizado para apontar para a nova documentação consolidada.
+
+### Removido
+- Arquivos antigos `RELEASE_V*.md` da raiz, agora consolidados em `docs/RELEASE_NOTES.md`.
+
 
 ## v16.1.2 - Refinamento de Acessibilidade Admin
 
@@ -68,7 +84,7 @@
 ---
 
 
-<<<<<<< HEAD
+
 ## v15.0.0 - Recuperação de Senha
 
 ### Adicionado
@@ -84,9 +100,9 @@
 ---
 
 
-=======
-<<<<<<< HEAD
->>>>>>> c227331657d57b2b56a41444b3d5ed6f277556f3
+
+
+ c227331657d57b2b56a41444b3d5ed6f277556f3
 ## v14.1.1 - Correção do redirect admin
 
 ### Corrigido
@@ -97,11 +113,11 @@
 ---
 
 
-<<<<<<< HEAD
-=======
-=======
->>>>>>> 7019867f0aae28feca9d3d3415d07b05bbff440a
->>>>>>> c227331657d57b2b56a41444b3d5ed6f277556f3
+
+
+
+ 7019867f0aae28feca9d3d3415d07b05bbff440a
+ c227331657d57b2b56a41444b3d5ed6f277556f3
 ## v14.1.0 - UX Admin
 
 ### Corrigido

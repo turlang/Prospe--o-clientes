@@ -35,6 +35,7 @@ const {
   reconcileMercadoPagoPayment
 } = require('./services/billingService');
 const { writeAdminAudit } = require('./services/adminAuditService');
+const { buildSalesApproach } = require('./services/salesStrategyEngine');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -45,6 +46,11 @@ const startedAt = new Date();
 function publicBaseUrl(req) {
   return process.env.PUBLIC_APP_URL || `${req.protocol}://${req.get('host')}`;
 }
+
+function planRank(planId) {
+  return ({ trial: 0, pro: 1, agency: 2 })[planId] ?? 0;
+}
+
 
 app.use(helmet({
   contentSecurityPolicy: {
@@ -408,16 +414,15 @@ app.post('/api/gerar-abordagem', requireAuth, async (req, res) => {
     const lead = leads.find((item) => String(item.placeId || item.nome) === String(leadId));
     if (!lead) return res.status(404).json({ error: 'Lead não encontrado.' });
 
-    const nome = lead.nome || 'tudo bem';
-    const segmento = lead.segmentoComercial || lead.tipo || 'empresa local';
-    const dorPrincipal = Array.isArray(lead.dores) && lead.dores.length
-      ? lead.dores[0]
-      : 'algumas oportunidades de melhoria na presença digital';
-    const servico = lead.servico || 'um diagnóstico rápido de presença digital';
+    const recommendation = buildSalesApproach(lead);
 
-    const abordagem = `Olá, ${nome}. Tudo bem?\n\nAnalisei rapidamente a presença digital da sua ${segmento} e identifiquei uma oportunidade: ${dorPrincipal}.\n\nEu trabalho com ${servico} para ajudar negócios locais a receberem mais contatos qualificados pelo Google e pelo WhatsApp.\n\nPosso te enviar 2 ou 3 sugestões objetivas, sem compromisso, para melhorar isso?`;
-
-    res.json({ abordagem });
+    res.json({
+      abordagem: recommendation.abordagem,
+      strategy: recommendation.strategy,
+      diagnostics: recommendation.diagnostics,
+      followUps: recommendation.followUps,
+      explanation: recommendation.explanation
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
