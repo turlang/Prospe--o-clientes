@@ -1,3 +1,11 @@
+## V20.5 — Groq como provedor recomendado de IA
+
+- Adicionado suporte ao GroqCloud via `GROQ_API_KEY`.
+- `AI_PROVIDER=auto` agora prioriza Groq, depois Gemini, depois OpenAI e por fim motor local.
+- README e `.env.example` atualizados com configuração de Render para Groq.
+- Erros técnicos de IA agora são convertidos em mensagens mais amigáveis para o usuário final.
+- Mantido fallback local para o CRM continuar funcionando mesmo se a IA externa estiver indisponível.
+
 # Release Notes
 
 ## V20.3 — Gemini e IA Comercial transparente

@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { safeJsonParse, buildPrompt, getAiProviderStatus, normalizeProvider, normalizeGeminiModelName, pickBestGeminiModel } = require('../src/services/aiApproachService');
+const { safeJsonParse, buildPrompt, getAiProviderStatus, normalizeProvider, normalizeGeminiModelName, pickBestGeminiModel, toFriendlyAiError } = require('../src/services/aiApproachService');
 const { buildSalesApproach } = require('../src/services/salesStrategyEngine');
 
 test('safeJsonParse extrai JSON válido mesmo com texto ao redor', () => {
@@ -28,7 +28,8 @@ test('prompt de IA contém contexto do lead e regra de personalização', () => 
 });
 
 
-test('normalizeProvider aceita gemini e fallback automatico', () => {
+test('normalizeProvider aceita groq, gemini e fallback automatico', () => {
+  assert.equal(normalizeProvider('groq'), 'groq');
   assert.equal(normalizeProvider('gemini'), 'gemini');
   assert.equal(normalizeProvider('openai'), 'openai');
   assert.equal(normalizeProvider('qualquer'), 'auto');
@@ -69,4 +70,30 @@ test('pickBestGeminiModel troca modelo configurado indisponivel por flash compat
   assert.equal(result.model, 'gemini-2.0-flash');
   assert.equal(result.source, 'auto-selected');
   assert.equal(result.available, true);
+});
+
+
+test('status da IA prioriza Groq quando chave estiver configurada', () => {
+  const oldProvider = process.env.AI_PROVIDER;
+  const oldGroqKey = process.env.GROQ_API_KEY;
+  const oldGroqModel = process.env.GROQ_MODEL;
+
+  process.env.AI_PROVIDER = 'groq';
+  process.env.GROQ_API_KEY = 'fake-groq-key-for-test';
+  process.env.GROQ_MODEL = 'llama-3.3-70b-versatile';
+
+  const status = getAiProviderStatus();
+  assert.equal(status.provider, 'groq');
+  assert.equal(status.providerLabel, 'Groq');
+  assert.equal(status.model, 'llama-3.3-70b-versatile');
+  assert.equal(status.configured, true);
+
+  if (oldProvider === undefined) delete process.env.AI_PROVIDER; else process.env.AI_PROVIDER = oldProvider;
+  if (oldGroqKey === undefined) delete process.env.GROQ_API_KEY; else process.env.GROQ_API_KEY = oldGroqKey;
+  if (oldGroqModel === undefined) delete process.env.GROQ_MODEL; else process.env.GROQ_MODEL = oldGroqModel;
+});
+
+test('erro tecnico de IA vira mensagem amigavel', () => {
+  assert.match(toFriendlyAiError(new Error('quota exceeded')), /limite de uso|cota/i);
+  assert.match(toFriendlyAiError(new Error('invalid api key')), /chave/i);
 });

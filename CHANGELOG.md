@@ -1,3 +1,14 @@
+## 20.5.0
+
+### Adicionado
+- Suporte ao provedor Groq para geração de abordagens comerciais.
+- Variáveis `GROQ_API_KEY` e `GROQ_MODEL` no `.env.example`.
+
+### Alterado
+- Provedor recomendado de IA passa a ser Groq.
+- Modo `AI_PROVIDER=auto` prioriza Groq antes de Gemini/OpenAI.
+- Erros técnicos de IA são apresentados de forma amigável ao usuário.
+
 # Changelog
 
 ## 20.3.0 — Gemini e transparência da IA

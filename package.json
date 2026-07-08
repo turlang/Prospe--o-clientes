@@ -1,7 +1,7 @@
 {
   "name": "agente-prospeccao-real",
-  "version": "20.4.0",
-  "description": "CRM comercial inteligente com Gemini com seleção automática de modelo e abordagens variadas",
+  "version": "20.5.0",
+  "description": "CRM comercial inteligente com suporte a Groq, Gemini, OpenAI e fallback local",
   "main": "src/server.js",
   "type": "commonjs",
   "scripts": {

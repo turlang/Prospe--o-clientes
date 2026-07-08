@@ -8,12 +8,20 @@
  * próxima do lead. Se a API falhar, o motor local entra como fallback.
  *
  * Provedores suportados:
+ * - groq: GroqCloud via GROQ_API_KEY.
  * - gemini: Google Gemini via GEMINI_API_KEY.
  * - openai: OpenAI via OPENAI_API_KEY.
- * - auto: escolhe Gemini se configurado; depois OpenAI; depois motor local.
+ * - auto: escolhe Groq se configurado; depois Gemini; depois OpenAI; depois motor local.
  */
 
 const AI_PROVIDERS = {
+  groq: {
+    id: 'groq',
+    label: 'Groq',
+    keyEnv: 'GROQ_API_KEY',
+    modelEnv: 'GROQ_MODEL',
+    defaultModel: 'llama-3.3-70b-versatile'
+  },
   gemini: {
     id: 'gemini',
     label: 'Google Gemini',
@@ -43,7 +51,7 @@ const GEMINI_MODELS_CACHE_MS = 1000 * 60 * 10;
 
 function normalizeProvider(value = process.env.AI_PROVIDER) {
   const provider = String(value || 'auto').trim().toLowerCase();
-  return ['auto', 'local', 'gemini', 'openai'].includes(provider) ? provider : 'auto';
+  return ['auto', 'local', 'groq', 'gemini', 'openai'].includes(provider) ? provider : 'auto';
 }
 
 function isAiFeatureEnabled() {
@@ -60,10 +68,12 @@ function getConfiguredProvider() {
 
   const selected = normalizeProvider();
   if (selected === 'local') return null;
+  if (selected === 'groq' && hasProviderKey('groq')) return 'groq';
   if (selected === 'gemini' && hasProviderKey('gemini')) return 'gemini';
   if (selected === 'openai' && hasProviderKey('openai')) return 'openai';
 
   if (selected === 'auto') {
+    if (hasProviderKey('groq')) return 'groq';
     if (hasProviderKey('gemini')) return 'gemini';
     if (hasProviderKey('openai')) return 'openai';
   }
@@ -111,11 +121,13 @@ function getAiProviderStatus() {
     };
   }
 
-  const missing = selected === 'gemini'
-    ? 'GEMINI_API_KEY'
-    : selected === 'openai'
-      ? 'OPENAI_API_KEY'
-      : 'GEMINI_API_KEY ou OPENAI_API_KEY';
+  const missing = selected === 'groq'
+    ? 'GROQ_API_KEY'
+    : selected === 'gemini'
+      ? 'GEMINI_API_KEY'
+      : selected === 'openai'
+        ? 'OPENAI_API_KEY'
+        : 'GROQ_API_KEY, GEMINI_API_KEY ou OPENAI_API_KEY';
 
   return {
     enabled: true,
@@ -140,6 +152,25 @@ function safeJsonParse(text) {
     if (!match) return null;
     try { return JSON.parse(match[0]); } catch { return null; }
   }
+}
+
+function toFriendlyAiError(error) {
+  const message = String(error?.message || 'A IA externa não respondeu.');
+  const lower = message.toLowerCase();
+
+  if (lower.includes('quota') || lower.includes('rate limit') || lower.includes('limit')) {
+    return 'O provedor de IA atingiu limite de uso ou cota. Usei uma variação local automaticamente.';
+  }
+
+  if (lower.includes('api key') || lower.includes('authentication') || lower.includes('unauthorized') || lower.includes('invalid')) {
+    return 'A chave do provedor de IA parece inválida ou sem permissão. Usei uma variação local automaticamente.';
+  }
+
+  if (lower.includes('model') || lower.includes('not found')) {
+    return 'O modelo de IA configurado não está disponível. Usei uma variação local automaticamente.';
+  }
+
+  return 'A IA externa ficou indisponível no momento. Usei uma variação local automaticamente.';
 }
 
 function compactLeadForPrompt(leadContext = {}) {
@@ -395,6 +426,55 @@ async function generateWithGemini({ leadContext, localRecommendation, regenerate
   }
 }
 
+
+async function generateWithGroq({ leadContext, localRecommendation, regenerateKey, previousApproach = '' }) {
+  if (!hasProviderKey('groq')) return null;
+
+  const provider = 'groq';
+  const model = getProviderModel(provider);
+  const prompt = buildPrompt({ leadContext, localRecommendation, regenerateKey, previousApproach });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), Number(process.env.AI_APPROACH_TIMEOUT_MS || 20000));
+
+  try {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      signal: controller.signal,
+      headers: {
+        Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model,
+        temperature: Number(process.env.AI_APPROACH_TEMPERATURE || 0.9),
+        max_completion_tokens: Number(process.env.AI_MAX_TOKENS || 1400),
+        response_format: { type: 'json_object' },
+        messages: [
+          {
+            role: 'system',
+            content: 'Você gera abordagens comerciais éticas, consultivas e personalizadas. Retorne somente JSON válido.'
+          },
+          { role: 'user', content: prompt }
+        ]
+      })
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      const error = new Error(data?.error?.message || 'Falha ao gerar abordagem com Groq.');
+      error.status = response.status;
+      error.data = data;
+      throw error;
+    }
+
+    const content = data?.choices?.[0]?.message?.content || '';
+    const parsed = safeJsonParse(content);
+    return normalizeAiResult({ parsed, provider, model, localRecommendation });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 async function generateWithOpenAI({ leadContext, localRecommendation, regenerateKey, previousApproach = '' }) {
   if (!hasProviderKey('openai')) return null;
 
@@ -440,6 +520,7 @@ async function generateWithOpenAI({ leadContext, localRecommendation, regenerate
 
 async function generateWithConfiguredProvider(args) {
   const provider = getConfiguredProvider();
+  if (provider === 'groq') return generateWithGroq(args);
   if (provider === 'gemini') return generateWithGemini(args);
   if (provider === 'openai') return generateWithOpenAI(args);
   return null;
@@ -459,10 +540,11 @@ async function generateAiEnhancedApproach({ leadContext, localRecommendation, re
       providerLabel: 'Motor Local',
       model: 'local',
       aiStatus: status,
-      aiError: error.message,
+      aiError: toFriendlyAiError(error),
+      aiTechnicalError: error.message,
       explanation: [
         ...(localRecommendation.explanation || []),
-        `IA externa indisponível: ${error.message}. Foi usada uma abordagem local variada.`
+        `${toFriendlyAiError(error)} Foi usada uma abordagem local variada.`
       ]
     };
   }
@@ -488,5 +570,6 @@ module.exports = {
   buildPrompt,
   safeJsonParse,
   pickBestGeminiModel,
-  listGeminiModels
+  listGeminiModels,
+  toFriendlyAiError
 };

@@ -224,9 +224,21 @@ Este projeto deve ser apresentado como um case Full Stack SaaS com foco em prosp
 
 O sistema funciona sem IA externa usando o motor local de estratégias. Para gerar abordagens mais naturais e personalizadas por lead, configure um provedor de IA.
 
-#### Opção recomendada: Google Gemini
+#### Opção recomendada: GroqCloud
 
 No Render, adicione estas variáveis em **Environment Variables**:
+
+```env
+AI_PROVIDER=groq
+GROQ_API_KEY=sua_chave_groq
+GROQ_MODEL=llama-3.3-70b-versatile
+AI_APPROACHES_ENABLED=true
+AI_APPROACH_TIMEOUT_MS=20000
+AI_APPROACH_TEMPERATURE=0.85
+AI_MAX_TOKENS=1200
+```
+
+#### Gemini opcional
 
 ```env
 AI_PROVIDER=gemini
@@ -234,9 +246,6 @@ GEMINI_API_KEY=sua_chave_do_google_ai_studio
 GEMINI_MODEL=gemini-2.0-flash
 GEMINI_AUTO_MODEL=true
 AI_APPROACHES_ENABLED=true
-AI_APPROACH_TIMEOUT_MS=20000
-AI_APPROACH_TEMPERATURE=0.85
-AI_MAX_TOKENS=1200
 ```
 
 #### OpenAI opcional
@@ -248,11 +257,8 @@ OPENAI_APPROACH_MODEL=gpt-4o-mini
 AI_APPROACHES_ENABLED=true
 ```
 
+Também é possível usar `AI_PROVIDER=auto`; nesse modo, o sistema tenta Groq primeiro, depois Gemini, depois OpenAI e, se nada estiver configurado, usa o motor local.
 
-> Dica: se o modelo configurado não estiver disponível para sua chave/API, o sistema consulta a lista de modelos compatíveis com `generateContent` e escolhe automaticamente um modelo Flash válido. Deixe `GEMINI_AUTO_MODEL=true` para manter esse comportamento no Render.
+Na interface, a lateral mostra o status da **IA Comercial**. Cada abordagem também exibe o motor utilizado: Groq, Gemini, OpenAI, fallback local ou motor local.
 
-Também é possível usar `AI_PROVIDER=auto`; nesse modo, o sistema tenta Gemini primeiro, depois OpenAI e, se nada estiver configurado, usa o motor local.
-
-Na interface, a lateral mostra o status da **IA Comercial**. Cada abordagem também exibe o motor utilizado: Gemini, OpenAI, fallback local ou motor local.
-
-Quando a IA estiver indisponível, o sistema volta automaticamente para o motor local com variações.
+Quando a IA estiver indisponível, o sistema volta automaticamente para o motor local com variações e mostra uma mensagem amigável ao usuário.
