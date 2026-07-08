@@ -40,17 +40,22 @@ const kanbanBoard = document.querySelector('#kanbanBoard');
 const filterStatus = document.querySelector('#filterStatus');
 const filterFavorite = document.querySelector('#filterFavorite');
 const searchLead = document.querySelector('#searchLead');
+const dashboardFunnel = document.querySelector('#dashboardFunnel');
+const dashboardInsights = document.querySelector('#dashboardInsights');
+const agendaList = document.querySelector('#agendaList');
+const leadDetailPanel = document.querySelector('#leadDetailPanel');
 
 let authToken = localStorage.getItem('authToken') || '';
 let currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
 let lastLeads = [];
 
 const PIPELINE = [
-  { key: 'NOVO', label: 'Novo lead', hint: 'Oportunidade encontrada' },
-  { key: 'CONTATADO', label: 'Contato enviado', hint: 'Primeira abordagem feita' },
-  { key: 'INTERESSADO', label: 'Respondeu', hint: 'Lead demonstrou interesse' },
-  { key: 'PROPOSTA', label: 'Proposta', hint: 'Orçamento ou reunião' },
-  { key: 'FECHADO', label: 'Fechado', hint: 'Cliente convertido' }
+  { key: 'NOVO', label: 'Novo lead', hint: 'Encontrado, ainda sem contato' },
+  { key: 'CONTATADO', label: 'Contato realizado', hint: 'WhatsApp, ligação ou e-mail enviado' },
+  { key: 'INTERESSADO', label: 'Interesse', hint: 'Respondeu ou pediu mais detalhes' },
+  { key: 'PROPOSTA', label: 'Proposta enviada', hint: 'Orçamento ou reunião encaminhada' },
+  { key: 'FECHADO', label: 'Fechado', hint: 'Virou cliente' },
+  { key: 'SEM_INTERESSE', label: 'Perdido', hint: 'Sem interesse ou descartado' }
 ];
 
 bootAuth();
@@ -189,9 +194,9 @@ loadSaved.addEventListener('click', async (event) => {
   event.preventDefault();
   await window.forceLoadSavedLeads();
 });
-filterStatus.addEventListener('change', loadSavedLeads);
-filterFavorite.addEventListener('change', loadSavedLeads);
-searchLead.addEventListener('input', debounce(loadSavedLeads, 350));
+filterStatus.addEventListener('change', () => carregarLeadsCRM());
+filterFavorite.addEventListener('change', () => carregarLeadsCRM());
+searchLead.addEventListener('input', debounce(() => carregarLeadsCRM(), 350));
 
 async function authRequest(url, payload) {
   statusBox.innerHTML = '<p class="loading">Validando acesso...</p>';
@@ -300,6 +305,7 @@ function switchView(view) {
   if (view === 'dashboard') loadSavedLeads(false, { renderCards: false });
   if (view === 'historico') loadHistory();
   if (view === 'planos') renderPlans();
+  if (view === 'agenda') loadAgenda();
   if (view === 'campanhas') { loadAutomationActions(); loadFollowups(); }
 }
 
@@ -436,6 +442,7 @@ async function loadSavedLeads(showLoading = true, options = {}) {
       results.hidden = true;
     }
     renderExecutiveStats(lastLeads);
+    renderDashboardExtras(lastLeads);
     renderKanban(lastLeads);
     renderActivityTimeline(lastLeads);
     renderOnboarding();
@@ -450,19 +457,85 @@ async function loadSavedLeads(showLoading = true, options = {}) {
   }
 }
 
+function countByStatus(leads) {
+  const base = PIPELINE.reduce((acc, item) => ({ ...acc, [item.key]: 0 }), {});
+  (Array.isArray(leads) ? leads : []).forEach((lead) => {
+    const status = normalizeStatus(lead.status);
+    base[status] = Number(base[status] || 0) + 1;
+  });
+  return base;
+}
+
+function getLastInteraction(lead) {
+  const interactions = Array.isArray(lead?.interacoes) ? lead.interacoes : [];
+  return interactions.length ? interactions[interactions.length - 1] : null;
+}
+
+function daysSince(value) {
+  const date = value ? new Date(value) : null;
+  if (!date || Number.isNaN(date.getTime())) return null;
+  return Math.floor((Date.now() - date.getTime()) / 86400000);
+}
+
+function renderDashboardExtras(leads) {
+  leads = Array.isArray(leads) ? leads : [];
+  const counts = countByStatus(leads);
+  if (dashboardFunnel) {
+    const max = Math.max(...Object.values(counts), 1);
+    dashboardFunnel.innerHTML = PIPELINE.map((step) => {
+      const value = counts[step.key] || 0;
+      const width = Math.max(6, Math.round((value / max) * 100));
+      return `
+        <article class="funnel-row">
+          <div><strong>${escapeHtml(step.label)}</strong><small>${escapeHtml(step.hint)}</small></div>
+          <div class="funnel-meter"><span style="width:${width}%"></span></div>
+          <b>${value}</b>
+        </article>
+      `;
+    }).join('');
+  }
+
+  if (dashboardInsights) {
+    const hot = leads.filter((lead) => Number(lead.score || 0) >= 80).slice(0, 3);
+    const stalled = leads.filter((lead) => {
+      const last = getLastInteraction(lead);
+      const age = daysSince(last?.data || lead.coletadoEm);
+      return age !== null && age >= 7 && !['FECHADO','SEM_INTERESSE'].includes(normalizeStatus(lead.status));
+    }).slice(0, 3);
+    const items = [
+      ...hot.map((lead) => ({ type: 'Lead quente', lead, message: 'Priorize contato ainda hoje.' })),
+      ...stalled.map((lead) => ({ type: 'Parado', lead, message: 'Sem atividade recente; agende follow-up.' }))
+    ];
+    dashboardInsights.innerHTML = items.length ? items.map((item) => {
+      const leadId = getLeadId(item.lead);
+      return `
+        <article class="history-item">
+          <div><strong>${escapeHtml(item.type)}: ${escapeHtml(item.lead.nome || 'Lead')}</strong><p>${escapeHtml(item.message)}</p><small>Status: ${escapeHtml(normalizeStatus(item.lead.status))}</small></div>
+          <button type="button" class="secondary" onclick="openLeadDetail('${escapeAttr(leadId)}')">Abrir ficha</button>
+        </article>
+      `;
+    }).join('') : '<p class="meta">Nenhuma prioridade crítica. Continue prospectando ou movendo leads no CRM.</p>';
+  }
+}
+
 function renderExecutiveStats(leads) {
   if (!executiveStats) return;
   leads = Array.isArray(leads) ? leads : [];
   const total = leads.length;
   const hot = leads.filter((lead) => Number(lead.score || 0) >= 80).length;
-  const contacted = leads.filter((lead) => ['CONTATADO', 'INTERESSADO', 'REUNIAO', 'PROPOSTA', 'FECHADO'].includes(lead.status)).length;
+  const contacted = leads.filter((lead) => ['CONTATADO', 'INTERESSADO', 'REUNIAO', 'PROPOSTA', 'FECHADO'].includes(normalizeStatus(lead.status))).length;
+  const proposals = leads.filter((lead) => normalizeStatus(lead.status) === 'PROPOSTA').length;
+  const closed = leads.filter((lead) => normalizeStatus(lead.status) === 'FECHADO').length;
   const potential = leads.reduce((sum, lead) => sum + estimateTicket(lead.ticketEstimado), 0);
-  const rate = total ? Math.round((contacted / total) * 100) : 0;
+  const contactRate = total ? Math.round((contacted / total) * 100) : 0;
+  const closeRate = total ? Math.round((closed / total) * 100) : 0;
 
   executiveStats.innerHTML = `
-    <article><small>Leads encontrados</small><strong>${total}</strong><span>Base atual do CRM</span></article>
+    <article><small>Leads no CRM</small><strong>${total}</strong><span>Base comercial salva</span></article>
     <article><small>Alta prioridade</small><strong>${hot}</strong><span>Score acima de 80</span></article>
-    <article><small>Taxa de contato</small><strong>${rate}%</strong><span>${contacted} contatos iniciados</span></article>
+    <article><small>Taxa de contato</small><strong>${contactRate}%</strong><span>${contacted} contatos iniciados</span></article>
+    <article><small>Propostas</small><strong>${proposals}</strong><span>em negociação</span></article>
+    <article><small>Clientes fechados</small><strong>${closed}</strong><span>${closeRate}% de conversão geral</span></article>
     <article><small>Potencial estimado</small><strong>${formatMoney(potential)}</strong><span>Somatório aproximado</span></article>
   `;
 }
@@ -494,7 +567,7 @@ function renderKanbanCard(lead) {
       <strong>${escapeHtml(lead.nome)}</strong>
       <p>${escapeHtml(lead.segmentoComercial || lead.tipo || 'Segmento não informado')}</p>
       <div class="score-line"><span>${scoreStars(lead.score)}</span><b>${lead.score || 0}/100</b></div>
-      <button type="button" class="secondary mini" onclick="focusLead('${escapeAttr(leadId)}')">Ver lead</button>
+      <button type="button" class="secondary mini" onclick="openLeadDetail('${escapeAttr(leadId)}')">Abrir ficha</button>
     </article>
   `;
 }
@@ -508,11 +581,55 @@ async function dropLead(event, status) {
   try {
     await markStatus(leadId, status);
     statusBox.innerHTML = `<p>Status atualizado para ${escapeHtml(status)}.</p>`;
-    await loadSavedLeads(false);
+    await carregarLeadsCRM();
   } catch (error) {
     showError(error.message);
   }
 }
+
+function openLeadDetail(leadId) {
+  if (!document.querySelector('#view-crm')?.classList.contains('active-view')) {
+    switchView('crm');
+  }
+  const lead = (Array.isArray(lastLeads) ? lastLeads : []).find((item) => String(getLeadId(item)) === String(leadId));
+  if (!leadDetailPanel) return;
+  if (!lead) {
+    leadDetailPanel.innerHTML = '<h3>Detalhe do lead</h3><p class="meta">Carregue o CRM e selecione um lead.</p>';
+    return;
+  }
+
+  const interactions = Array.isArray(lead.interacoes) ? lead.interacoes.slice().reverse() : [];
+  const whatsapp = makeWhatsAppLink(lead);
+  leadDetailPanel.innerHTML = `
+    <div class="lead-detail-head">
+      <div><p class="tag dark">${escapeHtml(normalizeStatus(lead.status))}</p><h3>${escapeHtml(lead.nome || 'Lead')}</h3><p class="meta">${escapeHtml(lead.segmentoComercial || lead.tipo || 'Segmento não informado')}</p></div>
+      <span class="score-badge">${Number(lead.score || 0)}/100</span>
+    </div>
+    <div class="detail-grid">
+      <p><strong>Telefone</strong><span>${escapeHtml(lead.telefone || 'Não informado')}</span></p>
+      <p><strong>Endereço</strong><span>${escapeHtml(lead.endereco || 'Não informado')}</span></p>
+      <p><strong>Ticket</strong><span>${escapeHtml(lead.ticketEstimado || '-')}</span></p>
+      <p><strong>Probabilidade</strong><span>${escapeHtml(lead.probabilidade || '-')}</span></p>
+    </div>
+    <div class="links">
+      ${lead.site ? `<a href="${escapeAttr(lead.site)}" target="_blank" rel="noopener">Site</a>` : ''}
+      ${lead.maps ? `<a href="${escapeAttr(lead.maps)}" target="_blank" rel="noopener">Maps</a>` : ''}
+      ${whatsapp ? `<a href="${escapeAttr(whatsapp)}" target="_blank" onclick="markStatus('${escapeAttr(leadId)}','CONTATADO')">WhatsApp</a>` : ''}
+    </div>
+    <div class="links">
+      <button type="button" class="secondary" onclick="updateStatus('${escapeAttr(leadId)}','CONTATADO')">Contato feito</button>
+      <button type="button" class="secondary" onclick="updateStatus('${escapeAttr(leadId)}','PROPOSTA')">Proposta</button>
+      <button type="button" class="secondary" onclick="scheduleFollowup('${escapeAttr(leadId)}')">Agendar retorno</button>
+    </div>
+    <section class="timeline detail-timeline">
+      <h4>Timeline</h4>
+      ${interactions.length ? interactions.map((item) => `<article class="timeline-item"><span></span><div><strong>${escapeHtml(item.tipo || item.intencao || 'Atividade')}</strong><p>${escapeHtml(item.proximoPasso || item.status || item.mensagem || '')}</p><small>${formatDate(item.data)}</small></div></article>`).join('') : '<p class="meta">Ainda não há atividades registradas.</p>'}
+    </section>
+    <label>Notas atuais<textarea readonly>${escapeHtml(lead.notas || 'Sem notas comerciais.')}</textarea></label>
+  `;
+}
+
+window.openLeadDetail = openLeadDetail;
 
 function focusLead(leadId) {
   switchView('crm');
@@ -520,6 +637,7 @@ function focusLead(leadId) {
     const card = document.querySelector(`[data-lead-id="${CSS.escape(leadId)}"]`);
     if (card) {
       card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      openLeadDetail(leadId);
       card.classList.add('pulse');
       setTimeout(() => card.classList.remove('pulse'), 1600);
     }
@@ -926,6 +1044,7 @@ async function startAutomationSequence(leadId) {
     statusBox.innerHTML = `<p>Sequência automática criada para ${escapeHtml(data.leadName)} com ${data.tasks.length} follow-ups.</p>`;
     await loadAutomationActions();
     await loadFollowups();
+    await loadAgenda();
   } catch (error) {
     showError(error.message);
   }
@@ -989,6 +1108,7 @@ async function scheduleFollowup(leadId) {
 
     statusBox.innerHTML = `<p>Follow-up agendado para ${new Date(data.dueAt).toLocaleDateString('pt-BR')}.</p>`;
     await loadFollowups();
+    await loadAgenda();
   } catch (error) {
     showError(error.message);
   }
@@ -1024,12 +1144,44 @@ async function loadFollowups() {
   }
 }
 
+async function loadAgenda() {
+  if (!agendaList || !authToken) return;
+  agendaList.innerHTML = '<p class="loading">Carregando agenda comercial...</p>';
+  try {
+    const response = await apiFetch('/api/followups');
+    const tasks = await readJson(response);
+    if (!response.ok) throw new Error(tasks.error || 'Erro ao carregar agenda.');
+    const sorted = (Array.isArray(tasks) ? tasks : []).sort((a, b) => new Date(a.dueAt || 0) - new Date(b.dueAt || 0));
+    if (!sorted.length) {
+      agendaList.innerHTML = '<p class="meta">Nenhuma tarefa comercial agendada. Abra um lead no CRM e clique em Agendar follow-up.</p>';
+      return;
+    }
+    const today = new Date();
+    agendaList.innerHTML = sorted.map((task) => {
+      const due = new Date(task.dueAt);
+      const overdue = !task.done && due < today;
+      return `
+        <article class="agenda-item ${task.done ? 'done' : ''} ${overdue ? 'overdue' : ''}">
+          <div class="agenda-date"><strong>${due.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</strong><span>${due.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span></div>
+          <div><h4>${escapeHtml(task.title || 'Follow-up comercial')}</h4><p>${escapeHtml(task.leadName || 'Lead')}</p><small>Prioridade: ${escapeHtml(task.priority || 'MÉDIA')} · ${escapeHtml(task.automationType || 'MANUAL')}</small><p>${escapeHtml(task.message || '')}</p></div>
+          ${task.done ? '<span class="tag dark">Concluído</span>' : `<button type="button" class="secondary" onclick="completeFollowup('${escapeAttr(task.id)}')">Concluir</button>`}
+        </article>
+      `;
+    }).join('');
+  } catch (error) {
+    agendaList.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
+  }
+}
+
+window.loadAgenda = loadAgenda;
+
 async function completeFollowup(taskId) {
   try {
     const response = await apiFetch(`/api/followups/${taskId}/done`, { method: 'PATCH' });
     const data = await readJson(response);
     if (!response.ok) throw new Error(data.error);
     await loadFollowups();
+    await loadAgenda();
   } catch (error) {
     showError(error.message);
   }
@@ -1082,6 +1234,7 @@ async function carregarLeadsCRM() {
     }
 
     const leads = Array.isArray(data) ? data : [];
+    lastLeads = leads;
     window.lastLeads = leads;
 
     if (!leads.length) {
@@ -1089,11 +1242,15 @@ async function carregarLeadsCRM() {
       return;
     }
 
+    renderKanban(leads);
+    renderDashboardExtras(leads);
+    renderExecutiveStats(leads);
+
     target.innerHTML = leads.map((lead) => {
       const leadId = String(lead.placeId || lead.nome || '').replace(/'/g, "\\'");
       const score = Number(lead.score || 0);
       return `
-        <article class="lead-card">
+        <article class="lead-card" data-lead-id="${escapeAttr(leadId)}">
           <div class="lead-header">
             <div>
               <h3>${escapeHtml(lead.nome || 'Lead sem nome')}</h3>
@@ -1107,6 +1264,7 @@ async function carregarLeadsCRM() {
           <p><strong>Site:</strong> ${lead.site ? `<a href="${escapeAttr(lead.site)}" target="_blank" rel="noopener">Abrir site</a>` : 'Não informado'}</p>
 
           <div class="links">
+            <button type="button" class="secondary" onclick="openLeadDetail('${leadId}')">Abrir ficha</button>
             <button type="button" class="secondary" onclick="updateStatus('${leadId}', 'CONTATADO')">Marcar contatado</button>
             <button type="button" class="secondary" onclick="updateStatus('${leadId}', 'INTERESSADO')">Marcar interessado</button>
             <button type="button" class="secondary" onclick="generateApproach('${leadId}')">Gerar abordagem</button>
@@ -1148,6 +1306,7 @@ async function updateStatus(leadId, status) {
     await markStatus(leadId, status);
     statusBox.innerHTML = `<p>Status atualizado para ${escapeHtml(status)}.</p>`;
     await carregarLeadsCRM();
+    openLeadDetail(leadId);
     await refreshStats();
     await loadHistory();
   } catch (error) {
@@ -1157,6 +1316,9 @@ async function updateStatus(leadId, status) {
 
 window.updateStatus = updateStatus;
 
+
+window.loadAgenda = loadAgenda;
+window.openLeadDetail = openLeadDetail;
 
 function showPaymentReturnMessage() {
   const params = new URLSearchParams(window.location.search);

@@ -63,8 +63,9 @@
             <li><button class="nav-btn" type="button" data-view="prospectar">Prospectar</button></li>
             <li><button class="nav-btn" type="button" data-view="crm">CRM Kanban</button></li>
             <li><button class="nav-btn" type="button" data-view="historico">Histórico</button></li>
-            <li><button class="nav-btn" type="button" data-view="planos">Planos</button></li>
+            <li><button class="nav-btn" type="button" data-view="agenda">Agenda</button></li>
             <li><button class="nav-btn" type="button" data-view="campanhas">Campanhas</button></li>
+            <li><button class="nav-btn" type="button" data-view="planos">Planos</button></li>
           </ul>
         </nav>
         <div class="upgrade-box">
@@ -87,6 +88,16 @@
             <button type="button" onclick="switchView('prospectar')">Prospectar agora</button>
           </div>
           <div id="executiveStats" class="executive-grid"></div>
+          <div class="dashboard-analytics">
+            <section class="card-panel">
+              <div class="section-title"><h3>Funil comercial</h3><p class="meta">Acompanhe a evolução real dos leads dentro do CRM.</p></div>
+              <div id="dashboardFunnel" class="funnel-list"></div>
+            </section>
+            <section class="card-panel">
+              <div class="section-title"><h3>Prioridades da semana</h3><p class="meta">O sistema aponta onde você deve agir primeiro.</p></div>
+              <div id="dashboardInsights" class="history-list compact-list"></div>
+            </section>
+          </div>
           <section class="card-panel dashboard-info">
             <div class="section-title">
               <h3>Como interpretar este painel</h3>
@@ -96,6 +107,7 @@
               <article><strong>Prospectar</strong><span>Buscar novos negócios por segmento e região.</span></article>
               <article><strong>CRM</strong><span>Organizar leads, status, notas, abordagem e follow-up.</span></article>
               <article><strong>Histórico</strong><span>Ver somente leads que tiveram tentativa real de contato.</span></article>
+              <article><strong>Agenda</strong><span>Ver follow-ups e tarefas comerciais pendentes.</span></article>
               <article><strong>Campanhas</strong><span>Criar sequências e acompanhar retornos comerciais.</span></article>
             </div>
           </section>
@@ -146,8 +158,18 @@
             <button id="loadSaved" type="button" class="secondary" onclick="carregarLeadsCRM()">Carregar CRM</button>
             <button id="exportCsv" type="button">Exportar CSV</button>
           </div>
+          <div class="crm-workspace">
+            <section class="kanban-preview card-panel">
+              <div class="section-title"><h3>Pipeline comercial</h3><p class="meta">Arraste ou use os botões para mover cada lead entre as etapas comerciais.</p></div>
+              <div id="kanbanBoard" class="kanban-board"></div>
+            </section>
+            <aside id="leadDetailPanel" class="lead-detail card-panel">
+              <h3>Detalhe do lead</h3>
+              <p class="meta">Clique em um card do pipeline ou em “Abrir ficha” para ver telefone, links, timeline, notas e próximas ações.</p>
+            </aside>
+          </div>
           <div class="kanban-preview card-panel">
-            <div class="section-title"><h3>Leads salvos</h3><p class="meta">Aqui ficam os leads já salvos para trabalho comercial. Use os botões do card para marcar contato, gerar abordagem ou agendar retorno.</p></div>
+            <div class="section-title"><h3>Lista do CRM</h3><p class="meta">Visão detalhada para edição de status, tags, notas e abordagem.</p></div>
             <div id="crmLoadedLeads" class="grid"></div>
           </div>
         </section>
@@ -160,6 +182,27 @@
           </div>
         </section>
 
+
+
+        <section id="view-agenda" class="view">
+          <div class="dashboard-header card-panel">
+            <div>
+              <p class="tag dark">Agenda</p>
+              <h2>Agenda comercial</h2>
+              <p class="meta">Aqui ficam as tarefas de ligação, WhatsApp, proposta e retorno que você precisa executar.</p>
+            </div>
+            <button type="button" onclick="loadAgenda()">Atualizar agenda</button>
+          </div>
+          <div class="info-grid">
+            <article><strong>Hoje</strong><span>Follow-ups vencidos ou que precisam de atenção imediata.</span></article>
+            <article><strong>Próximos dias</strong><span>Retornos agendados para manter o lead aquecido.</span></article>
+            <article><strong>Concluídos</strong><span>Ações já finalizadas, mantendo histórico comercial.</span></article>
+          </div>
+          <section class="card-panel">
+            <h3>Tarefas comerciais</h3>
+            <div id="agendaList" class="agenda-list"></div>
+          </section>
+        </section>
 
         <section id="view-planos" class="view">
           <div class="dashboard-header card-panel">
@@ -207,6 +250,6 @@
       </section>
     </section>
   </main>
-  <script src="app.js?v=v18-2-ux-abas"></script>
+  <script src="app.js?v=v19-crm-profissional"></script>
 </body>
 </html>

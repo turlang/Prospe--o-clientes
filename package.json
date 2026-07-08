@@ -1,7 +1,7 @@
 {
   "name": "agente-prospeccao-real",
-  "version": "18.2.0",
-  "description": "SaaS de prospecção com abas reorganizadas por função e histórico de contatos",
+  "version": "19.0.0",
+  "description": "SaaS de prospecção com CRM profissional, dashboard executivo e agenda comercial",
   "main": "src/server.js",
   "type": "commonjs",
   "scripts": {
