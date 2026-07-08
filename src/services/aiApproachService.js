@@ -14,6 +14,8 @@
  * - auto: escolhe Groq se configurado; depois Gemini; depois OpenAI; depois motor local.
  */
 
+const { buildCommercialPrompt, normalizeMode } = require('./commercialPromptEngine');
+
 const AI_PROVIDERS = {
   groq: {
     id: 'groq',
@@ -193,45 +195,18 @@ function compactLeadForPrompt(leadContext = {}) {
   };
 }
 
-function buildPrompt({ leadContext, localRecommendation, regenerateKey, previousApproach = '' }) {
-  const lead = compactLeadForPrompt(leadContext);
-  const antiRepeat = previousApproach
-    ? `Abordagem anterior que NÃO deve ser repetida: ${previousApproach}`
-    : 'Não repita frases prontas. Crie uma versão original para esta geração.';
-
-  return [
-    'Você é um especialista em vendas B2B consultivas para negócios locais no Brasil.',
-    'Crie uma abordagem comercial curta, humana e personalizada para o lead abaixo.',
-    'A mensagem deve parecer escrita por uma pessoa que realmente analisou a empresa.',
-    'Não use promessa exagerada, não invente dados, não diga que falou com alguém e não use pressão artificial.',
-    'Evite texto genérico como “trabalho com soluções digitais”. Seja específico sobre a oportunidade observada.',
-    'A mensagem deve abrir conversa, pedir permissão e aproximar-se da realidade do negócio.',
-    'Use português do Brasil, tom profissional, simples e direto. Evite emojis em excesso.',
-    'Gere uma variação nova sempre que o campo regenerateKey mudar.',
-    antiRepeat,
-    '',
-    'Retorne SOMENTE JSON válido neste formato:',
-    '{',
-    '  "abordagem": "mensagem pronta para WhatsApp ou e-mail",',
-    '  "strategy": { "id": "consultiva|pas|aida|spin|curiosidade|diagnostico", "name": "nome da estratégia", "reason": "por que ela foi escolhida" },',
-    '  "diagnostics": { "primaryPain": "dor principal", "priority": "Alta|Média|Baixa", "opportunityTags": ["tag"] },',
-    '  "followUps": [ { "day": 3, "title": "Follow-up curto", "objective": "objetivo", "message": "mensagem" } ],',
-    '  "explanation": ["motivo da escolha", "como a mensagem se aproxima do lead"]',
-    '}',
-    '',
-    'Lead analisado:',
-    JSON.stringify(lead, null, 2),
-    '',
-    'Recomendação local de referência, apenas para contexto. Melhore e personalize:',
-    JSON.stringify({
-      strategy: localRecommendation.strategy,
-      diagnostics: localRecommendation.diagnostics,
-      abordagem: localRecommendation.abordagem
-    }, null, 2),
-    '',
-    `regenerateKey: ${regenerateKey || Date.now()}`
-  ].join('\n');
+function buildPrompt({ lead = {}, leadContext, localRecommendation, regenerateKey, previousApproach = '', mode = 'new', channel = 'generic' }) {
+  return buildCommercialPrompt({
+    lead,
+    leadContext,
+    localRecommendation,
+    regenerateKey,
+    previousApproach,
+    mode: normalizeMode(mode),
+    channel
+  });
 }
+
 
 function normalizeAiResult({ parsed, provider, model, localRecommendation, resolvedModelInfo = null }) {
   if (!parsed || !parsed.abordagem) {
@@ -255,7 +230,8 @@ function normalizeAiResult({ parsed, provider, model, localRecommendation, resol
       : localRecommendation.followUps,
     explanation: Array.isArray(parsed.explanation) && parsed.explanation.length
       ? parsed.explanation
-      : localRecommendation.explanation
+      : localRecommendation.explanation,
+    qualityChecklist: Array.isArray(parsed.qualityChecklist) ? parsed.qualityChecklist : []
   };
 }
 
@@ -385,11 +361,11 @@ async function callGeminiModel({ model, prompt, controller }) {
   return data;
 }
 
-async function generateWithGemini({ leadContext, localRecommendation, regenerateKey, previousApproach = '' }) {
+async function generateWithGemini({ lead = {}, leadContext, localRecommendation, regenerateKey, previousApproach = '', mode = 'new', channel = 'generic' }) {
   if (!hasProviderKey('gemini')) return null;
 
   const provider = 'gemini';
-  const prompt = buildPrompt({ leadContext, localRecommendation, regenerateKey, previousApproach });
+  const prompt = buildPrompt({ lead, leadContext, localRecommendation, regenerateKey, previousApproach, mode, channel });
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), Number(process.env.AI_APPROACH_TIMEOUT_MS || 25000));
   let resolved = null;
@@ -427,12 +403,12 @@ async function generateWithGemini({ leadContext, localRecommendation, regenerate
 }
 
 
-async function generateWithGroq({ leadContext, localRecommendation, regenerateKey, previousApproach = '' }) {
+async function generateWithGroq({ lead = {}, leadContext, localRecommendation, regenerateKey, previousApproach = '', mode = 'new', channel = 'generic' }) {
   if (!hasProviderKey('groq')) return null;
 
   const provider = 'groq';
   const model = getProviderModel(provider);
-  const prompt = buildPrompt({ leadContext, localRecommendation, regenerateKey, previousApproach });
+  const prompt = buildPrompt({ lead, leadContext, localRecommendation, regenerateKey, previousApproach, mode, channel });
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), Number(process.env.AI_APPROACH_TIMEOUT_MS || 20000));
 
@@ -475,12 +451,12 @@ async function generateWithGroq({ leadContext, localRecommendation, regenerateKe
   }
 }
 
-async function generateWithOpenAI({ leadContext, localRecommendation, regenerateKey, previousApproach = '' }) {
+async function generateWithOpenAI({ lead = {}, leadContext, localRecommendation, regenerateKey, previousApproach = '', mode = 'new', channel = 'generic' }) {
   if (!hasProviderKey('openai')) return null;
 
   const provider = 'openai';
   const model = getProviderModel(provider);
-  const prompt = buildPrompt({ leadContext, localRecommendation, regenerateKey, previousApproach });
+  const prompt = buildPrompt({ lead, leadContext, localRecommendation, regenerateKey, previousApproach, mode, channel });
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), Number(process.env.AI_APPROACH_TIMEOUT_MS || 20000));
 
@@ -526,11 +502,11 @@ async function generateWithConfiguredProvider(args) {
   return null;
 }
 
-async function generateAiEnhancedApproach({ leadContext, localRecommendation, regenerateKey, previousApproach = '' }) {
+async function generateAiEnhancedApproach({ lead = {}, leadContext, localRecommendation, regenerateKey, previousApproach = '', mode = 'new', channel = 'generic' }) {
   const status = getAiProviderStatus();
 
   try {
-    const ai = await generateWithConfiguredProvider({ leadContext, localRecommendation, regenerateKey, previousApproach });
+    const ai = await generateWithConfiguredProvider({ lead, leadContext, localRecommendation, regenerateKey, previousApproach, mode, channel });
     if (ai) return { ...ai, aiStatus: { ...status, model: ai.model, resolvedModelInfo: ai.resolvedModelInfo || null } };
   } catch (error) {
     return {

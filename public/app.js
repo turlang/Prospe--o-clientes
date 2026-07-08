@@ -669,7 +669,7 @@ function openLeadDetail(leadId) {
       <button type="button" class="secondary" onclick="updateStatus('${escapeAttr(leadId)}','CONTATADO')">Contato feito</button>
       <button type="button" class="secondary" onclick="updateStatus('${escapeAttr(leadId)}','INTERESSADO')">Interessado</button>
       <button type="button" class="secondary" onclick="updateStatus('${escapeAttr(leadId)}','PROPOSTA')">Proposta</button>
-      <button type="button" class="secondary" onclick="generateApproach('${escapeAttr(leadId)}', 'new')">🧠 Gerar melhor abordagem</button>
+      <button type="button" class="secondary" onclick="generateApproach('${escapeAttr(leadId)}', 'new')">🧠 Consultor IA</button>
       <button type="button" class="secondary" onclick="scheduleFollowup('${escapeAttr(leadId)}')">Agendar retorno</button>
     </div>
     <pre id="approach-modal-${escapeAttr(leadId)}" class="msg crm-approach-output"></pre>
@@ -765,7 +765,7 @@ function renderLead(lead) {
       <label>Notas comerciais<textarea id="notes-${escapeAttr(leadId)}" placeholder="Ex: respondeu rápido, pedir orçamento, retornar sexta...">${escapeHtml(lead.notas || '')}</textarea></label>
       <div class="links">
         <button type="button" class="secondary" onclick="saveLeadMeta('${escapeAttr(leadId)}')">Salvar CRM</button>
-        <button type="button" class="approach-btn" onclick="generateApproach('${escapeAttr(leadId)}', 'new')">🧠 Gerar melhor abordagem</button>
+        <button type="button" class="approach-btn" onclick="generateApproach('${escapeAttr(leadId)}', 'new')">🧠 Consultor IA</button>
         <button type="button" class="secondary" onclick="generateCampaign('${escapeAttr(leadId)}')">Sequência</button>
         <button type="button" class="secondary" onclick="scheduleFollowup('${escapeAttr(leadId)}')">Agendar follow-up</button>
       </div>
@@ -823,7 +823,7 @@ async function generateApproach(leadId, mode = 'new') {
   ].filter(Boolean);
 
   outputs.forEach((output) => {
-    output.textContent = 'Gerando melhor abordagem comercial...';
+    output.textContent = 'Analisando lead, histórico e estratégia comercial...';
   });
 
   try {
@@ -832,6 +832,8 @@ async function generateApproach(leadId, mode = 'new') {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         leadId,
+        mode,
+        channel: 'generic',
         regenerateKey: `${mode}-${Date.now()}-${Math.random().toString(36).slice(2)}`,
         previousApproach: approachHistory[leadId] || ''
       })
@@ -845,7 +847,7 @@ async function generateApproach(leadId, mode = 'new') {
       output.innerHTML = html;
     });
 
-    statusBox.innerHTML = `<p>Melhor abordagem gerada com estratégia ${escapeHtml(data.strategy?.name || 'comercial')}.</p>`;
+    statusBox.innerHTML = `<p>Abordagem comercial gerada com ${escapeHtml(engineLabel(data))} e estratégia ${escapeHtml(data.strategy?.name || 'comercial')}.</p>`;
   } catch (error) {
     outputs.forEach((output) => {
       output.textContent = error.message;
@@ -884,6 +886,7 @@ function renderSalesApproach(data, leadId = '') {
   const tags = Array.isArray(diagnostics.opportunityTags) ? diagnostics.opportunityTags : [];
   const followUps = Array.isArray(data.followUps) ? data.followUps : [];
   const explanation = Array.isArray(data.explanation) ? data.explanation : [];
+  const qualityChecklist = Array.isArray(data.qualityChecklist) ? data.qualityChecklist : [];
 
   return `
     <section class="strategy-output">
@@ -910,6 +913,7 @@ function renderSalesApproach(data, leadId = '') {
 
       ${tags.length ? `<p class="meta"><strong>Oportunidades:</strong> ${tags.map(escapeHtml).join(' · ')}</p>` : ''}
       ${explanation.length ? `<ul class="strategy-reasons">${explanation.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>` : ''}
+      ${qualityChecklist.length ? `<p class="meta"><strong>Qualidade:</strong> ${qualityChecklist.map(escapeHtml).join(' · ')}</p>` : ''}
 
       <h4>Mensagem pronta para enviar</h4>
       <pre class="msg strategy-message">${escapeHtml(data.abordagem || '')}</pre>

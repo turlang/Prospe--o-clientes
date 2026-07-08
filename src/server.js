@@ -412,7 +412,7 @@ app.post('/api/leads/status', requireAuth, async (req, res) => {
  */
 app.post('/api/gerar-abordagem', requireAuth, async (req, res) => {
   try {
-    const { leadId, regenerateKey, previousApproach } = req.body;
+    const { leadId, regenerateKey, previousApproach, mode = 'new', channel = 'generic' } = req.body;
     if (!leadId) return res.status(400).json({ error: 'Informe o leadId.' });
 
     const leads = await readLeads(req.user.sub);
@@ -421,11 +421,27 @@ app.post('/api/gerar-abordagem', requireAuth, async (req, res) => {
 
     const localRecommendation = buildSalesApproach(lead, { variationSeed: regenerateKey });
     const recommendation = await generateAiEnhancedApproach({
+      lead,
       leadContext: localRecommendation.leadContext,
       localRecommendation,
       regenerateKey,
-      previousApproach
+      previousApproach,
+      mode,
+      channel
     });
+
+    await updateLeadStatus(leadId, lead.status || 'NOVO', {
+      data: new Date().toISOString(),
+      tipo: recommendation.source === 'ai' ? 'ABORDAGEM_IA_GERADA' : 'ABORDAGEM_GERADA',
+      status: lead.status || 'NOVO',
+      strategy: recommendation.strategy?.name || recommendation.strategy?.id || 'comercial',
+      provider: recommendation.providerLabel || recommendation.provider || 'Motor Local',
+      model: recommendation.model || 'local',
+      modo: mode,
+      canal: channel,
+      abordagem: recommendation.abordagem,
+      resumo: `Abordagem gerada em modo ${mode} para canal ${channel}.`
+    }, req.user.sub);
 
     res.json({
       source: recommendation.source || 'local',
@@ -439,7 +455,10 @@ app.post('/api/gerar-abordagem', requireAuth, async (req, res) => {
       strategy: recommendation.strategy,
       diagnostics: recommendation.diagnostics,
       followUps: recommendation.followUps,
-      explanation: recommendation.explanation
+      explanation: recommendation.explanation,
+      qualityChecklist: recommendation.qualityChecklist || [],
+      mode,
+      channel
     });
   } catch (error) {
     res.status(500).json({ error: error.message });

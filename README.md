@@ -262,3 +262,18 @@ Também é possível usar `AI_PROVIDER=auto`; nesse modo, o sistema tenta Groq p
 Na interface, a lateral mostra o status da **IA Comercial**. Cada abordagem também exibe o motor utilizado: Groq, Gemini, OpenAI, fallback local ou motor local.
 
 Quando a IA estiver indisponível, o sistema volta automaticamente para o motor local com variações e mostra uma mensagem amigável ao usuário.
+
+#### Prompt Engine Comercial V20.6
+
+A geração de abordagem não envia apenas um texto simples para a IA. Antes da chamada ao provedor, o sistema monta um briefing comercial com:
+
+- perfil do lead;
+- maturidade digital;
+- dor principal;
+- oportunidades detectadas;
+- estratégia recomendada;
+- canal de contato;
+- histórico recente do lead;
+- abordagem anterior, quando houver.
+
+Com isso, os botões **Gerar abordagem**, **Gerar outra versão** e **Melhorar esta abordagem** produzem mensagens menos genéricas e mais próximas da realidade do lead. Cada abordagem gerada também é registrada na timeline comercial do lead para reduzir repetição nas próximas gerações.

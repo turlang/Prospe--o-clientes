@@ -1,3 +1,14 @@
+## V20.6 — Prompt Engine Comercial
+
+- Criado `src/services/commercialPromptEngine.js` para montar briefing comercial antes da chamada de IA.
+- O prompt agora considera perfil do lead, maturidade digital, oportunidade, estratégia, canal, modo de geração e memória comercial.
+- A IA passa a receber regras explícitas para evitar clichês, propaganda agressiva e informações inventadas.
+- `Gerar outra versão` agora envia instruções para mudar abertura, argumento e CTA, evitando repetição da abordagem anterior.
+- `Melhorar esta abordagem` usa a mensagem anterior como base para uma versão mais específica e natural.
+- Cada abordagem gerada é registrada na timeline do lead como `ABORDAGEM_IA_GERADA` ou `ABORDAGEM_GERADA`.
+- Frontend atualizado para exibir checklist de qualidade quando o provedor retornar esse campo.
+- Testes adicionados para o Prompt Engine Comercial.
+
 ## V20.5 — Groq como provedor recomendado de IA
 
 - Adicionado suporte ao GroqCloud via `GROQ_API_KEY`.
