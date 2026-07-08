@@ -18,3 +18,8 @@ test('JWT_SECRET padrão é bloqueado em produção', () => {
   assert.match(auth, /JWT_SECRET obrigatório em produção/);
   assert.match(auth, /NODE_ENV/);
 });
+
+
+test('frontend legado com onclick permanece funcional sob CSP', () => {
+  assert.match(server, /scriptSrc:\s*\["'self'",\s*"'unsafe-inline'"\]/);
+});
