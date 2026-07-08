@@ -57,6 +57,7 @@
           <button id="logout" type="button" class="secondary logout-top">Sair</button>
         </div>
         <div id="usageBox" class="usage-box"></div>
+        <div id="aiStatusBox" class="ai-status-box"></div>
         <nav aria-label="Menu principal">
           <ul class="nav-list">
             <li><button class="nav-btn active" type="button" data-view="dashboard">Visão geral</button></li>
@@ -140,7 +141,7 @@
             <div>
               <p class="tag dark">CRM</p>
               <h2>Gestão dos leads salvos</h2>
-              <p class="meta">Use esta aba para acompanhar cada oportunidade depois da prospecção: status, abordagem, notas e próximos contatos.</p>
+              <p class="meta">Use esta aba para acompanhar cada oportunidade no pipeline comercial. Clique em um card para abrir a ficha completa do lead em popup.</p>
             </div>
           </div>
           <div class="info-grid crm-purpose">
@@ -155,22 +156,18 @@
             <label for="filterStatus">Status</label>
             <select id="filterStatus" name="filterStatus"><option value="">Todos</option><option>NOVO</option><option>CONTATADO</option><option>INTERESSADO</option><option>PROPOSTA</option><option>FECHADO</option><option>SEM_INTERESSE</option></select>
             <label class="check" for="filterFavorite"><input id="filterFavorite" name="filterFavorite" type="checkbox" /> Favoritos</label>
-            <button id="loadSaved" type="button" class="secondary" onclick="carregarLeadsCRM()">Carregar CRM</button>
+            <button id="loadSaved" type="button" class="secondary" onclick="carregarLeadsCRM()">Atualizar pipeline</button>
             <button id="exportCsv" type="button">Exportar CSV</button>
           </div>
           <div class="crm-workspace">
             <section class="kanban-preview card-panel">
-              <div class="section-title"><h3>Pipeline comercial</h3><p class="meta">Arraste ou use os botões para mover cada lead entre as etapas comerciais.</p></div>
+              <div class="section-title"><h3>Pipeline comercial</h3><p class="meta">Arraste os cards entre as etapas. Clique em um lead para abrir a ficha completa, gerar abordagem e agendar follow-up.</p></div>
               <div id="kanbanBoard" class="kanban-board"></div>
             </section>
             <aside id="leadDetailPanel" class="lead-detail card-panel">
               <h3>Ficha do lead</h3>
               <p class="meta">Clique em qualquer card do pipeline para abrir a ficha completa em popup.</p>
             </aside>
-          </div>
-          <div class="kanban-preview card-panel">
-            <div class="section-title"><h3>Lista do CRM</h3><p class="meta">Visão detalhada para edição de status, tags, notas e abordagem.</p></div>
-            <div id="crmLoadedLeads" class="grid"></div>
           </div>
         </section>
 

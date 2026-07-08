@@ -36,7 +36,7 @@ const {
 } = require('./services/billingService');
 const { writeAdminAudit } = require('./services/adminAuditService');
 const { buildSalesApproach } = require('./services/salesStrategyEngine');
-const { generateAiEnhancedApproach } = require('./services/aiApproachService');
+const { generateAiEnhancedApproach, getAiProviderStatus } = require('./services/aiApproachService');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -125,6 +125,10 @@ app.use('/api/auth', authRoutes);
 
 app.get('/api/plans', (_req, res) => {
   res.json(getAllPlans());
+});
+
+app.get('/api/ai/status', requireAuth, (_req, res) => {
+  res.json(getAiProviderStatus());
 });
 
 app.get('/api/billing/usage', requireAuth, async (req, res) => {
@@ -424,7 +428,10 @@ app.post('/api/gerar-abordagem', requireAuth, async (req, res) => {
 
     res.json({
       source: recommendation.source || 'local',
+      provider: recommendation.provider || 'local',
+      providerLabel: recommendation.providerLabel || 'Motor Local',
       model: recommendation.model || null,
+      aiStatus: recommendation.aiStatus || getAiProviderStatus(),
       aiError: recommendation.aiError || null,
       abordagem: recommendation.abordagem,
       strategy: recommendation.strategy,

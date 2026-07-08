@@ -1,5 +1,18 @@
 # Changelog
 
+## 20.3.0 — Gemini e transparência da IA
+
+### Adicionado
+- Suporte a Google Gemini via `AI_PROVIDER=gemini`, `GEMINI_API_KEY` e `GEMINI_MODEL`.
+- Endpoint autenticado `/api/ai/status` para mostrar qual motor está ativo.
+- Status visual da IA Comercial na lateral do dashboard.
+- Identificação do motor usado em cada abordagem: Gemini, OpenAI, fallback local ou motor local.
+- Testes automatizados para seleção de provedor e status do Gemini.
+
+### Alterado
+- Camada de IA agora usa um gerenciador de provedores com modo `auto`, `gemini`, `openai` ou `local`.
+- Documentação e `.env.example` atualizados com configuração para Render.
+
 ## 20.0.0 — CRM Comercial Inteligente — Sprint 1
 
 ### Adicionado

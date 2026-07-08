@@ -1,3 +1,14 @@
+# Release Notes
+
+## V20.3 — Gemini e IA Comercial transparente
+
+- Adicionado suporte ao Google Gemini como provedor principal de IA generativa.
+- Mantido suporte a OpenAI e fallback local.
+- Criado endpoint `/api/ai/status` para informar provedor, modelo e motivo do modo ativo.
+- Adicionado painel lateral de status da IA Comercial.
+- Cada abordagem agora mostra explicitamente se foi gerada por Gemini, OpenAI, fallback local ou motor local.
+- Atualizados README e `.env.example` com instruções para configurar no Render.
+
 # Release Notes — LeadHunter Pro
 
 Histórico consolidado das versões antigas. Os arquivos `RELEASE_V*.md` foram unificados aqui para manter a raiz do projeto limpa.

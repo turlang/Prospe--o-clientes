@@ -26,6 +26,7 @@ const exportCsv = document.querySelector('#exportCsv');
 const welcome = document.querySelector('#welcome');
 const planInfo = document.querySelector('#planInfo');
 const usageBox = document.querySelector('#usageBox');
+const aiStatusBox = document.querySelector('#aiStatusBox');
 const plansGrid = document.querySelector('#plansGrid');
 const statsBox = document.querySelector('#stats');
 const executiveStats = document.querySelector('#executiveStats');
@@ -267,6 +268,7 @@ async function showDashboard() {
 
   renderOnboarding();
   await refreshUsage();
+  await refreshAiStatus();
   await renderPlans();
   await refreshStats();
   await loadSavedLeads(false, { renderCards: false });
@@ -344,6 +346,27 @@ async function refreshStats() {
     `;
   } catch {
     statsBox.innerHTML = '';
+  }
+}
+
+
+async function refreshAiStatus() {
+  if (!aiStatusBox) return;
+
+  try {
+    const response = await apiFetch('/api/ai/status');
+    const data = await readJson(response);
+    if (!response.ok) throw new Error(data.error || 'Erro ao consultar IA.');
+
+    const isExternal = data.provider && data.provider !== 'local' && data.configured;
+    aiStatusBox.innerHTML = `
+      <small>IA Comercial</small>
+      <strong>${isExternal ? '🟢 ' : '🟡 '}${escapeHtml(data.providerLabel || 'Motor Local')}</strong>
+      <span>${escapeHtml(data.model || 'local')}</span>
+      <em>${escapeHtml(data.reason || '')}</em>
+    `;
+  } catch {
+    aiStatusBox.innerHTML = '<small>IA Comercial</small><strong>🟡 Motor Local</strong><span>Status indisponível</span>';
   }
 }
 
@@ -825,6 +848,29 @@ async function generateApproach(leadId) {
   }
 }
 
+
+function engineLabel(data) {
+  if (data.source === 'ai') return `IA ${data.providerLabel || data.provider || 'generativa'}`;
+  if (data.source === 'local-fallback') return 'Fallback local';
+  return 'Motor local';
+}
+
+function renderEngineDetails(data) {
+  const status = data.aiStatus || {};
+  const provider = data.providerLabel || status.providerLabel || engineLabel(data);
+  const model = data.model || status.model || 'local';
+  const reason = data.source === 'ai'
+    ? `Gerado por ${provider}. Modelo: ${model}.`
+    : (status.reason || 'Nenhuma IA externa configurada; foi usado o motor local.');
+
+  return `
+    <div class="engine-details">
+      <strong>${escapeHtml(engineLabel(data))}</strong>
+      <span>${escapeHtml(reason)}</span>
+    </div>
+  `;
+}
+
 function renderSalesApproach(data) {
   const diagnostics = data.diagnostics || {};
   const tags = Array.isArray(diagnostics.opportunityTags) ? diagnostics.opportunityTags : [];
@@ -840,10 +886,11 @@ function renderSalesApproach(data) {
         </div>
         <div class="strategy-badges">
           <span class="tag dark">Prioridade ${escapeHtml(diagnostics.priority || '-')}</span>
-          <span class="tag">${data.source === 'ai' ? 'IA generativa' : data.source === 'local-fallback' ? 'Fallback local' : 'Motor local'}</span>
+          <span class="tag">${engineLabel(data)}</span>
         </div>
       </header>
 
+      ${renderEngineDetails(data)}
       ${data.aiError ? `<p class="warning">IA externa indisponível: ${escapeHtml(data.aiError)}. Usei uma variação local.</p>` : ''}
 
       <div class="strategy-diagnostics">
@@ -1293,25 +1340,26 @@ async function completeFollowup(taskId) {
 
 
 
-// Botão Carregar do CRM - implementação independente e visível.
+// Carrega os leads salvos diretamente no pipeline comercial.
+// A aba CRM não exibe mais uma lista duplicada: o pipeline é a visão principal,
+// e a ficha completa do lead abre em popup ao clicar em um card.
 async function carregarLeadsCRM() {
-  const target = document.querySelector('#crmLoadedLeads') || document.querySelector('#results');
   const token = localStorage.getItem('authToken');
+  const board = document.querySelector('#kanbanBoard');
 
   console.log('[CRM] carregarLeadsCRM acionado');
 
-  if (!target) {
-    alert('Área de listagem do CRM não encontrada.');
+  if (!board) {
+    alert('Pipeline do CRM não encontrado.');
     return;
   }
 
   if (!token) {
-    target.innerHTML = '<p class="error">Sessão expirada. Faça login novamente.</p>';
+    board.innerHTML = '<p class="error">Sessão expirada. Faça login novamente.</p>';
     return;
   }
 
-  target.hidden = false;
-  target.innerHTML = '<p class="loading">Carregando leads salvos...</p>';
+  board.innerHTML = '<p class="loading">Carregando pipeline comercial...</p>';
 
   try {
     const status = document.querySelector('#filterStatus')?.value || '';
@@ -1319,76 +1367,40 @@ async function carregarLeadsCRM() {
     const query = document.querySelector('#searchLead')?.value?.trim() || '';
 
     const params = new URLSearchParams();
-
     if (status) params.set('status', status);
     if (favorite) params.set('favorito', 'true');
     if (query) params.set('q', query);
 
     const response = await fetch(`/api/leads${params.toString() ? `?${params.toString()}` : ''}`, {
-      headers: {
-        Authorization: 'Bearer ' + token
-      }
+      headers: { Authorization: 'Bearer ' + token }
     });
 
     const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || 'Erro ao carregar leads.');
-    }
+    if (!response.ok) throw new Error(data.error || 'Erro ao carregar leads.');
 
     const leads = Array.isArray(data) ? data : [];
     lastLeads = leads;
     window.lastLeads = leads;
 
-    if (!leads.length) {
-      target.innerHTML = '<p class="empty-state">Nenhum lead encontrado com os filtros atuais.</p>';
-      return;
-    }
-
     renderKanban(leads);
     renderDashboardExtras(leads);
     renderExecutiveStats(leads);
 
-    target.innerHTML = leads.map((lead) => {
-      const leadId = String(lead.placeId || lead.nome || '').replace(/'/g, "\\'");
-      const score = Number(lead.score || 0);
-      return `
-        <article class="lead-card" data-lead-id="${escapeAttr(leadId)}">
-          <div class="lead-header">
-            <div>
-              <h3>${escapeHtml(lead.nome || 'Lead sem nome')}</h3>
-              <p class="meta">${escapeHtml(lead.endereco || 'Endereço não informado')}</p>
-            </div>
-            <span class="score-badge">${score}/100</span>
-          </div>
-
-          <p><strong>Status:</strong> ${escapeHtml(lead.status || 'NOVO')}</p>
-          <p><strong>Telefone:</strong> ${escapeHtml(lead.telefone || 'Não informado')}</p>
-          <p><strong>Site:</strong> ${lead.site ? `<a href="${escapeAttr(lead.site)}" target="_blank" rel="noopener">Abrir site</a>` : 'Não informado'}</p>
-
-          <div class="links">
-            <button type="button" class="secondary" onclick="openLeadDetail('${leadId}')">Abrir ficha</button>
-            <button type="button" class="secondary" onclick="updateStatus('${leadId}', 'CONTATADO')">Marcar contatado</button>
-            <button type="button" class="secondary" onclick="updateStatus('${leadId}', 'INTERESSADO')">Marcar interessado</button>
-            <button type="button" class="secondary" onclick="generateApproach('${leadId}')">🧠 Gerar melhor abordagem</button>
-            <button type="button" class="secondary" onclick="scheduleFollowup('${leadId}')">Agendar follow-up</button>
-          </div>
-          <pre id="approach-${leadId}" class="msg crm-approach-output"></pre>
-        </article>
-      `;
-    }).join('');
+    const detailPanel = document.querySelector('#leadDetailPanel');
+    if (detailPanel) {
+      detailPanel.innerHTML = leads.length
+        ? '<h3>Ficha do lead</h3><p class="meta">Clique em qualquer card do pipeline para abrir a ficha completa em popup.</p>'
+        : '<h3>Ficha do lead</h3><p class="meta">Nenhum lead encontrado com os filtros atuais.</p>';
+    }
 
     const statusBox = document.querySelector('#status');
     if (statusBox) {
-      statusBox.innerHTML = `<p>${leads.length} leads carregados no CRM.</p>`;
+      statusBox.innerHTML = `<p>${leads.length} leads carregados no pipeline comercial.</p>`;
     }
-
-    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
   } catch (error) {
-    target.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
+    board.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
   }
 }
-
 window.carregarLeadsCRM = carregarLeadsCRM;
 
 

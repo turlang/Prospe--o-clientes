@@ -1,7 +1,7 @@
 {
   "name": "agente-prospeccao-real",
-  "version": "20.1.0",
-  "description": "CRM comercial inteligente com IA opcional para abordagens personalizadas por lead",
+  "version": "20.3.0",
+  "description": "CRM comercial inteligente com Gemini opcional e status transparente da IA",
   "main": "src/server.js",
   "type": "commonjs",
   "scripts": {
