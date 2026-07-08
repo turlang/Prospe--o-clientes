@@ -54,6 +54,9 @@ app.use(helmet({
       // O frontend legado usa handlers inline (onclick) em vários botões.
       // Mantemos CSP ativa, mas liberamos inline scripts para preservar a UX até a migração completa para listeners externos.
       scriptSrc: ["'self'", "'unsafe-inline'"],
+      // Helmet 7 também cria script-src-attr. Sem esta diretiva,
+      // o navegador bloqueia onclick/ondrop/ondragstart do frontend legado.
+      scriptSrcAttr: ["'unsafe-inline'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", 'data:', 'https:'],
       connectSrc: ["'self'", 'https://api.mercadopago.com'],
