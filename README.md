@@ -219,3 +219,17 @@ Projeto em estágio avançado para demonstração comercial, validação de merc
 ## Posicionamento no portfólio
 
 Este projeto deve ser apresentado como um case Full Stack SaaS com foco em prospecção, CRM, assinatura, pagamentos, segurança, auditoria e inteligência comercial aplicada à venda consultiva.
+
+### IA opcional para abordagens comerciais
+
+O sistema funciona sem IA externa usando o motor local de estratégias. Para gerar abordagens mais naturais e personalizadas por lead, configure:
+
+```env
+OPENAI_API_KEY=
+OPENAI_APPROACH_MODEL=gpt-4o-mini
+AI_APPROACHES_ENABLED=true
+AI_APPROACH_TIMEOUT_MS=20000
+AI_APPROACH_TEMPERATURE=0.85
+```
+
+Quando a IA estiver indisponível, o sistema volta automaticamente para o motor local com variações.

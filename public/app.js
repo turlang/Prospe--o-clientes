@@ -806,7 +806,7 @@ async function generateApproach(leadId) {
     const response = await apiFetch('/api/gerar-abordagem', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ leadId })
+      body: JSON.stringify({ leadId, regenerateKey: `${Date.now()}-${Math.random().toString(36).slice(2)}` })
     });
     const data = await readJson(response);
     if (!response.ok) throw new Error(data.error);
@@ -838,8 +838,13 @@ function renderSalesApproach(data) {
           <small>Estratégia recomendada</small>
           <strong>${escapeHtml(data.strategy?.name || 'Abordagem consultiva')}</strong>
         </div>
-        <span class="tag dark">Prioridade ${escapeHtml(diagnostics.priority || '-')}</span>
+        <div class="strategy-badges">
+          <span class="tag dark">Prioridade ${escapeHtml(diagnostics.priority || '-')}</span>
+          <span class="tag">${data.source === 'ai' ? 'IA generativa' : data.source === 'local-fallback' ? 'Fallback local' : 'Motor local'}</span>
+        </div>
       </header>
+
+      ${data.aiError ? `<p class="warning">IA externa indisponível: ${escapeHtml(data.aiError)}. Usei uma variação local.</p>` : ''}
 
       <div class="strategy-diagnostics">
         <span>${diagnostics.hasWebsite ? 'Site ✔' : 'Sem site próprio'}</span>

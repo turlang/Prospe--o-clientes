@@ -1,13 +1,13 @@
 {
   "name": "agente-prospeccao-real",
-  "version": "20.0.0",
-  "description": "CRM comercial inteligente com motor de estratégias de abordagem e documentação consolidada",
+  "version": "20.1.0",
+  "description": "CRM comercial inteligente com IA opcional para abordagens personalizadas por lead",
   "main": "src/server.js",
   "type": "commonjs",
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "check": "node --check src/server.js && node --check src/authRoutes.js && node --check src/services/billingService.js && node --check src/services/adminAuditService.js && node --check src/services/emailService.js && node --check src/services/salesStrategyEngine.js && node --check src/middleware/admin.js && node --check src/adminPlansRoutes.js && node --check public/app.js && node --check public/admin.js && node --check src/db.js && npm test",
+    "check": "node --check src/server.js && node --check src/authRoutes.js && node --check src/services/billingService.js && node --check src/services/adminAuditService.js && node --check src/services/emailService.js && node --check src/services/salesStrategyEngine.js && node --check src/services/aiApproachService.js && node --check src/middleware/admin.js && node --check src/adminPlansRoutes.js && node --check public/app.js && node --check public/admin.js && node --check src/db.js && npm test",
     "test": "node --test tests/*.test.js"
   },
   "dependencies": {

@@ -693,3 +693,11 @@ npm run check
 ```
 
 Resultado: 17 testes aprovados.
+
+## V20.1 — Abordagem com IA opcional e variações reais
+
+- Adicionada integração opcional com IA generativa para criar abordagens mais próximas do lead.
+- O botão "Gerar melhor abordagem" agora envia uma chave de regeneração para evitar respostas idênticas.
+- O motor local ganhou variações por estratégia e segmento para funcionar mesmo sem API externa.
+- A resposta informa se veio de IA generativa, motor local ou fallback local.
+- Novas variáveis de ambiente adicionadas ao `.env.example`.

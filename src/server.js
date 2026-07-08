@@ -36,6 +36,7 @@ const {
 } = require('./services/billingService');
 const { writeAdminAudit } = require('./services/adminAuditService');
 const { buildSalesApproach } = require('./services/salesStrategyEngine');
+const { generateAiEnhancedApproach } = require('./services/aiApproachService');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -407,16 +408,24 @@ app.post('/api/leads/status', requireAuth, async (req, res) => {
  */
 app.post('/api/gerar-abordagem', requireAuth, async (req, res) => {
   try {
-    const { leadId } = req.body;
+    const { leadId, regenerateKey } = req.body;
     if (!leadId) return res.status(400).json({ error: 'Informe o leadId.' });
 
     const leads = await readLeads(req.user.sub);
     const lead = leads.find((item) => String(item.placeId || item.nome) === String(leadId));
     if (!lead) return res.status(404).json({ error: 'Lead não encontrado.' });
 
-    const recommendation = buildSalesApproach(lead);
+    const localRecommendation = buildSalesApproach(lead, { variationSeed: regenerateKey });
+    const recommendation = await generateAiEnhancedApproach({
+      leadContext: localRecommendation.leadContext,
+      localRecommendation,
+      regenerateKey
+    });
 
     res.json({
+      source: recommendation.source || 'local',
+      model: recommendation.model || null,
+      aiError: recommendation.aiError || null,
       abordagem: recommendation.abordagem,
       strategy: recommendation.strategy,
       diagnostics: recommendation.diagnostics,

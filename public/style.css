@@ -1078,3 +1078,18 @@ body.modal-open {
 .followup-sequence article p {
   margin: 4px 0;
 }
+
+.strategy-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  justify-content: flex-end;
+}
+
+.warning {
+  border: 1px solid rgba(250, 204, 21, 0.35);
+  background: rgba(250, 204, 21, 0.10);
+  color: #fde68a;
+  border-radius: 12px;
+  padding: 0.75rem 0.9rem;
+}
