@@ -896,3 +896,113 @@ a:focus-visible {
   .funnel-row, .agenda-item, .detail-grid { grid-template-columns: 1fr; }
   .lead-header, .lead-detail-head { display: grid; }
 }
+
+/* v19.3 — Pipeline compacto e ficha do lead em popup */
+.crm-workspace {
+  grid-template-columns: 1fr;
+}
+.crm-workspace .lead-detail {
+  position: static;
+  max-height: none;
+}
+.crm-workspace .kanban-board {
+  grid-template-columns: repeat(6, minmax(150px, 1fr));
+  gap: 8px;
+}
+.crm-workspace .kanban-column {
+  min-height: 0;
+  max-height: 430px;
+  padding: 8px;
+  border-radius: 14px;
+}
+.crm-workspace .kanban-column header {
+  margin-bottom: 8px;
+  gap: 8px;
+}
+.crm-workspace .kanban-column header strong {
+  font-size: .84rem;
+}
+.crm-workspace .kanban-column header small {
+  display: none;
+}
+.crm-workspace .kanban-column header span {
+  min-width: 24px;
+  height: 24px;
+  font-size: .78rem;
+}
+.crm-workspace .kanban-list {
+  gap: 7px;
+  max-height: 350px;
+  overflow-y: auto;
+  padding-right: 3px;
+}
+.crm-workspace .kanban-card {
+  padding: 8px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+.crm-workspace .kanban-card strong {
+  display: block;
+  font-size: .84rem;
+  line-height: 1.2;
+}
+.crm-workspace .kanban-card p {
+  margin: 3px 0 5px;
+  font-size: .76rem;
+  line-height: 1.2;
+}
+.crm-workspace .kanban-card .score-line {
+  font-size: .75rem;
+}
+.lead-modal[hidden] { display: none; }
+.lead-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+.lead-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, .62);
+  backdrop-filter: blur(5px);
+}
+.lead-modal-card {
+  position: relative;
+  width: min(920px, 96vw);
+  max-height: 88vh;
+  overflow: auto;
+  z-index: 1;
+  box-shadow: 0 28px 80px rgba(15, 23, 42, .35);
+}
+.modal-close {
+  position: sticky;
+  top: 0;
+  float: right;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 999px;
+  background: #0f172a;
+  color: #fff;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 2;
+}
+body.modal-open {
+  overflow: hidden;
+}
+@media (max-width: 900px) {
+  .crm-workspace .kanban-board {
+    grid-template-columns: repeat(6, minmax(150px, 72vw));
+  }
+  .lead-modal {
+    padding: 10px;
+  }
+  .lead-modal-card {
+    max-height: 92vh;
+  }
+}

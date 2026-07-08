@@ -563,11 +563,10 @@ function renderKanban(leads) {
 function renderKanbanCard(lead) {
   const leadId = getLeadId(lead);
   return `
-    <article class="kanban-card" draggable="true" ondragstart="dragLead(event, '${escapeAttr(leadId)}')">
+    <article class="kanban-card" draggable="true" onclick="openLeadDetail('${escapeAttr(leadId)}')" ondragstart="dragLead(event, '${escapeAttr(leadId)}')" title="Clique para abrir a ficha do lead">
       <strong>${escapeHtml(lead.nome)}</strong>
       <p>${escapeHtml(lead.segmentoComercial || lead.tipo || 'Segmento não informado')}</p>
       <div class="score-line"><span>${scoreStars(lead.score)}</span><b>${lead.score || 0}/100</b></div>
-      <button type="button" class="secondary mini" onclick="openLeadDetail('${escapeAttr(leadId)}')">Abrir ficha</button>
     </article>
   `;
 }
@@ -587,22 +586,48 @@ async function dropLead(event, status) {
   }
 }
 
+function ensureLeadModal() {
+  let modal = document.querySelector('#leadModal');
+  if (modal) return modal;
+
+  modal = document.createElement('div');
+  modal.id = 'leadModal';
+  modal.className = 'lead-modal';
+  modal.hidden = true;
+  modal.innerHTML = `
+    <div class="lead-modal-backdrop" onclick="closeLeadModal()"></div>
+    <section class="lead-modal-card card-panel" role="dialog" aria-modal="true" aria-labelledby="leadModalTitle">
+      <button type="button" class="modal-close" onclick="closeLeadModal()" aria-label="Fechar ficha do lead">×</button>
+      <div id="leadModalContent"></div>
+    </section>
+  `;
+  document.body.appendChild(modal);
+  return modal;
+}
+
+function closeLeadModal() {
+  const modal = document.querySelector('#leadModal');
+  if (modal) modal.hidden = true;
+  document.body.classList.remove('modal-open');
+}
+
 function openLeadDetail(leadId) {
-  if (!document.querySelector('#view-crm')?.classList.contains('active-view')) {
-    switchView('crm');
-  }
   const lead = (Array.isArray(lastLeads) ? lastLeads : []).find((item) => String(getLeadId(item)) === String(leadId));
-  if (!leadDetailPanel) return;
+  const modal = ensureLeadModal();
+  const content = modal.querySelector('#leadModalContent');
+
   if (!lead) {
-    leadDetailPanel.innerHTML = '<h3>Detalhe do lead</h3><p class="meta">Carregue o CRM e selecione um lead.</p>';
+    content.innerHTML = '<h3 id="leadModalTitle">Detalhe do lead</h3><p class="meta">Carregue o CRM e selecione um lead.</p>';
+    modal.hidden = false;
+    document.body.classList.add('modal-open');
     return;
   }
 
   const interactions = Array.isArray(lead.interacoes) ? lead.interacoes.slice().reverse() : [];
   const whatsapp = makeWhatsAppLink(lead);
-  leadDetailPanel.innerHTML = `
+  content.innerHTML = `
     <div class="lead-detail-head">
-      <div><p class="tag dark">${escapeHtml(normalizeStatus(lead.status))}</p><h3>${escapeHtml(lead.nome || 'Lead')}</h3><p class="meta">${escapeHtml(lead.segmentoComercial || lead.tipo || 'Segmento não informado')}</p></div>
+      <div><p class="tag dark">${escapeHtml(normalizeStatus(lead.status))}</p><h3 id="leadModalTitle">${escapeHtml(lead.nome || 'Lead')}</h3><p class="meta">${escapeHtml(lead.segmentoComercial || lead.tipo || 'Segmento não informado')}</p></div>
       <span class="score-badge">${Number(lead.score || 0)}/100</span>
     </div>
     <div class="detail-grid">
@@ -618,18 +643,29 @@ function openLeadDetail(leadId) {
     </div>
     <div class="links">
       <button type="button" class="secondary" onclick="updateStatus('${escapeAttr(leadId)}','CONTATADO')">Contato feito</button>
+      <button type="button" class="secondary" onclick="updateStatus('${escapeAttr(leadId)}','INTERESSADO')">Interessado</button>
       <button type="button" class="secondary" onclick="updateStatus('${escapeAttr(leadId)}','PROPOSTA')">Proposta</button>
+      <button type="button" class="secondary" onclick="generateApproach('${escapeAttr(leadId)}')">Gerar abordagem</button>
       <button type="button" class="secondary" onclick="scheduleFollowup('${escapeAttr(leadId)}')">Agendar retorno</button>
     </div>
+    <pre id="approach-modal-${escapeAttr(leadId)}" class="msg crm-approach-output"></pre>
     <section class="timeline detail-timeline">
       <h4>Timeline</h4>
       ${interactions.length ? interactions.map((item) => `<article class="timeline-item"><span></span><div><strong>${escapeHtml(item.tipo || item.intencao || 'Atividade')}</strong><p>${escapeHtml(item.proximoPasso || item.status || item.mensagem || '')}</p><small>${formatDate(item.data)}</small></div></article>`).join('') : '<p class="meta">Ainda não há atividades registradas.</p>'}
     </section>
     <label>Notas atuais<textarea readonly>${escapeHtml(lead.notas || 'Sem notas comerciais.')}</textarea></label>
   `;
+
+  if (leadDetailPanel) {
+    leadDetailPanel.innerHTML = `<h3>Ficha aberta</h3><p class="meta">A ficha de ${escapeHtml(lead.nome || 'lead')} está aberta em popup. Clique em outro card para trocar.</p>`;
+  }
+
+  modal.hidden = false;
+  document.body.classList.add('modal-open');
 }
 
 window.openLeadDetail = openLeadDetail;
+window.closeLeadModal = closeLeadModal;
 
 function focusLead(leadId) {
   switchView('crm');
@@ -1319,6 +1355,7 @@ window.updateStatus = updateStatus;
 
 window.loadAgenda = loadAgenda;
 window.openLeadDetail = openLeadDetail;
+window.closeLeadModal = closeLeadModal;
 
 function showPaymentReturnMessage() {
   const params = new URLSearchParams(window.location.search);
