@@ -8,6 +8,8 @@
  * organiza o próximo passo comercial depois que o lead demonstrou interesse.
  */
 
+const { generateAiJsonContent, getAiProviderStatus } = require('./aiApproachService');
+
 function getLeadId(lead = {}) {
   return String(lead.placeId || lead.nome || '').trim();
 }
@@ -79,6 +81,119 @@ function inferServiceFocus(lead = {}) {
   };
 }
 
+
+function buildProposalPrompt({ lead = {}, localProposal = {}, recommendation = {}, objective = '', previousProposal = '' } = {}) {
+  const company = lead.nome || 'empresa local';
+  const segment = lead.segmentoComercial || lead.tipo || lead.segmentoBuscado || 'negócio local';
+  const pains = Array.isArray(lead.dores) ? lead.dores : [];
+  const services = Array.isArray(lead.servicos) ? lead.servicos : [lead.servico].filter(Boolean);
+  const hasSite = Boolean(lead.site);
+  const hasPhone = Boolean(lead.telefone);
+
+  const briefing = {
+    empresa: company,
+    segmento: segment,
+    endereco: lead.endereco || '',
+    telefoneOuWhatsAppDisponivel: hasPhone,
+    siteIdentificado: hasSite,
+    ticketEstimado: lead.ticketEstimado || '',
+    probabilidade: lead.probabilidade || '',
+    score: lead.score || 0,
+    dores: pains,
+    servicosSugeridos: services,
+    objetivoComercial: objective || localProposal.objective || 'transformar a conversa inicial em uma proposta simples e fácil de entender',
+    abordagemGeradaAntes: recommendation.abordagem || '',
+    propostaAnterior: previousProposal || ''
+  };
+
+  const outputSchema = {
+    title: `Proposta comercial simples para ${company}`,
+    objective: 'objetivo da proposta em linguagem comercial simples',
+    diagnosis: 'diagnóstico curto, sem termos técnicos, baseado apenas nos dados do lead',
+    recommendedSolution: 'solução recomendada em linguagem de cliente final',
+    deliverables: ['3 a 6 entregáveis claros, sem jargões técnicos'],
+    estimatedRange: 'referência comercial ou texto a definir após conversa',
+    nextStep: 'próximo passo leve, de baixa pressão',
+    messageToSend: 'mensagem curta para enviar junto com a proposta por WhatsApp ou e-mail',
+    commercialReasoning: ['por que esta proposta faz sentido para este lead'],
+    qualityChecklist: ['itens atendidos']
+  };
+
+  return [
+    'Você é um vendedor extremamente experiente de serviços tecnológicos para pequenos negócios locais.',
+    'Seu papel é transformar uma oportunidade em uma proposta comercial simples, humana e vendável.',
+    '',
+    'IMPORTANTE:',
+    '- O cliente provavelmente não entende tecnologia.',
+    '- Não use termos técnicos como SEO, landing page, funil, conversão, automação, tráfego, CRM ou performance.',
+    '- Traduza tecnologia para resultado percebido: mais clientes chamando, mais confiança, mais orçamentos, mais agendamentos, menos dúvidas antes do contato.',
+    '- Não prometa resultado garantido.',
+    '- Não invente dados que não estão no briefing.',
+    '- A proposta deve parecer feita por um consultor comercial experiente, não por um técnico.',
+    '- Seja objetivo, próximo e fácil de entender.',
+    '- Se houver proposta anterior, gere uma versão realmente diferente e melhor.',
+    '',
+    'Briefing do lead:',
+    JSON.stringify(briefing, null, 2),
+    '',
+    'Proposta local de referência, apenas como apoio. Não copie literalmente:',
+    JSON.stringify(localProposal, null, 2),
+    '',
+    'Retorne SOMENTE JSON válido seguindo este formato:',
+    JSON.stringify(outputSchema, null, 2)
+  ].join('\n');
+}
+
+function normalizeAiProposal({ lead = {}, aiResult = {}, fallbackProposal = {} } = {}) {
+  const parsed = aiResult.parsed || {};
+  const deliverables = Array.isArray(parsed.deliverables) && parsed.deliverables.length
+    ? parsed.deliverables.map(String)
+    : fallbackProposal.deliverables;
+
+  const proposal = {
+    ...fallbackProposal,
+    id: fallbackProposal.id || `proposal-${Date.now()}`,
+    createdAt: fallbackProposal.createdAt || new Date().toISOString(),
+    leadId: getLeadId(lead),
+    leadName: lead.nome || fallbackProposal.leadName || 'Lead',
+    segment: lead.segmentoComercial || lead.tipo || lead.segmentoBuscado || fallbackProposal.segment || 'negócio local',
+    title: String(parsed.title || fallbackProposal.title || `Proposta comercial para ${lead.nome || 'lead'}`).trim(),
+    objective: String(parsed.objective || fallbackProposal.objective || '').trim(),
+    diagnosis: String(parsed.diagnosis || fallbackProposal.diagnosis || '').trim(),
+    recommendedSolution: String(parsed.recommendedSolution || fallbackProposal.recommendedSolution || '').trim(),
+    deliverables,
+    estimatedRange: String(parsed.estimatedRange || fallbackProposal.estimatedRange || 'a definir após diagnóstico').trim(),
+    nextStep: String(parsed.nextStep || fallbackProposal.nextStep || '').trim(),
+    generatedMessage: String(parsed.messageToSend || parsed.generatedMessage || fallbackProposal.generatedMessage || '').trim(),
+    commercialReasoning: Array.isArray(parsed.commercialReasoning) ? parsed.commercialReasoning.map(String) : [],
+    qualityChecklist: Array.isArray(parsed.qualityChecklist) ? parsed.qualityChecklist.map(String) : [],
+    provider: aiResult.providerLabel || aiResult.provider || fallbackProposal.provider || 'Motor Local',
+    model: aiResult.model || fallbackProposal.model || 'local',
+    source: aiResult.source || fallbackProposal.source || 'local',
+    aiStatus: aiResult.aiStatus || getAiProviderStatus(),
+    aiError: aiResult.aiError || null
+  };
+
+  proposal.text = proposalToPlainText(proposal);
+  return proposal;
+}
+
+async function buildAiProposal({ lead = {}, recommendation = {}, objective = '', previousProposal = '' } = {}) {
+  const fallbackProposal = buildProposalFromApproach({ lead, recommendation, objective });
+  const prompt = buildProposalPrompt({ lead, localProposal: fallbackProposal, recommendation, objective, previousProposal });
+  const aiResult = await generateAiJsonContent({
+    prompt,
+    systemContent: 'Você cria propostas comerciais simples, humanas e consultivas para pequenos negócios. Retorne somente JSON válido.',
+    maxTokens: Number(process.env.AI_PROPOSAL_MAX_TOKENS || 1900)
+  });
+
+  if (!aiResult || !aiResult.parsed) {
+    return normalizeAiProposal({ lead, aiResult: aiResult || {}, fallbackProposal });
+  }
+
+  return normalizeAiProposal({ lead, aiResult, fallbackProposal });
+}
+
 function buildProposalFromApproach({ lead = {}, recommendation = {}, objective = '' } = {}) {
   const service = inferServiceFocus(lead);
   const ticket = estimateTicketValue(lead.ticketEstimado);
@@ -115,6 +230,7 @@ function buildProposalFromApproach({ lead = {}, recommendation = {}, objective =
 
 function proposalToPlainText(proposal = {}) {
   const deliverables = Array.isArray(proposal.deliverables) ? proposal.deliverables : [];
+  const reasoning = Array.isArray(proposal.commercialReasoning) ? proposal.commercialReasoning : [];
   return [
     proposal.title,
     '',
@@ -134,7 +250,9 @@ function proposalToPlainText(proposal = {}) {
     '',
     'Próximo passo:',
     proposal.nextStep || '-',
-    proposal.generatedMessage ? ['','Mensagem sugerida para enviar:', proposal.generatedMessage].join('\n') : ''
+    reasoning.length ? ['','Por que esta proposta faz sentido:', ...reasoning.map((item) => `- ${item}`)].join('\n') : '',
+    proposal.generatedMessage ? ['','Mensagem sugerida para enviar:', proposal.generatedMessage].join('\n') : '',
+    proposal.provider ? ['','Motor usado:', `${proposal.provider}${proposal.model ? ` · ${proposal.model}` : ''}`].join('\n') : ''
   ].filter(Boolean).join('\n');
 }
 
@@ -182,6 +300,9 @@ module.exports = {
   getLeadId,
   estimateTicketValue,
   inferServiceFocus,
+  buildProposalPrompt,
+  normalizeAiProposal,
+  buildAiProposal,
   buildProposalFromApproach,
   proposalToPlainText,
   extractProposalEvents,

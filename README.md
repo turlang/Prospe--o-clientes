@@ -10,6 +10,8 @@ O projeto demonstra uma aplicação SaaS com autenticação, CRM, planos editáv
 
 ## Principais funcionalidades
 
+- Propostas comerciais geradas por IA usando o mesmo provedor configurado para abordagens (Groq, Gemini ou OpenAI), com fallback local automático.
+
 ### Central de Propostas
 
 A V21.2 adiciona uma central para gerar propostas comerciais simples a partir dos leads do CRM. A proposta registra a oportunidade na timeline, move o lead para a etapa `PROPOSTA` e pode ser copiada para envio manual por WhatsApp ou e-mail.

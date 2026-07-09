@@ -1,3 +1,12 @@
+
+## V21.3 — Propostas comerciais com IA
+
+- Propostas agora usam o mesmo AI Provider Manager das abordagens (Groq, Gemini, OpenAI ou fallback local).
+- Adicionado prompt específico para proposta comercial simples, humana e sem linguagem técnica.
+- A proposta gerada pela IA inclui diagnóstico, solução recomendada, entregáveis, referência comercial, próximo passo e mensagem pronta para envio.
+- Quando a IA estiver indisponível, o sistema usa automaticamente uma proposta local e informa o motor utilizado.
+- Novos testes para prompt de proposta com IA e normalização do retorno do provedor.
+
 ## V21.2 — Central de propostas comerciais
 
 - Adicionada nova aba **Propostas**.

@@ -361,6 +361,192 @@ async function callGeminiModel({ model, prompt, controller }) {
   return data;
 }
 
+
+async function callGroqJson({ prompt, systemContent = 'Você gera conteúdo comercial ético, consultivo e personalizado. Retorne somente JSON válido.', controller, maxTokens = null }) {
+  if (!hasProviderKey('groq')) return null;
+  const provider = 'groq';
+  const model = getProviderModel(provider);
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    signal: controller.signal,
+    headers: {
+      Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model,
+      temperature: Number(process.env.AI_APPROACH_TEMPERATURE || 0.85),
+      max_completion_tokens: Number(maxTokens || process.env.AI_PROPOSAL_MAX_TOKENS || process.env.AI_MAX_TOKENS || 1800),
+      response_format: { type: 'json_object' },
+      messages: [
+        { role: 'system', content: systemContent },
+        { role: 'user', content: prompt }
+      ]
+    })
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    const error = new Error(data?.error?.message || 'Falha ao gerar conteúdo com Groq.');
+    error.status = response.status;
+    error.data = data;
+    throw error;
+  }
+
+  const content = data?.choices?.[0]?.message?.content || '';
+  return {
+    source: 'ai',
+    provider,
+    providerLabel: AI_PROVIDERS[provider].label,
+    model,
+    parsed: safeJsonParse(content),
+    raw: content
+  };
+}
+
+async function callGeminiJson({ prompt, controller, maxTokens = null }) {
+  if (!hasProviderKey('gemini')) return null;
+  const provider = 'gemini';
+  let resolved = await resolveGeminiModel();
+
+  async function request(model) {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(normalizeGeminiModelName(model))}:generateContent?key=${encodeURIComponent(process.env.GEMINI_API_KEY)}`, {
+      method: 'POST',
+      signal: controller.signal,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: Number(process.env.AI_APPROACH_TEMPERATURE || 0.85),
+          maxOutputTokens: Number(maxTokens || process.env.AI_PROPOSAL_MAX_TOKENS || process.env.AI_MAX_TOKENS || 1800),
+          responseMimeType: 'application/json'
+        }
+      })
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      const error = new Error(data?.error?.message || 'Falha ao gerar conteúdo com Gemini.');
+      error.status = response.status;
+      error.data = data;
+      throw error;
+    }
+    return data;
+  }
+
+  let data;
+  try {
+    data = await request(resolved.model);
+  } catch (error) {
+    const shouldRetryModel = [400, 404].includes(Number(error.status)) && String(error.message || '').toLowerCase().includes('model');
+    if (!shouldRetryModel) throw error;
+    const models = await listGeminiModels({ force: true });
+    const retryResolved = pickBestGeminiModel(models, resolved.configuredModel || getProviderModel('gemini'));
+    if (!retryResolved.model || retryResolved.model === resolved.model) throw error;
+    resolved = retryResolved;
+    data = await request(resolved.model);
+  }
+
+  const content = data?.candidates?.[0]?.content?.parts?.map((part) => part.text || '').join('\n') || '';
+  return {
+    source: 'ai',
+    provider,
+    providerLabel: AI_PROVIDERS[provider].label,
+    model: resolved.model,
+    resolvedModelInfo: resolved,
+    parsed: safeJsonParse(content),
+    raw: content
+  };
+}
+
+async function callOpenAiJson({ prompt, systemContent = 'Você gera conteúdo comercial ético, consultivo e personalizado. Retorne somente JSON válido.', controller, maxTokens = null }) {
+  if (!hasProviderKey('openai')) return null;
+  const provider = 'openai';
+  const model = getProviderModel(provider);
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    signal: controller.signal,
+    headers: {
+      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model,
+      temperature: Number(process.env.AI_APPROACH_TEMPERATURE || 0.85),
+      max_tokens: Number(maxTokens || process.env.AI_PROPOSAL_MAX_TOKENS || process.env.AI_MAX_TOKENS || 1800),
+      response_format: { type: 'json_object' },
+      messages: [
+        { role: 'system', content: systemContent },
+        { role: 'user', content: prompt }
+      ]
+    })
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    const error = new Error(data?.error?.message || 'Falha ao gerar conteúdo com OpenAI.');
+    error.status = response.status;
+    error.data = data;
+    throw error;
+  }
+
+  const content = data?.choices?.[0]?.message?.content || '';
+  return {
+    source: 'ai',
+    provider,
+    providerLabel: AI_PROVIDERS[provider].label,
+    model,
+    parsed: safeJsonParse(content),
+    raw: content
+  };
+}
+
+async function generateAiJsonContent({ prompt, systemContent, maxTokens = null } = {}) {
+  const status = getAiProviderStatus();
+  const provider = getConfiguredProvider();
+
+  if (!provider) {
+    return {
+      source: 'local',
+      provider: 'local',
+      providerLabel: 'Motor Local',
+      model: 'local',
+      aiStatus: status,
+      parsed: null,
+      aiError: null
+    };
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), Number(process.env.AI_PROPOSAL_TIMEOUT_MS || process.env.AI_APPROACH_TIMEOUT_MS || 25000));
+
+  try {
+    let result = null;
+    if (provider === 'groq') result = await callGroqJson({ prompt, systemContent, controller, maxTokens });
+    if (provider === 'gemini') result = await callGeminiJson({ prompt, controller, maxTokens });
+    if (provider === 'openai') result = await callOpenAiJson({ prompt, systemContent, controller, maxTokens });
+
+    if (!result || !result.parsed) throw new Error('A IA retornou uma resposta inválida para o conteúdo solicitado.');
+
+    return {
+      ...result,
+      aiStatus: { ...status, model: result.model, resolvedModelInfo: result.resolvedModelInfo || null }
+    };
+  } catch (error) {
+    return {
+      source: 'local-fallback',
+      provider: 'local',
+      providerLabel: 'Motor Local',
+      model: 'local',
+      aiStatus: status,
+      parsed: null,
+      aiError: toFriendlyAiError(error),
+      aiTechnicalError: error.message
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 async function generateWithGemini({ lead = {}, leadContext, localRecommendation, regenerateKey, previousApproach = '', mode = 'new', channel = 'generic' }) {
   if (!hasProviderKey('gemini')) return null;
 
@@ -543,6 +729,7 @@ module.exports = {
   getAiProviderStatus,
   isAiApproachEnabled,
   generateAiEnhancedApproach,
+  generateAiJsonContent,
   buildPrompt,
   safeJsonParse,
   pickBestGeminiModel,

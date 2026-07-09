@@ -4,7 +4,9 @@ const {
   buildProposalFromApproach,
   buildProposalSummary,
   estimateTicketValue,
-  inferServiceFocus
+  inferServiceFocus,
+  buildProposalPrompt,
+  normalizeAiProposal
 } = require('../src/services/commercialProposalService');
 
 test('V21.2 cria proposta comercial simples a partir do lead', () => {
@@ -63,4 +65,48 @@ test('V21.2 estima ticket e foco de serviço sem linguagem técnica', () => {
   const focus = inferServiceFocus({ segmentoComercial: 'Clínica odontológica', site: '' });
   assert.match(focus.title, /confiança|contatos|presença/i);
   assert.ok(focus.deliverables.every((item) => !/SEO|CRM|landing page/i.test(item)));
+});
+
+
+test('V21.3 prompt de proposta orienta IA a falar simples com cliente nao tecnico', () => {
+  const prompt = buildProposalPrompt({
+    lead: { nome: 'Clínica Sorriso', segmentoComercial: 'Clínica odontológica', site: '', telefone: '11' },
+    localProposal: { title: 'Proposta local', deliverables: ['Página profissional'] },
+    recommendation: { abordagem: 'Mensagem inicial consultiva' },
+    objective: 'gerar mais agendamentos'
+  });
+
+  assert.match(prompt, /não entende tecnologia/i);
+  assert.match(prompt, /Retorne SOMENTE JSON válido/i);
+  assert.match(prompt, /Clínica Sorriso/);
+  assert.match(prompt, /mais agendamentos|mais clientes/i);
+});
+
+test('V21.3 proposta normalizada usa dados retornados pela IA e preserva provedor', () => {
+  const proposal = normalizeAiProposal({
+    lead: { placeId: 'lead-ia', nome: 'Pet Shop Bom Cuidado', segmentoComercial: 'Pet shop' },
+    fallbackProposal: buildProposalFromApproach({ lead: { nome: 'Pet Shop Bom Cuidado' }, recommendation: {} }),
+    aiResult: {
+      source: 'ai',
+      provider: 'groq',
+      providerLabel: 'Groq',
+      model: 'llama-3.3-70b-versatile',
+      parsed: {
+        title: 'Proposta simples para Pet Shop Bom Cuidado',
+        objective: 'facilitar que clientes chamem no WhatsApp',
+        diagnosis: 'A empresa pode tornar mais fácil o primeiro contato de novos clientes.',
+        recommendedSolution: 'Organizar uma apresentação simples com botões de contato.',
+        deliverables: ['Página clara de apresentação', 'Botões para WhatsApp', 'Informações principais organizadas'],
+        estimatedRange: 'A definir após conversa rápida',
+        nextStep: 'Marcar uma conversa de 10 minutos.',
+        messageToSend: 'Posso te mostrar uma ideia simples?',
+        commercialReasoning: ['A proposta fala em benefício direto para o cliente.']
+      }
+    }
+  });
+
+  assert.equal(proposal.provider, 'Groq');
+  assert.equal(proposal.model, 'llama-3.3-70b-versatile');
+  assert.match(proposal.text, /Motor usado/);
+  assert.match(proposal.text, /Posso te mostrar/);
 });

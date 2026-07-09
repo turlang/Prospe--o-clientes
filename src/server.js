@@ -40,7 +40,7 @@ const { generateAiEnhancedApproach, getAiProviderStatus } = require('./services/
 const { buildAgendaSummary } = require('./services/commercialAgendaService');
 const { buildCommercialIntelligence, buildObjectionResponse } = require('./services/commercialIntelligenceService');
 const { buildCommercialReport, buildCommercialReportCsv } = require('./services/commercialReportService');
-const { buildProposalFromApproach, buildProposalSummary } = require('./services/commercialProposalService');
+const { buildAiProposal, buildProposalSummary } = require('./services/commercialProposalService');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -1075,7 +1075,7 @@ app.post('/api/proposals/generate', requireAuth, async (req, res) => {
       channel: 'proposal'
     });
 
-    const proposal = buildProposalFromApproach({ lead, recommendation, objective });
+    const proposal = await buildAiProposal({ lead, recommendation, objective, previousProposal });
 
     const updated = await updateLeadStatus(leadId, 'PROPOSTA', {
       data: new Date().toISOString(),
@@ -1098,10 +1098,10 @@ app.post('/api/proposals/generate', requireAuth, async (req, res) => {
       proposal,
       source: recommendation.source || 'local',
       provider: recommendation.provider || 'local',
-      providerLabel: recommendation.providerLabel || proposal.provider,
-      model: recommendation.model || proposal.model,
-      aiStatus: recommendation.aiStatus || getAiProviderStatus(),
-      aiError: recommendation.aiError || null
+      providerLabel: proposal.provider || recommendation.providerLabel || 'Motor Local',
+      model: proposal.model || recommendation.model || 'local',
+      aiStatus: proposal.aiStatus || recommendation.aiStatus || getAiProviderStatus(),
+      aiError: proposal.aiError || recommendation.aiError || null
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
