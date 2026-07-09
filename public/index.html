@@ -65,6 +65,7 @@
             <li><button class="nav-btn" type="button" data-view="crm">CRM Kanban</button></li>
             <li><button class="nav-btn" type="button" data-view="historico">Histórico</button></li>
             <li><button class="nav-btn" type="button" data-view="agenda">Agenda</button></li>
+            <li><button class="nav-btn" type="button" data-view="relatorios">Relatórios</button></li>
             <li><button class="nav-btn" type="button" data-view="campanhas">Campanhas</button></li>
             <li><button class="nav-btn" type="button" data-view="planos">Planos</button></li>
           </ul>
@@ -207,6 +208,42 @@
             <div id="agendaList" class="agenda-list"></div>
           </section>
         </section>
+
+        <section id="view-relatorios" class="view">
+          <div class="dashboard-header card-panel">
+            <div>
+              <p class="tag dark">Relatórios</p>
+              <h2>Relatório comercial</h2>
+              <p class="meta">Visão gerencial do funil, conversão, receita estimada, segmentos com maior potencial e leads parados.</p>
+            </div>
+            <div class="header-actions">
+              <button type="button" onclick="loadCommercialReport()">Atualizar relatório</button>
+              <button type="button" class="secondary" onclick="downloadCommercialReportCsv()">Baixar CSV</button>
+            </div>
+          </div>
+          <div id="reportSummary" class="agenda-summary-grid"></div>
+          <div class="dashboard-analytics">
+            <section class="card-panel">
+              <div class="section-title"><h3>Funil por etapa</h3><p class="meta">Distribuição dos leads no pipeline.</p></div>
+              <div id="reportFunnel" class="funnel-list"></div>
+            </section>
+            <section class="card-panel">
+              <div class="section-title"><h3>Recomendações gerenciais</h3><p class="meta">Ações sugeridas com base nos dados do funil.</p></div>
+              <div id="reportRecommendations" class="history-list compact-list"></div>
+            </section>
+          </div>
+          <div class="dashboard-analytics">
+            <section class="card-panel">
+              <div class="section-title"><h3>Melhores segmentos</h3><p class="meta">Ranking por potencial comercial estimado.</p></div>
+              <div id="reportSegments" class="report-table-wrap"></div>
+            </section>
+            <section class="card-panel">
+              <div class="section-title"><h3>Leads parados</h3><p class="meta">Oportunidades ativas sem próximo passo ou sem interação recente.</p></div>
+              <div id="reportStalled" class="history-list compact-list"></div>
+            </section>
+          </div>
+        </section>
+
 
         <section id="view-planos" class="view">
           <div class="dashboard-header card-panel">

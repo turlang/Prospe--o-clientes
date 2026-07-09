@@ -257,3 +257,14 @@
 
 ### Alterado
 - O motor local agora adapta a mensagem ao canal quando a IA externa estiver indisponível.
+
+## 21.1.0 - Relatórios Comerciais Gerenciais
+
+### Adicionado
+- Nova aba **Relatórios** com visão gerencial do funil comercial.
+- Endpoint `GET /api/reports/commercial` com métricas de conversão, receita prevista, ranking de segmentos e leads parados.
+- Endpoint `GET /api/reports/commercial.csv` para exportar relatório comercial.
+- Serviço `commercialReportService` com testes automatizados.
+
+### Melhorado
+- Dashboard comercial passa a ter uma visão complementar para gestão e análise, além da operação diária do CRM.

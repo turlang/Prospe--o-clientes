@@ -294,3 +294,6 @@ A partir da versão 20.8, o botão **Consultor IA** pode gerar peças comerciais
 Cada canal usa regras próprias no Prompt Engine. Quando Groq, Gemini ou OpenAI estiverem configurados, a IA externa gera a peça. Se a IA falhar ou não estiver configurada, o motor local adapta a mensagem automaticamente para o canal escolhido.
 
 - Agenda comercial inteligente com tarefas agrupadas por urgência.
+
+
+- Relatórios comerciais gerenciais.

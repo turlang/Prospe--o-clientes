@@ -39,6 +39,7 @@ const { buildSalesApproach } = require('./services/salesStrategyEngine');
 const { generateAiEnhancedApproach, getAiProviderStatus } = require('./services/aiApproachService');
 const { buildAgendaSummary } = require('./services/commercialAgendaService');
 const { buildCommercialIntelligence, buildObjectionResponse } = require('./services/commercialIntelligenceService');
+const { buildCommercialReport, buildCommercialReportCsv } = require('./services/commercialReportService');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -1032,6 +1033,34 @@ app.get('/api/commercial-intelligence/summary', requireAuth, async (req, res) =>
       listTasks(req.user.sub)
     ]);
     res.json(buildCommercialIntelligence(leads, tasks));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+app.get('/api/reports/commercial', requireAuth, async (req, res) => {
+  try {
+    const [leads, tasks] = await Promise.all([
+      readLeads(req.user.sub),
+      listTasks(req.user.sub)
+    ]);
+    res.json(buildCommercialReport(leads, tasks));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/reports/commercial.csv', requireAuth, async (req, res) => {
+  try {
+    const [leads, tasks] = await Promise.all([
+      readLeads(req.user.sub),
+      listTasks(req.user.sub)
+    ]);
+    const report = buildCommercialReport(leads, tasks);
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="relatorio-comercial.csv"');
+    res.send(buildCommercialReportCsv(report));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

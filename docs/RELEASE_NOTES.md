@@ -786,3 +786,17 @@ Resultado: 35 testes aprovados.
 - Novos formatos: WhatsApp, e-mail, ligação, follow-up, tratamento de objeção e convite para diagnóstico.
 - O fallback local também adapta a mensagem ao canal escolhido.
 - A interface agora permite gerar outra versão ou melhorar o texto mantendo o canal selecionado.
+
+## V21.1 — Relatórios Comerciais Gerenciais
+
+Esta versão adiciona uma camada de análise gerencial ao CRM:
+
+- relatório comercial consolidado;
+- funil por etapa;
+- taxa de contato e fechamento;
+- receita prevista ponderada pelo estágio do lead;
+- ranking de segmentos com maior potencial;
+- identificação de leads parados;
+- exportação CSV do relatório.
+
+O objetivo é ajudar o usuário a enxergar o negócio como gestor comercial, não apenas como operador de prospecção.

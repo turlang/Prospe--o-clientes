@@ -48,6 +48,11 @@ const agendaSummary = document.querySelector('#agendaSummary');
 const commercialIntelligenceSummary = document.querySelector('#commercialIntelligenceSummary');
 const commercialIntelligenceAdvice = document.querySelector('#commercialIntelligenceAdvice');
 const leadDetailPanel = document.querySelector('#leadDetailPanel');
+const reportSummary = document.querySelector('#reportSummary');
+const reportFunnel = document.querySelector('#reportFunnel');
+const reportRecommendations = document.querySelector('#reportRecommendations');
+const reportSegments = document.querySelector('#reportSegments');
+const reportStalled = document.querySelector('#reportStalled');
 
 let authToken = localStorage.getItem('authToken') || '';
 let currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
@@ -313,6 +318,7 @@ function switchView(view) {
   if (view === 'historico') loadHistory();
   if (view === 'planos') renderPlans();
   if (view === 'agenda') loadAgenda();
+  if (view === 'relatorios') loadCommercialReport();
   if (view === 'campanhas') { loadAutomationActions(); loadFollowups(); }
 }
 
@@ -1586,6 +1592,102 @@ window.updateStatus = updateStatus;
 window.loadAgenda = loadAgenda;
 window.openLeadDetail = openLeadDetail;
 window.closeLeadModal = closeLeadModal;
+
+
+async function loadCommercialReport() {
+  if (!authToken || !reportSummary) return;
+  reportSummary.innerHTML = '<p class="loading">Carregando relatório comercial...</p>';
+  try {
+    const response = await apiFetch('/api/reports/commercial');
+    const data = await readJson(response);
+    if (!response.ok) throw new Error(data.error || 'Erro ao carregar relatório comercial.');
+    renderCommercialReport(data);
+  } catch (error) {
+    reportSummary.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
+  }
+}
+
+function renderCommercialReport(data = {}) {
+  const summary = data.summary || {};
+  if (reportSummary) {
+    reportSummary.innerHTML = `
+      <article><small>Leads totais</small><strong>${Number(summary.totalLeads || 0)}</strong><span>base comercial</span></article>
+      <article><small>Taxa de contato</small><strong>${Number(summary.contactRate || 0)}%</strong><span>${Number(summary.contacted || 0)} contatados</span></article>
+      <article><small>Receita prevista</small><strong>${formatMoney(summary.estimatedPipelineRevenue || 0)}</strong><span>estimativa ponderada</span></article>
+      <article><small>Leads parados</small><strong>${Number(summary.stalledLeads || 0)}</strong><span>precisam de ação</span></article>
+    `;
+  }
+
+  if (reportFunnel) {
+    const funnel = Array.isArray(data.funnel) ? data.funnel : [];
+    reportFunnel.innerHTML = funnel.length ? funnel.map((item) => `
+      <article class="funnel-item">
+        <div><strong>${escapeHtml(item.status)}</strong><small>${Number(item.percentage || 0)}% do funil</small></div>
+        <span>${Number(item.total || 0)}</span>
+      </article>
+    `).join('') : '<p class="meta">Sem dados de funil.</p>';
+  }
+
+  if (reportRecommendations) {
+    const recommendations = Array.isArray(data.recommendations) ? data.recommendations : [];
+    reportRecommendations.innerHTML = recommendations.length ? recommendations.map((text) => `
+      <article class="history-item manager-advice"><div><strong>Recomendação</strong><p>${escapeHtml(text)}</p></div></article>
+    `).join('') : '<p class="meta">Nenhuma recomendação no momento.</p>';
+  }
+
+  if (reportSegments) {
+    const rows = Array.isArray(data.bySegment) ? data.bySegment : [];
+    reportSegments.innerHTML = rows.length ? `
+      <table class="mini-report-table">
+        <thead><tr><th>Segmento</th><th>Total</th><th>Contatados</th><th>Propostas</th><th>Receita prevista</th></tr></thead>
+        <tbody>
+          ${rows.map((item) => `
+            <tr>
+              <td>${escapeHtml(item.name)}</td>
+              <td>${Number(item.total || 0)}</td>
+              <td>${Number(item.contacted || 0)}</td>
+              <td>${Number(item.proposals || 0)}</td>
+              <td>${formatMoney(item.estimatedRevenue || 0)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    ` : '<p class="meta">Ainda não há segmentos suficientes para análise.</p>';
+  }
+
+  if (reportStalled) {
+    const stalled = Array.isArray(data.stalledLeads) ? data.stalledLeads : [];
+    reportStalled.innerHTML = stalled.length ? stalled.map((item) => `
+      <article class="history-item">
+        <div>
+          <strong>${escapeHtml(item.leadName)}</strong>
+          <p>${escapeHtml(item.reason)} · ${Number(item.daysWithoutInteraction || 0)} dia(s) sem interação</p>
+          <small>Status: ${escapeHtml(item.status)}</small>
+        </div>
+        <button type="button" class="secondary" onclick="openLeadDetail('${escapeAttr(item.leadId)}')">Abrir ficha</button>
+      </article>
+    `).join('') : '<p class="meta">Nenhum lead parado encontrado.</p>';
+  }
+}
+
+async function downloadCommercialReportCsv() {
+  try {
+    const response = await apiFetch('/api/reports/commercial.csv');
+    if (!response.ok) throw new Error('Erro ao baixar relatório CSV.');
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'relatorio-comercial.csv';
+    link.click();
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    showError(error.message);
+  }
+}
+
+window.loadCommercialReport = loadCommercialReport;
+window.downloadCommercialReportCsv = downloadCommercialReportCsv;
 
 function showPaymentReturnMessage() {
   const params = new URLSearchParams(window.location.search);
