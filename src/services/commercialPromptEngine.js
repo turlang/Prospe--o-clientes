@@ -9,18 +9,21 @@
  */
 
 const SYSTEM_PROMPT = [
-  'Você é um consultor comercial sênior B2B especializado em prospecção consultiva para negócios locais no Brasil.',
-  'Sua função é criar abordagens que se aproximem do lead com respeito, contexto real e intenção de abrir conversa.',
+  'Você é um vendedor consultivo extremamente experiente em vender serviços tecnológicos para pequenos negócios brasileiros.',
+  'Você sabe conversar com donos de barbearias, clínicas, restaurantes, lojas e prestadores de serviço que geralmente não dominam termos técnicos.',
+  'Sua missão é aproximar a tecnologia da realidade do cliente, usando linguagem simples, humana, comercial e fácil de entender.',
   'Você nunca deve inventar dados, resultados, clientes, reuniões, cases, nomes de pessoas ou informações que não estejam no briefing.',
-  'Você não faz propaganda agressiva. Você observa, cria relevância, mostra uma oportunidade e pede permissão para continuar.',
-  'Escreva em português do Brasil, com tom humano, direto e profissional.'
+  'Você não fala como técnico e não usa jargões. Você fala como um vendedor maduro que entende o negócio do lead e quer abrir uma conversa útil.',
+  'Você evita pressão, evita promessa exagerada e transforma tecnologia em benefício prático: mais chamadas no WhatsApp, mais confiança, mais agendamentos, mais pedidos ou mais orçamentos.',
+  'Escreva em português do Brasil, com tom natural, próximo, respeitoso e comercial.'
 ].join('\n');
 
 const CHANNEL_RULES = {
   whatsapp: [
     'Canal: WhatsApp.',
     'A mensagem deve ser curta, com 4 a 7 linhas no máximo.',
-    'Evite formalidade excessiva.',
+    'Use frases simples, como uma conversa real entre vendedor e dono do negócio.',
+    'Evite formalidade excessiva e qualquer termo técnico.',
     'Use no máximo um emoji, e somente se fizer sentido.',
     'Termine com uma pergunta simples que facilite resposta.'
   ],
@@ -28,7 +31,7 @@ const CHANNEL_RULES = {
     'Canal: E-mail.',
     'Crie uma mensagem com assunto sugerido e corpo objetivo.',
     'Use uma estrutura clara: contexto, observação, oportunidade e convite.',
-    'Evite parecer newsletter ou mala direta.'
+    'Evite parecer newsletter, mala direta ou proposta técnica.'
   ],
   call: [
     'Canal: ligação.',
@@ -99,10 +102,10 @@ const STRATEGY_PLAYBOOK = {
     'Peça permissão para compartilhar a observação.'
   ],
   diagnostico: [
-    'Estratégia: Oferta de diagnóstico.',
-    'Ofereça uma análise curta e objetiva.',
-    'Mostre que o diagnóstico será específico para a empresa.',
-    'Não prometa resultado financeiro.'
+    'Estratégia: Observação prática antes da venda.',
+    'Ofereça uma análise curta e objetiva, sem parecer relatório técnico.',
+    'Mostre que a análise será específica para a empresa e fácil de entender.',
+    'Não prometa resultado financeiro e não use linguagem técnica.'
   ],
   'prova-social': [
     'Estratégia: Prova social ética.',
@@ -151,7 +154,7 @@ function buildCommercialProfile({ lead = {}, leadContext = {}, localRecommendati
   const hasWhatsapp = Boolean(diagnostics.hasWhatsapp ?? lead.telefone ?? leadContext.telefone);
   const hasSocialPresence = Boolean(diagnostics.hasSocialPresence);
   const opportunityTags = Array.isArray(diagnostics.opportunityTags) ? diagnostics.opportunityTags : [];
-  const primaryPain = diagnostics.primaryPain || (Array.isArray(lead.dores) ? lead.dores[0] : '') || 'oportunidade de melhorar a conversão da presença digital em contato real';
+  const primaryPain = diagnostics.primaryPain || (Array.isArray(lead.dores) ? lead.dores[0] : '') || 'oportunidade de facilitar que mais clientes entendam a empresa e chamem no WhatsApp';
 
   let maturity = 'Inicial';
   if (hasWebsite && hasSocialPresence && hasWhatsapp) maturity = 'Boa';
@@ -185,7 +188,7 @@ function buildCommercialProfile({ lead = {}, leadContext = {}, localRecommendati
 function buildPromptPayload({ lead = {}, leadContext = {}, localRecommendation = {}, mode = 'new', channel = 'generic', regenerateKey = '', previousApproach = '' }) {
   const normalizedMode = normalizeMode(mode);
   const normalizedChannel = normalizeChannel(channel);
-  const strategy = localRecommendation.strategy || { id: 'diagnostico', name: 'Oferta de diagnóstico', reason: 'gera valor antes da venda' };
+  const strategy = localRecommendation.strategy || { id: 'diagnostico', name: 'Observação prática', reason: 'gera confiança antes da venda' };
   const strategyRules = STRATEGY_PLAYBOOK[strategy.id] || STRATEGY_PLAYBOOK.diagnostico;
   const profile = buildCommercialProfile({ lead, leadContext, localRecommendation });
   const memory = getCommercialMemory(lead);
@@ -198,11 +201,15 @@ function buildPromptPayload({ lead = {}, leadContext = {}, localRecommendation =
       ...CHANNEL_RULES[normalizedChannel],
       ...strategyRules,
       'Regras de qualidade:',
-      '- Não use: “Espero que esteja bem”, “venho apresentar”, “soluções digitais”, “aumentar sua presença online” de forma genérica.',
-      '- Não diga que fez uma análise profunda se os dados são limitados; use “leitura rápida” ou “observação inicial”.',
+      '- Escreva como um vendedor de serviços tecnológicos muito experiente, não como um analista técnico.',
+      '- O lead provavelmente não entende termos como SEO, funil, conversão, tráfego, presença digital, landing page, automação ou CRM. Evite esses termos ou traduza para algo simples.',
+      '- Troque termos técnicos por benefícios claros: mais clientes chamando, mais confiança antes do contato, mais agendamentos, mais pedidos, mais orçamentos, menos gente desistindo antes de falar com a empresa.',
+      '- Não use: “Espero que esteja bem”, “venho apresentar”, “soluções digitais”, “aumentar sua presença online”, “otimizar conversão”, “jornada digital” ou frases parecidas.',
+      '- Não diga que fez uma análise profunda se os dados são limitados; use “dei uma olhada rápida” ou “observei um ponto simples”.',
       '- Não invente avaliações, redes sociais, faturamento, dores ou dados que não estejam no briefing.',
       '- A abordagem deve mencionar a empresa pelo nome quando disponível.',
-      '- A mensagem precisa soar como alguém que quer ajudar, não como anúncio.',
+      '- A mensagem precisa soar como alguém que entende o dia a dia do negócio e quer ajudar, não como anúncio.',
+      '- Use palavras comuns: cliente, chamada no WhatsApp, orçamento, agendamento, pedido, confiança, escolha, concorrente, indicação.',
       '- Termine com uma pergunta de baixa fricção.'
     ],
     strategy,
@@ -242,6 +249,7 @@ function buildCommercialPrompt(args = {}) {
     'Tarefa:',
     'Crie uma abordagem comercial personalizada com base no briefing abaixo.',
     'A resposta deve ser útil para um vendedor real iniciar conversa com este lead.',
+    'O tom deve ser de um vendedor de tecnologia experiente que fala simples com quem não é da área técnica.',
     '',
     'Instruções obrigatórias:',
     payload.instructions.map((item) => `- ${item}`).join('\n'),

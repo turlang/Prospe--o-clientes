@@ -117,10 +117,10 @@ function hasSocialPresence(lead = {}) {
 
 function getPrimaryPain(lead = {}) {
   if (Array.isArray(lead.dores) && lead.dores.length) return lead.dores[0];
-  if (!hasWebsite(lead)) return 'a empresa ainda não parece ter um site próprio para converter pesquisas em contatos';
-  if (!hasWhatsapp(lead)) return 'o caminho para o cliente chamar no WhatsApp pode estar pouco claro';
-  if (!hasSocialPresence(lead)) return 'a presença nas redes sociais parece ter espaço para ganhar mais confiança';
-  return 'existem oportunidades para transformar a presença digital em mais contatos qualificados';
+  if (!hasWebsite(lead)) return 'quem procura vocês no Google pode não encontrar um caminho claro para chamar ou pedir orçamento';
+  if (!hasWhatsapp(lead)) return 'o cliente pode não encontrar rapidamente como chamar vocês no WhatsApp';
+  if (!hasSocialPresence(lead)) return 'a primeira impressão antes do contato pode ficar mais forte e mais clara';
+  return 'existem pontos simples para facilitar que mais clientes chamem vocês';
 }
 
 function inferOpportunityTags(lead = {}) {
@@ -129,7 +129,7 @@ function inferOpportunityTags(lead = {}) {
   if (hasWhatsapp(lead)) tags.push('Possui canal de WhatsApp/telefone');
   if (hasSocialPresence(lead)) tags.push('Possui presença social');
   if (Number(lead.score || 0) >= 80) tags.push('Alta prioridade comercial');
-  if (Array.isArray(lead.dores) && lead.dores.length) tags.push('Dores digitais detectadas');
+  if (Array.isArray(lead.dores) && lead.dores.length) tags.push('Pontos de melhoria detectados');
   if (lead.maps) tags.push('Encontrado no Google Maps');
   if (lead.endereco) tags.push('Atuação local identificada');
   return tags.length ? tags : ['Oportunidade comercial local'];
@@ -145,7 +145,7 @@ function chooseStrategy(lead = {}, segmentGroup = inferSegmentGroup(lead)) {
     return {
       id: 'consultiva',
       name: 'Consultiva',
-      reason: 'o lead tem bom potencial, mas ainda perde confiança e conversões por não ter site próprio.'
+      reason: 'a empresa tem potencial, mas pode perder clientes porque algumas pessoas não encontram informações claras antes de chamar.'
     };
   }
 
@@ -153,7 +153,7 @@ function chooseStrategy(lead = {}, segmentGroup = inferSegmentGroup(lead)) {
     return {
       id: 'pas',
       name: 'PAS — Problema, Agitação e Solução',
-      reason: 'existe uma dor objetiva que pode estar fazendo a empresa perder contatos no digital.'
+      reason: 'existe um ponto simples que pode estar fazendo interessados desistirem antes de chamar.'
     };
   }
 
@@ -176,7 +176,7 @@ function chooseStrategy(lead = {}, segmentGroup = inferSegmentGroup(lead)) {
   return {
     id: 'diagnostico',
     name: 'Oferta de diagnóstico',
-    reason: 'a abordagem com diagnóstico reduz resistência, gera valor primeiro e abre conversa comercial.'
+    reason: 'uma conversa baseada em observação simples gera confiança antes de vender.'
   };
 }
 
@@ -215,51 +215,50 @@ function buildLeadContext(lead = {}, diagnostics = null) {
 function buildMessage({ lead, strategy, segmentGroup, primaryPain, variationSeed }) {
   const businessName = lead.nome || 'sua empresa';
   const segment = lead.segmentoComercial || lead.tipo || lead.segmentoBuscado || 'negócio local';
-  const benefit = segmentBenefit(segmentGroup);
   const playbook = SEGMENT_PLAYBOOKS[segmentGroup] || SEGMENT_PLAYBOOKS.local;
   const variants = STRATEGY_VARIATIONS[strategy.id] || STRATEGY_VARIATIONS.diagnostico;
   const variant = stableVariantIndex(variationSeed, variants.length);
 
   if (strategy.id === 'consultiva') {
     const messages = [
-      `Olá, tudo bem? Encontrei a ${businessName} pesquisando ${segment} na região e vi uma oportunidade bem prática.\n\nO cliente que procura esse tipo de serviço normalmente decide pela confiança que sente antes mesmo de chamar no WhatsApp. No caso da ${businessName}, percebi que ${primaryPain}.\n\nIsso pode fazer algumas pessoas compararem com concorrentes que passam uma primeira impressão mais completa.\n\nEu trabalho ajudando negócios locais a ${benefit}. Posso te enviar 2 ou 3 sugestões específicas para a ${businessName}, sem compromisso?`,
-      `Oi, tudo bem? Estava analisando empresas de ${segment} e a ${businessName} chamou minha atenção.\n\nVocês já têm potencial de atrair clientes pela busca local, mas encontrei um ponto que pode melhorar a conversão: ${primaryPain}.\n\nNa prática, quando alguém pesquisa no Google, pequenos detalhes de presença digital podem decidir se a pessoa chama vocês ou outro concorrente.\n\nPosso te mandar um diagnóstico curto com melhorias objetivas para aumentar essa confiança?`,
-      `Olá! Vi a ${businessName} enquanto pesquisava opções de ${segment} e notei uma oportunidade comercial.\n\nPara esse segmento, o cliente costuma escolher por ${playbook.angle}. Hoje, ${primaryPain}.\n\nNão estou falando de mudar tudo, mas de ajustar a forma como a empresa aparece e conduz o cliente até o contato.\n\nQuer que eu te envie algumas ideias específicas para aplicar na ${businessName}?`
+      `Olá! Encontrei a ${businessName} pesquisando opções de ${segment} na região e percebi um ponto simples que pode ajudar.\n\nHoje muita gente decide com quem falar antes mesmo de chamar no WhatsApp. No caso da ${businessName}, notei que ${primaryPain}.\n\nIsso pode fazer alguns clientes escolherem outro lugar só porque encontraram as informações com mais facilidade.\n\nEu ajudo empresas locais a usar a tecnologia de um jeito simples para receber mais chamadas e pedidos de orçamento. Posso te mandar 2 ou 3 ideias bem práticas para a ${businessName}?`,
+      `Oi! Dei uma olhada rápida na ${businessName} e vi uma oportunidade que pode fazer diferença no dia a dia.\n\nQuando alguém procura por ${segment}, normalmente escolhe quem passa confiança e facilita o contato. Percebi que ${primaryPain}.\n\nNão é algo complicado de resolver. São ajustes pequenos que podem ajudar mais pessoas a chamar vocês.\n\nQuer que eu te envie algumas sugestões simples e específicas para a ${businessName}?`,
+      `Olá! Vi a ${businessName} enquanto pesquisava empresas de ${segment} e achei que vale compartilhar uma observação.\n\nNesse tipo de negócio, o cliente costuma escolher por ${playbook.angle}. Hoje, ${primaryPain}.\n\nMeu trabalho é deixar esse caminho mais fácil: a pessoa encontra, entende, confia e chama.\n\nPosso te mostrar em poucas linhas o que eu faria primeiro?`
     ];
     return messages[variant];
   }
 
   if (strategy.id === 'pas') {
     const messages = [
-      `Olá, tudo bem? Fiz uma leitura rápida da presença digital da ${businessName}.\n\nPercebi um ponto que pode estar tirando oportunidades de vocês: ${primaryPain}.\n\nQuando o caminho até o contato não está claro, o cliente interessado pode desistir ou escolher uma empresa que pareça mais fácil de chamar.\n\nPosso te mostrar um diagnóstico simples com ajustes que ajudariam a ${businessName} a receber contatos mais qualificados?`,
-      `Oi! Encontrei a ${businessName} pesquisando ${segment} e notei algo importante.\n\nO problema não é aparecer na internet; é transformar essa aparição em contato real. Hoje, ${primaryPain}.\n\nIsso pode gerar perda silenciosa de clientes, principalmente quando eles estão comparando empresas da região.\n\nPosso te enviar uma análise objetiva com o que eu melhoraria primeiro?`,
-      `Olá, tudo bem? Posso compartilhar uma observação rápida sobre a ${businessName}?\n\nEm negócios de ${segment}, cada etapa até o WhatsApp precisa ser simples. Quando ${primaryPain}, parte dos clientes acaba indo para outra opção.\n\nExistem ajustes pequenos que podem reduzir essa perda. Posso te mandar 3 sugestões práticas?`
+      `Olá! Dei uma olhada rápida na ${businessName} e percebi um ponto que pode estar fazendo alguns clientes desistirem antes de chamar.\n\nHoje, ${primaryPain}.\n\nQuando a pessoa tem dúvida ou não encontra o caminho fácil para falar com a empresa, ela acaba procurando outra opção.\n\nPosso te enviar 3 ajustes simples para ajudar a ${businessName} a receber mais contatos?`,
+      `Oi! Encontrei a ${businessName} pesquisando ${segment} e notei algo importante.\n\nÀs vezes o problema não é falta de cliente. É o cliente não encontrar rápido como confiar e chamar vocês. No caso da ${businessName}, ${primaryPain}.\n\nIsso pode estar custando chamadas e pedidos de orçamento sem ninguém perceber.\n\nQuer que eu te mostre uma ideia simples para melhorar isso?`,
+      `Olá! Posso compartilhar uma observação rápida sobre a ${businessName}?\n\nEm negócios de ${segment}, cada detalhe antes do contato conta. Quando ${primaryPain}, parte dos clientes pode ir para outro concorrente.\n\nExistem ajustes simples, sem complicar sua rotina. Posso te mandar os principais?`
     ];
     return messages[variant];
   }
 
   if (strategy.id === 'prova-social') {
     const messages = [
-      `Olá, tudo bem? Encontrei a ${businessName} e percebi que vocês já têm sinais importantes de presença digital.\n\nEm ${segment}, confiança pesa muito: o cliente olha reputação, aparência online e facilidade de contato antes de decidir.\n\nVi oportunidades para transformar essa confiança em mais conversas comerciais.\n\nPosso te enviar uma análise curta com ideias aplicáveis à realidade da ${businessName}?`,
-      `Oi! Vi a ${businessName} e gostei do potencial de presença local de vocês.\n\nPara clientes desse segmento, a decisão geralmente passa por prova social: avaliações, clareza da oferta e facilidade para falar com a empresa.\n\nAcredito que alguns ajustes podem fazer mais pessoas saírem da pesquisa e entrarem em contato.\n\nQuer que eu te mande um diagnóstico rápido?`,
-      `Olá! Pesquisando empresas de ${segment}, encontrei a ${businessName}.\n\nVocês já têm elementos que ajudam na confiança, mas dá para deixar a jornada do cliente mais direta até o contato.\n\nMinha ideia é mostrar oportunidades simples para transformar visibilidade em conversas. Posso enviar?`
+      `Olá! Encontrei a ${businessName} e vi que existe uma boa oportunidade de transformar confiança em mais contatos.\n\nEm ${segment}, as pessoas costumam observar reputação, aparência das informações e facilidade para chamar antes de decidir.\n\nCom alguns ajustes simples, dá para ajudar mais clientes a sentirem segurança e entrarem em contato.\n\nPosso te enviar uma análise curta com ideias para a ${businessName}?`,
+      `Oi! Vi a ${businessName} e percebi um potencial interessante.\n\nPara clientes desse segmento, confiança pesa muito: eles querem saber se a empresa é boa, se atende bem e se é fácil falar com alguém.\n\nA tecnologia pode ajudar nisso sem virar algo complicado.\n\nQuer que eu te mande algumas sugestões práticas?`,
+      `Olá! Pesquisando empresas de ${segment}, encontrei a ${businessName}.\n\nVocês já têm elementos que passam confiança, mas dá para deixar mais claro para o cliente por que escolher vocês e como chamar rapidamente.\n\nPosso te enviar 3 ideias simples para melhorar esse primeiro contato?`
     ];
     return messages[variant];
   }
 
   if (strategy.id === 'curiosidade') {
     const messages = [
-      `Olá, tudo bem? Posso fazer uma pergunta rápida?\n\nEncontrei a ${businessName} pesquisando empresas da região e notei um detalhe na presença digital que pode estar limitando novos contatos.\n\nÉ algo simples, mas costuma fazer diferença para quem procura ${segment}. Posso te mostrar?`,
-      `Oi! Vi a ${businessName} em uma pesquisa local e fiquei com uma observação que talvez ajude vocês a receberem mais contatos.\n\nNão quero te mandar uma proposta genérica. Posso te mostrar primeiro o ponto que encontrei?`,
-      `Olá! Achei a ${businessName} pesquisando ${segment} e percebi uma oportunidade que talvez esteja passando despercebida.\n\nPosso te enviar em poucas linhas o que eu ajustaria para facilitar a chegada de novos clientes?`
+      `Olá! Posso fazer uma pergunta rápida?\n\nEncontrei a ${businessName} pesquisando empresas da região e notei um detalhe simples que pode estar atrapalhando a chegada de novos clientes.\n\nÉ algo bem prático para quem procura ${segment}. Posso te mostrar?`,
+      `Oi! Vi a ${businessName} em uma busca local e tenho uma observação que talvez ajude vocês a receberem mais chamadas.\n\nNão quero te mandar uma proposta pronta. Prefiro te mostrar primeiro o ponto que encontrei.\n\nPosso enviar?`,
+      `Olá! Achei a ${businessName} pesquisando ${segment} e percebi uma oportunidade que talvez esteja passando despercebida.\n\nPosso te explicar em poucas linhas o que eu ajustaria para facilitar a chegada de novos clientes?`
     ];
     return messages[variant];
   }
 
   const messages = [
-    `Olá, tudo bem? Fiz uma leitura rápida da presença digital da ${businessName}.\n\nEncontrei algumas oportunidades para melhorar a forma como novos clientes encontram e entram em contato com vocês.\n\nMeu trabalho é ajudar negócios locais a ${benefit}, com ajustes práticos em presença digital, Google e canais de contato.\n\nPosso te enviar um diagnóstico gratuito e objetivo com os principais pontos que eu melhoraria na ${businessName}?`,
-    `Oi! Analisei rapidamente como a ${businessName} aparece para quem procura ${segment}.\n\nVi oportunidades de melhorar a clareza, a confiança e o caminho até o contato.\n\nIsso costuma ajudar empresas locais a transformar pesquisa em conversa comercial.\n\nPosso enviar um diagnóstico curto com sugestões específicas?`,
-    `Olá! Encontrei a ${businessName} e percebi que há espaço para fortalecer a presença digital de forma prática.\n\nA ideia não é complicar, e sim facilitar que quem já está procurando chegue até vocês com mais confiança.\n\nPosso te mandar 3 pontos de melhoria que identifiquei?`
+    `Olá! Dei uma olhada rápida na ${businessName} e encontrei alguns pontos que podem ajudar mais clientes a chamar vocês.\n\nMeu trabalho é usar tecnologia de forma simples para negócios locais: melhorar como a empresa aparece, facilitar o contato e passar mais confiança antes da primeira conversa.\n\nPosso te enviar uma análise curta com os principais pontos que eu melhoraria na ${businessName}?`,
+    `Oi! Analisei rapidamente como a ${businessName} aparece para quem procura ${segment}.\n\nVi oportunidades de deixar as informações mais claras e o contato mais fácil para o cliente.\n\nIsso costuma ajudar empresas locais a receber mais chamadas no WhatsApp e pedidos de orçamento.\n\nQuer que eu te mande algumas sugestões específicas?`,
+    `Olá! Encontrei a ${businessName} e percebi que alguns ajustes simples podem facilitar a chegada de novos clientes.\n\nA ideia não é complicar, nem falar de tecnologia difícil. É ajudar quem já está procurando a entender melhor vocês e chamar com mais confiança.\n\nPosso te mandar 3 pontos que eu melhoraria primeiro?`
   ];
   return messages[variant];
 }
@@ -270,14 +269,14 @@ function buildFollowUps(lead = {}, strategy, variationSeed) {
   const day3 = [
     `Oi, tudo bem? Só passando para confirmar se faz sentido eu te enviar as sugestões que identifiquei para a ${businessName}.`,
     `Oi! Vi que talvez minha mensagem tenha se perdido. Quer que eu te envie os pontos de melhoria que encontrei para a ${businessName}?`,
-    `Passando rapidamente: posso te mandar o diagnóstico curto que comentei sobre a presença digital da ${businessName}?`
+    `Passando rapidamente: posso te mandar a análise curta que comentei sobre como facilitar a chegada de clientes para a ${businessName}?`
   ][variant];
 
   return [
     {
       day: 1,
       title: 'Mensagem inicial',
-      objective: 'abrir conversa com diagnóstico contextual',
+      objective: 'abrir conversa com uma observação simples e contextual',
       message: 'Enviar a abordagem personalizada e aguardar sinal de interesse.'
     },
     {
@@ -290,13 +289,13 @@ function buildFollowUps(lead = {}, strategy, variationSeed) {
       day: 7,
       title: 'Dica prática',
       objective: 'gerar valor antes da venda',
-      message: 'Enviar uma dica simples sobre Google, site ou WhatsApp com base na principal oportunidade detectada.'
+      message: 'Enviar uma dica simples sobre Google, informações da empresa ou WhatsApp com base na principal oportunidade detectada.'
     },
     {
       day: 12,
       title: 'Convite para diagnóstico',
       objective: 'converter interesse em conversa',
-      message: 'Oferecer uma análise rápida de 10 minutos para mostrar os pontos de melhoria.'
+      message: 'Oferecer uma conversa rápida de 10 minutos para mostrar os pontos de melhoria.'
     },
     {
       day: 20,

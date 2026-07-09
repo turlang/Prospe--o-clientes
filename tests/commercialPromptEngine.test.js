@@ -74,3 +74,17 @@ test('normalizeMode mantém fallback seguro', () => {
   assert.equal(normalizeMode('variant'), 'variant');
   assert.equal(normalizeMode('qualquer'), 'new');
 });
+
+test('Prompt Engine orienta IA a vender tecnologia em linguagem simples', () => {
+  const prompt = buildCommercialPrompt({
+    lead: { nome: 'Barbearia Elite', segmentoComercial: 'Barbearia', score: 80 },
+    mode: 'new',
+    channel: 'whatsapp',
+    regenerateKey: 'tom-v207'
+  });
+
+  assert.ok(prompt.includes('vendedor de tecnologia experiente'));
+  assert.ok(prompt.includes('termos técnicos'));
+  assert.ok(prompt.includes('mais chamadas no WhatsApp'));
+  assert.ok(prompt.includes('tom-v207'));
+});

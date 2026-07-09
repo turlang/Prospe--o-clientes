@@ -17,7 +17,7 @@ A evolução deve continuar migrando responsabilidades de `server.js` para servi
 ## Motor de Estratégias Comerciais
 O arquivo `src/services/salesStrategyEngine.js` centraliza a lógica de diagnóstico do lead, seleção de estratégia, mensagem personalizada e sequência sugerida de follow-up.
 
-## V20.6 — Prompt Engine Comercial
+## V20.7 — Prompt Engine Comercial Humanizado
 
 A geração de abordagem agora passa por uma camada de briefing antes da IA:
 
@@ -31,13 +31,14 @@ Lead salvo
   -> Fallback local quando necessário
 ```
 
-O objetivo é impedir mensagens genéricas. O prompt enviado à IA contém:
+O objetivo é impedir mensagens genéricas e evitar que a IA fale como técnico. O prompt enviado à IA contém:
 
 - empresa, segmento, score e maturidade digital;
 - dor principal e oportunidades detectadas;
 - estratégia recomendada;
 - histórico recente de abordagens e respostas;
 - modo de geração: nova, variação, melhoria ou follow-up;
-- regras de qualidade para evitar clichês e informações inventadas.
+- regras de qualidade para evitar clichês, informações inventadas e jargões técnicos.
+- orientação para falar como vendedor consultivo de serviços tecnológicos para clientes que não dominam tecnologia.
 
 Cada abordagem gerada é registrada na timeline do lead para que futuras versões não repitam o mesmo argumento.

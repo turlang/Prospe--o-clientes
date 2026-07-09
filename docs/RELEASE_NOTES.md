@@ -731,3 +731,25 @@ Resultado: 17 testes aprovados.
 - O motor local ganhou variações por estratégia e segmento para funcionar mesmo sem API externa.
 - A resposta informa se veio de IA generativa, motor local ou fallback local.
 - Novas variáveis de ambiente adicionadas ao `.env.example`.
+
+---
+
+## V20.7 — Prompt com tom de vendedor experiente
+
+Esta versão ajusta o comportamento da IA para que a abordagem não fique técnica demais para clientes que não conhecem tecnologia.
+
+### Principais mudanças
+
+- A IA agora recebe instruções para agir como um vendedor consultivo extremamente experiente em serviços tecnológicos.
+- O prompt evita linguagem de analista técnico e prioriza conversa simples com donos de pequenos negócios.
+- Termos técnicos como SEO, funil, conversão, landing page, automação e CRM devem ser evitados ou traduzidos para benefícios práticos.
+- As mensagens passam a falar em resultados compreensíveis para o lead: mais chamadas no WhatsApp, mais agendamentos, mais pedidos, mais orçamentos e mais confiança.
+- O motor local também foi humanizado para manter qualidade quando a IA estiver indisponível.
+
+### Validação
+
+```bash
+npm run check
+```
+
+Resultado: 35 testes aprovados.

@@ -219,3 +219,16 @@
 - Dashboard
 - MongoDB Atlas
 - Render
+
+---
+
+## v20.7.0 - Tom comercial humanizado para IA
+
+### Alterado
+- Prompt Engine passou a orientar a IA a atuar como vendedor consultivo de serviços tecnológicos, não como técnico.
+- Abordagens agora evitam jargões como SEO, funil, conversão, landing page, CRM e automação quando o lead não conhece tecnologia.
+- Benefícios foram traduzidos para linguagem simples: mais chamadas no WhatsApp, mais agendamentos, mais pedidos, mais orçamentos e mais confiança.
+- Motor local recebeu mensagens de fallback mais humanas e próximas do dono do negócio.
+
+### Testes
+- Adicionados testes garantindo prompt em linguagem simples e ausência de termos técnicos no fallback local.

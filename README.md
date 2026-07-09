@@ -263,7 +263,7 @@ Na interface, a lateral mostra o status da **IA Comercial**. Cada abordagem tamb
 
 Quando a IA estiver indisponível, o sistema volta automaticamente para o motor local com variações e mostra uma mensagem amigável ao usuário.
 
-#### Prompt Engine Comercial V20.6
+#### Prompt Engine Comercial V20.7
 
 A geração de abordagem não envia apenas um texto simples para a IA. Antes da chamada ao provedor, o sistema monta um briefing comercial com:
 
@@ -276,4 +276,4 @@ A geração de abordagem não envia apenas um texto simples para a IA. Antes da 
 - histórico recente do lead;
 - abordagem anterior, quando houver.
 
-Com isso, os botões **Gerar abordagem**, **Gerar outra versão** e **Melhorar esta abordagem** produzem mensagens menos genéricas e mais próximas da realidade do lead. Cada abordagem gerada também é registrada na timeline comercial do lead para reduzir repetição nas próximas gerações.
+Com isso, os botões **Gerar abordagem**, **Gerar outra versão** e **Melhorar esta abordagem** produzem mensagens menos genéricas, mais próximas da realidade do lead e com tom de vendedor experiente. A IA foi orientada a evitar jargões técnicos e traduzir tecnologia em benefícios simples, como mais chamadas no WhatsApp, mais agendamentos, mais pedidos, mais orçamentos e mais confiança. Cada abordagem gerada também é registrada na timeline comercial do lead para reduzir repetição nas próximas gerações.

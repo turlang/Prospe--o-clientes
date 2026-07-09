@@ -30,3 +30,15 @@ test('motor gera mensagem, diagnóstico e sequência de follow-up', () => {
   assert.ok(Array.isArray(result.followUps));
   assert.equal(result.followUps.length, 5);
 });
+
+test('motor local evita abordagem excessivamente técnica', () => {
+  const result = buildSalesApproach({
+    nome: 'Barbearia Elite',
+    segmentoComercial: 'Barbearia',
+    score: 85,
+    telefone: '(11) 98888-7777'
+  }, { variationSeed: 'tom-v207' });
+
+  assert.ok(result.abordagem.includes('tecnologia de um jeito simples') || result.abordagem.includes('ajustes pequenos') || result.abordagem.includes('chamar vocês'));
+  assert.equal(/SEO|landing page|CRM|automação|funil/i.test(result.abordagem), false);
+});
