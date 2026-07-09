@@ -1,3 +1,18 @@
+## 21.0.0 - Assistente Comercial Inteligente
+
+- Adicionado serviço `commercialIntelligenceService` para priorização dinâmica de leads.
+- Novo endpoint `/api/commercial-intelligence/summary` com próxima melhor ação, oportunidades em risco e orientação de gerente comercial.
+- Novo endpoint `/api/commercial-intelligence/objection` para resposta consultiva a objeções comuns.
+- Dashboard agora exibe Assistente Comercial Inteligente com leads ativos, alta prioridade, riscos e próximos passos.
+- Adicionados testes automatizados da inteligência comercial V21.
+
+## 20.9.0 - Agenda comercial inteligente
+
+- Nova visão de agenda operacional agrupando tarefas atrasadas, para hoje, próximos 7 dias, futuras e concluídas.
+- Criado endpoint `/api/agenda/summary` para entregar resumo executivo da agenda comercial.
+- Adicionado serviço `commercialAgendaService` com regras testáveis de prioridade, urgência e próxima melhor ação.
+- Interface da agenda ganhou cartões de resumo e botão para abrir a ficha do lead diretamente da tarefa.
+
 ## 20.5.0
 
 ### Adicionado

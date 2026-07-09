@@ -10,6 +10,8 @@ O projeto demonstra uma aplicação SaaS com autenticação, CRM, planos editáv
 
 ## Principais funcionalidades
 
+- Assistente Comercial Inteligente V21 com priorização dinâmica, próxima melhor ação e oportunidades em risco.
+
 - Cadastro e login de usuários.
 - CRM de leads com pipeline Kanban compacto.
 - Motor de Estratégias Comerciais para gerar a melhor abordagem por tipo de lead.
@@ -290,3 +292,5 @@ A partir da versão 20.8, o botão **Consultor IA** pode gerar peças comerciais
 - Convite para diagnóstico.
 
 Cada canal usa regras próprias no Prompt Engine. Quando Groq, Gemini ou OpenAI estiverem configurados, a IA externa gera a peça. Se a IA falhar ou não estiver configurada, o motor local adapta a mensagem automaticamente para o canal escolhido.
+
+- Agenda comercial inteligente com tarefas agrupadas por urgência.

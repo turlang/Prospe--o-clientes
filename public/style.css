@@ -1148,3 +1148,131 @@ body.modal-open {
 .strategy-output h4 {
   margin-top: 1rem;
 }
+
+/* V20.9 - Agenda comercial inteligente */
+.agenda-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin: 16px 0;
+}
+
+.agenda-summary-grid article {
+  background: rgba(255,255,255,0.92);
+  border: 1px solid rgba(15,23,42,0.08);
+  border-radius: 18px;
+  padding: 16px;
+  box-shadow: 0 12px 30px rgba(15,23,42,0.06);
+}
+
+.agenda-summary-grid article.wide {
+  grid-column: span 4;
+}
+
+.agenda-summary-grid small {
+  display: block;
+  color: #64748b;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  font-size: .72rem;
+}
+
+.agenda-summary-grid strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 1.65rem;
+  color: #0f172a;
+}
+
+.agenda-summary-grid span {
+  display: block;
+  margin-top: 4px;
+  color: #475569;
+  font-size: .92rem;
+}
+
+.agenda-group {
+  border: 1px solid rgba(15,23,42,0.08);
+  border-radius: 18px;
+  padding: 14px;
+  margin-bottom: 16px;
+  background: rgba(248,250,252,0.8);
+}
+
+.agenda-group > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.agenda-group > header h4 {
+  margin: 0;
+  color: #0f172a;
+}
+
+.agenda-group > header span {
+  min-width: 32px;
+  height: 28px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #e2e8f0;
+  color: #0f172a;
+  font-weight: 800;
+}
+
+.agenda-group.danger {
+  border-color: rgba(220,38,38,0.28);
+  background: rgba(254,242,242,0.78);
+}
+
+.agenda-group.today {
+  border-color: rgba(37,99,235,0.22);
+  background: rgba(239,246,255,0.78);
+}
+
+.agenda-item {
+  display: grid;
+  grid-template-columns: 82px minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  background: #fff;
+  border: 1px solid rgba(15,23,42,0.08);
+  border-radius: 16px;
+  padding: 12px;
+  margin: 10px 0;
+}
+
+.agenda-content h4 {
+  margin: 0 0 4px;
+}
+
+.agenda-content p {
+  margin: 4px 0;
+}
+
+.agenda-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+@media (max-width: 900px) {
+  .agenda-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .agenda-summary-grid article.wide {
+    grid-column: span 2;
+  }
+  .agenda-item {
+    grid-template-columns: 1fr;
+  }
+  .agenda-actions {
+    justify-content: flex-start;
+  }
+}

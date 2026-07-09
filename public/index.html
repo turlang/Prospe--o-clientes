@@ -89,13 +89,21 @@
             <button type="button" onclick="switchView('prospectar')">Prospectar agora</button>
           </div>
           <div id="executiveStats" class="executive-grid"></div>
+          <section class="card-panel intelligence-panel">
+            <div class="section-title">
+              <h3>Assistente Comercial Inteligente</h3>
+              <p class="meta">A V21 prioriza leads, identifica oportunidades em risco e recomenda a próxima melhor ação.</p>
+            </div>
+            <div id="commercialIntelligenceSummary" class="agenda-summary-grid"></div>
+            <div id="commercialIntelligenceAdvice" class="history-list compact-list"></div>
+          </section>
           <div class="dashboard-analytics">
             <section class="card-panel">
               <div class="section-title"><h3>Funil comercial</h3><p class="meta">Acompanhe a evolução real dos leads dentro do CRM.</p></div>
               <div id="dashboardFunnel" class="funnel-list"></div>
             </section>
             <section class="card-panel">
-              <div class="section-title"><h3>Prioridades da semana</h3><p class="meta">O sistema aponta onde você deve agir primeiro.</p></div>
+              <div class="section-title"><h3>Próximas melhores ações</h3><p class="meta">Recomendações do gerente comercial inteligente.</p></div>
               <div id="dashboardInsights" class="history-list compact-list"></div>
             </section>
           </div>
@@ -190,13 +198,12 @@
             </div>
             <button type="button" onclick="loadAgenda()">Atualizar agenda</button>
           </div>
-          <div class="info-grid">
-            <article><strong>Hoje</strong><span>Follow-ups vencidos ou que precisam de atenção imediata.</span></article>
-            <article><strong>Próximos dias</strong><span>Retornos agendados para manter o lead aquecido.</span></article>
-            <article><strong>Concluídos</strong><span>Ações já finalizadas, mantendo histórico comercial.</span></article>
-          </div>
+          <div id="agendaSummary" class="agenda-summary-grid"></div>
           <section class="card-panel">
-            <h3>Tarefas comerciais</h3>
+            <div class="section-title">
+              <h3>Agenda operacional</h3>
+              <p class="meta">Tarefas agrupadas por urgência para ajudar o vendedor a saber o que fazer primeiro.</p>
+            </div>
             <div id="agendaList" class="agenda-list"></div>
           </section>
         </section>
@@ -247,6 +254,6 @@
       </section>
     </section>
   </main>
-  <script src="app.js?v=v19-1-botoes-fix"></script>
+  <script src="app.js?v=v21-assistente-comercial"></script>
 </body>
 </html>

@@ -1,3 +1,29 @@
+## V21.0 — Assistente Comercial Inteligente
+
+A V21 transforma o CRM em um copiloto comercial que orienta o vendedor sobre onde agir primeiro.
+
+### Adicionado
+
+- Priorização dinâmica de leads com base em score, status, tempo sem interação e tarefas pendentes.
+- Próxima melhor ação por lead: primeiro contato, follow-up, proposta, ligação, pós-venda ou arquivamento.
+- Detecção de oportunidades em risco, como proposta sem retorno, lead novo parado e interessado sem próximo passo.
+- Resumo executivo no dashboard com leads ativos, alta prioridade, riscos e leads sem tarefa.
+- Orientações de gerente comercial para ajudar o usuário a decidir o foco do dia.
+- Endpoint `/api/commercial-intelligence/summary`.
+- Endpoint `/api/commercial-intelligence/objection`.
+- Testes automatizados para o motor de inteligência comercial.
+
+### Objetivo
+
+Reduzir confusão operacional e transformar o sistema em um assistente que recomenda a ação comercial mais útil, em vez de apenas armazenar informações.
+
+## 20.9.0 - Agenda comercial inteligente
+
+- Nova visão de agenda operacional agrupando tarefas atrasadas, para hoje, próximos 7 dias, futuras e concluídas.
+- Criado endpoint `/api/agenda/summary` para entregar resumo executivo da agenda comercial.
+- Adicionado serviço `commercialAgendaService` com regras testáveis de prioridade, urgência e próxima melhor ação.
+- Interface da agenda ganhou cartões de resumo e botão para abrir a ficha do lead diretamente da tarefa.
+
 ## V20.6 — Prompt Engine Comercial
 
 - Criado `src/services/commercialPromptEngine.js` para montar briefing comercial antes da chamada de IA.

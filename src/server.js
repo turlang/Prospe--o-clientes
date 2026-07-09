@@ -37,6 +37,8 @@ const {
 const { writeAdminAudit } = require('./services/adminAuditService');
 const { buildSalesApproach } = require('./services/salesStrategyEngine');
 const { generateAiEnhancedApproach, getAiProviderStatus } = require('./services/aiApproachService');
+const { buildAgendaSummary } = require('./services/commercialAgendaService');
+const { buildCommercialIntelligence, buildObjectionResponse } = require('./services/commercialIntelligenceService');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -1009,6 +1011,46 @@ app.post('/api/followups', requireAuth, async (req, res) => {
 app.get('/api/followups', requireAuth, async (req, res) => {
   try {
     res.json(await listTasks(req.user.sub));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/agenda/summary', requireAuth, async (req, res) => {
+  try {
+    const tasks = await listTasks(req.user.sub);
+    res.json(buildAgendaSummary(tasks));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/commercial-intelligence/summary', requireAuth, async (req, res) => {
+  try {
+    const [leads, tasks] = await Promise.all([
+      readLeads(req.user.sub),
+      listTasks(req.user.sub)
+    ]);
+    res.json(buildCommercialIntelligence(leads, tasks));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/commercial-intelligence/objection', requireAuth, async (req, res) => {
+  try {
+    const { leadId, objection } = req.body;
+    if (!leadId || !objection) return res.status(400).json({ error: 'Informe leadId e objeção.' });
+
+    const leads = await readLeads(req.user.sub);
+    const lead = leads.find((item) => String(item.placeId || item.nome) === String(leadId));
+    if (!lead) return res.status(404).json({ error: 'Lead não encontrado.' });
+
+    res.json({
+      leadId,
+      objection,
+      respostaSugerida: buildObjectionResponse(objection, lead)
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

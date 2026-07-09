@@ -44,6 +44,9 @@ const searchLead = document.querySelector('#searchLead');
 const dashboardFunnel = document.querySelector('#dashboardFunnel');
 const dashboardInsights = document.querySelector('#dashboardInsights');
 const agendaList = document.querySelector('#agendaList');
+const agendaSummary = document.querySelector('#agendaSummary');
+const commercialIntelligenceSummary = document.querySelector('#commercialIntelligenceSummary');
+const commercialIntelligenceAdvice = document.querySelector('#commercialIntelligenceAdvice');
 const leadDetailPanel = document.querySelector('#leadDetailPanel');
 
 let authToken = localStorage.getItem('authToken') || '';
@@ -187,6 +190,7 @@ form.addEventListener('submit', async (event) => {
     await refreshStats();
     await refreshUsage();
     await loadHistory();
+    await loadCommercialIntelligence();
   } catch (error) {
     showError(error.message);
   }
@@ -305,7 +309,7 @@ function switchView(view) {
   if (results) results.hidden = view !== 'prospectar';
 
   if (view === 'crm') carregarLeadsCRM();
-  if (view === 'dashboard') loadSavedLeads(false, { renderCards: false });
+  if (view === 'dashboard') { loadSavedLeads(false, { renderCards: false }); loadCommercialIntelligence(); }
   if (view === 'historico') loadHistory();
   if (view === 'planos') renderPlans();
   if (view === 'agenda') loadAgenda();
@@ -519,7 +523,7 @@ function renderDashboardExtras(leads) {
     }).join('');
   }
 
-  if (dashboardInsights) {
+  if (dashboardInsights && !dashboardInsights.dataset.aiLoaded) {
     const hot = leads.filter((lead) => Number(lead.score || 0) >= 80).slice(0, 3);
     const stalled = leads.filter((lead) => {
       const last = getLastInteraction(lead);
@@ -1338,30 +1342,81 @@ async function loadFollowups() {
 async function loadAgenda() {
   if (!agendaList || !authToken) return;
   agendaList.innerHTML = '<p class="loading">Carregando agenda comercial...</p>';
+  if (agendaSummary) agendaSummary.innerHTML = '';
+
   try {
-    const response = await apiFetch('/api/followups');
-    const tasks = await readJson(response);
-    if (!response.ok) throw new Error(tasks.error || 'Erro ao carregar agenda.');
-    const sorted = (Array.isArray(tasks) ? tasks : []).sort((a, b) => new Date(a.dueAt || 0) - new Date(b.dueAt || 0));
-    if (!sorted.length) {
-      agendaList.innerHTML = '<p class="meta">Nenhuma tarefa comercial agendada. Abra um lead no CRM e clique em Agendar follow-up.</p>';
-      return;
-    }
-    const today = new Date();
-    agendaList.innerHTML = sorted.map((task) => {
-      const due = new Date(task.dueAt);
-      const overdue = !task.done && due < today;
-      return `
-        <article class="agenda-item ${task.done ? 'done' : ''} ${overdue ? 'overdue' : ''}">
-          <div class="agenda-date"><strong>${due.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</strong><span>${due.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span></div>
-          <div><h4>${escapeHtml(task.title || 'Follow-up comercial')}</h4><p>${escapeHtml(task.leadName || 'Lead')}</p><small>Prioridade: ${escapeHtml(task.priority || 'MÉDIA')} · ${escapeHtml(task.automationType || 'MANUAL')}</small><p>${escapeHtml(task.message || '')}</p></div>
-          ${task.done ? '<span class="tag dark">Concluído</span>' : `<button type="button" class="secondary" onclick="completeFollowup('${escapeAttr(task.id)}')">Concluir</button>`}
-        </article>
-      `;
-    }).join('');
+    const response = await apiFetch('/api/agenda/summary');
+    const data = await readJson(response);
+    if (!response.ok) throw new Error(data.error || 'Erro ao carregar agenda.');
+
+    renderAgendaSummary(data.summary || {});
+    renderAgendaGroups(data.groups || {});
   } catch (error) {
     agendaList.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
   }
+}
+
+function renderAgendaSummary(summary) {
+  if (!agendaSummary) return;
+  const nextTask = summary.nextTask;
+  agendaSummary.innerHTML = `
+    <article><small>Atrasadas</small><strong>${Number(summary.overdue || 0)}</strong><span>exigem ação imediata</span></article>
+    <article><small>Hoje</small><strong>${Number(summary.today || 0)}</strong><span>tarefas para executar agora</span></article>
+    <article><small>Próximos 7 dias</small><strong>${Number(summary.upcoming || 0)}</strong><span>retornos para manter aquecido</span></article>
+    <article><small>Alta prioridade</small><strong>${Number(summary.highPriority || 0)}</strong><span>foco comercial principal</span></article>
+    <article class="wide"><small>Próxima melhor ação</small><strong>${nextTask ? escapeHtml(nextTask.title || 'Follow-up comercial') : 'Nenhuma ação pendente'}</strong><span>${nextTask ? `${escapeHtml(nextTask.leadName || 'Lead')} · ${formatDate(nextTask.dueAt)}` : 'Abra um lead no CRM e agende um follow-up.'}</span></article>
+  `;
+}
+
+function renderAgendaGroups(groups) {
+  const sections = [
+    { key: 'overdue', title: 'Atrasadas', empty: 'Nenhuma tarefa atrasada.', tone: 'danger' },
+    { key: 'today', title: 'Para hoje', empty: 'Nenhuma tarefa para hoje.', tone: 'today' },
+    { key: 'upcoming', title: 'Próximos 7 dias', empty: 'Nenhum retorno nos próximos dias.', tone: 'upcoming' },
+    { key: 'later', title: 'Mais tarde', empty: 'Nenhuma tarefa futura distante.', tone: 'later' },
+    { key: 'completed', title: 'Concluídas recentes', empty: 'Nenhuma tarefa concluída ainda.', tone: 'done' }
+  ];
+
+  const hasAny = sections.some((section) => Array.isArray(groups[section.key]) && groups[section.key].length);
+  if (!hasAny) {
+    agendaList.innerHTML = '<p class="meta">Nenhuma tarefa comercial agendada. Abra um lead no CRM e clique em Agendar retorno.</p>';
+    return;
+  }
+
+  agendaList.innerHTML = sections.map((section) => {
+    const tasks = Array.isArray(groups[section.key]) ? groups[section.key] : [];
+    return `
+      <section class="agenda-group ${section.tone}">
+        <header><h4>${section.title}</h4><span>${tasks.length}</span></header>
+        ${tasks.length ? tasks.map(renderAgendaTask).join('') : `<p class="meta">${section.empty}</p>`}
+      </section>
+    `;
+  }).join('');
+}
+
+function renderAgendaTask(task) {
+  const due = new Date(task.dueAt);
+  const validDate = !Number.isNaN(due.getTime());
+  const dateLabel = validDate ? due.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) : '--';
+  const timeLabel = validDate ? due.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '--:--';
+  const priority = escapeHtml(task.priority || 'MÉDIA');
+  const done = Boolean(task.done);
+
+  return `
+    <article class="agenda-item ${done ? 'done' : ''}">
+      <div class="agenda-date"><strong>${dateLabel}</strong><span>${timeLabel}</span></div>
+      <div class="agenda-content">
+        <h4>${escapeHtml(task.title || 'Follow-up comercial')}</h4>
+        <p>${escapeHtml(task.leadName || 'Lead')}</p>
+        <small>Prioridade: ${priority} · ${escapeHtml(task.automationType || 'MANUAL')}</small>
+        <p>${escapeHtml(task.message || '')}</p>
+      </div>
+      <div class="agenda-actions">
+        ${task.leadId ? `<button type="button" class="secondary" onclick="openLeadDetail('${escapeAttr(task.leadId)}')">Ver lead</button>` : ''}
+        ${done ? '<span class="tag dark">Concluído</span>' : `<button type="button" onclick="completeFollowup('${escapeAttr(task.id)}')">Concluir</button>`}
+      </div>
+    </article>
+  `;
 }
 
 window.loadAgenda = loadAgenda;
@@ -1444,6 +1499,61 @@ async function carregarLeadsCRM() {
 }
 window.carregarLeadsCRM = carregarLeadsCRM;
 
+
+
+async function loadCommercialIntelligence() {
+  if (!authToken || (!commercialIntelligenceSummary && !commercialIntelligenceAdvice && !dashboardInsights)) return;
+
+  try {
+    const response = await apiFetch('/api/commercial-intelligence/summary');
+    const data = await readJson(response);
+    if (!response.ok) throw new Error(data.error || 'Erro ao carregar inteligência comercial.');
+
+    renderCommercialIntelligence(data);
+  } catch (error) {
+    if (commercialIntelligenceAdvice) {
+      commercialIntelligenceAdvice.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
+    }
+  }
+}
+
+function renderCommercialIntelligence(data) {
+  const summary = data.summary || {};
+  if (commercialIntelligenceSummary) {
+    commercialIntelligenceSummary.innerHTML = `
+      <article><small>Leads ativos</small><strong>${Number(summary.activeLeads || 0)}</strong><span>em andamento no funil</span></article>
+      <article><small>Alta prioridade</small><strong>${Number(summary.highPriority || 0)}</strong><span>merecem ação primeiro</span></article>
+      <article><small>Em risco</small><strong>${Number(summary.atRisk || 0)}</strong><span>podem esfriar ou perder timing</span></article>
+      <article><small>Sem próximo passo</small><strong>${Number(summary.noNextStep || 0)}</strong><span>precisam de tarefa agendada</span></article>
+    `;
+  }
+
+  if (commercialIntelligenceAdvice) {
+    const advice = Array.isArray(data.managerAdvice) ? data.managerAdvice : [];
+    commercialIntelligenceAdvice.innerHTML = advice.length ? advice.map((text) => `
+      <article class="history-item manager-advice">
+        <div><strong>Orientação do gerente comercial</strong><p>${escapeHtml(text)}</p></div>
+      </article>
+    `).join('') : '<p class="meta">Nenhuma orientação crítica neste momento.</p>';
+  }
+
+  if (dashboardInsights) {
+    dashboardInsights.dataset.aiLoaded = 'true';
+    const actions = Array.isArray(data.nextActions) ? data.nextActions : [];
+    dashboardInsights.innerHTML = actions.length ? actions.map((item) => `
+      <article class="history-item priority-${escapeAttr(String(item.priority || '').toLowerCase())}">
+        <div>
+          <strong>${escapeHtml(item.priority || 'MÉDIA')} · ${escapeHtml(item.leadName || 'Lead')}</strong>
+          <p>${escapeHtml(item.action || 'Revisar oportunidade')}</p>
+          <small>${escapeHtml(item.reason || '')}${item.risk ? ` · Risco: ${escapeHtml(item.risk)}` : ''}</small>
+        </div>
+        <button type="button" class="secondary" onclick="openLeadDetail('${escapeAttr(item.leadId)}')">Abrir ficha</button>
+      </article>
+    `).join('') : '<p class="meta">Nenhuma ação urgente. Continue prospectando ou agendando follow-ups.</p>';
+  }
+}
+
+window.loadCommercialIntelligence = loadCommercialIntelligence;
 
 // crm-carregar-super-listener
 document.addEventListener('DOMContentLoaded', () => {
