@@ -419,7 +419,7 @@ app.post('/api/gerar-abordagem', requireAuth, async (req, res) => {
     const lead = leads.find((item) => String(item.placeId || item.nome) === String(leadId));
     if (!lead) return res.status(404).json({ error: 'Lead não encontrado.' });
 
-    const localRecommendation = buildSalesApproach(lead, { variationSeed: regenerateKey });
+    const localRecommendation = buildSalesApproach(lead, { variationSeed: regenerateKey, channel, mode });
     const recommendation = await generateAiEnhancedApproach({
       lead,
       leadContext: localRecommendation.leadContext,

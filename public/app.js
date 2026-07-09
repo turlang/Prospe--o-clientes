@@ -669,7 +669,7 @@ function openLeadDetail(leadId) {
       <button type="button" class="secondary" onclick="updateStatus('${escapeAttr(leadId)}','CONTATADO')">Contato feito</button>
       <button type="button" class="secondary" onclick="updateStatus('${escapeAttr(leadId)}','INTERESSADO')">Interessado</button>
       <button type="button" class="secondary" onclick="updateStatus('${escapeAttr(leadId)}','PROPOSTA')">Proposta</button>
-      <button type="button" class="secondary" onclick="generateApproach('${escapeAttr(leadId)}', 'new')">🧠 Consultor IA</button>
+      <button type="button" class="secondary" onclick="generateApproach('${escapeAttr(leadId)}', 'new', 'generic')">🧠 Consultor IA</button>
       <button type="button" class="secondary" onclick="scheduleFollowup('${escapeAttr(leadId)}')">Agendar retorno</button>
     </div>
     <pre id="approach-modal-${escapeAttr(leadId)}" class="msg crm-approach-output"></pre>
@@ -765,7 +765,7 @@ function renderLead(lead) {
       <label>Notas comerciais<textarea id="notes-${escapeAttr(leadId)}" placeholder="Ex: respondeu rápido, pedir orçamento, retornar sexta...">${escapeHtml(lead.notas || '')}</textarea></label>
       <div class="links">
         <button type="button" class="secondary" onclick="saveLeadMeta('${escapeAttr(leadId)}')">Salvar CRM</button>
-        <button type="button" class="approach-btn" onclick="generateApproach('${escapeAttr(leadId)}', 'new')">🧠 Consultor IA</button>
+        <button type="button" class="approach-btn" onclick="generateApproach('${escapeAttr(leadId)}', 'new', 'generic')">🧠 Consultor IA</button>
         <button type="button" class="secondary" onclick="generateCampaign('${escapeAttr(leadId)}')">Sequência</button>
         <button type="button" class="secondary" onclick="scheduleFollowup('${escapeAttr(leadId)}')">Agendar follow-up</button>
       </div>
@@ -816,14 +816,14 @@ async function saveLeadMeta(leadId) {
   } catch (error) { showError(error.message); }
 }
 
-async function generateApproach(leadId, mode = 'new') {
+async function generateApproach(leadId, mode = 'new', channel = 'generic') {
   const outputs = [
     document.getElementById(`approach-${leadId}`),
     document.getElementById(`approach-modal-${leadId}`)
   ].filter(Boolean);
 
   outputs.forEach((output) => {
-    output.textContent = 'Analisando lead, histórico e estratégia comercial...';
+    output.textContent = `Analisando lead, histórico e peça comercial (${channelLabel(channel)})...`;
   });
 
   try {
@@ -833,8 +833,8 @@ async function generateApproach(leadId, mode = 'new') {
       body: JSON.stringify({
         leadId,
         mode,
-        channel: 'generic',
-        regenerateKey: `${mode}-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        channel,
+        regenerateKey: `${mode}-${channel}-${Date.now()}-${Math.random().toString(36).slice(2)}`,
         previousApproach: approachHistory[leadId] || ''
       })
     });
@@ -847,7 +847,7 @@ async function generateApproach(leadId, mode = 'new') {
       output.innerHTML = html;
     });
 
-    statusBox.innerHTML = `<p>Abordagem comercial gerada com ${escapeHtml(engineLabel(data))} e estratégia ${escapeHtml(data.strategy?.name || 'comercial')}.</p>`;
+    statusBox.innerHTML = `<p>${escapeHtml(channelLabel(data.channel || channel))} gerado com ${escapeHtml(engineLabel(data))} e estratégia ${escapeHtml(data.strategy?.name || 'comercial')}.</p>`;
   } catch (error) {
     outputs.forEach((output) => {
       output.textContent = error.message;
@@ -856,6 +856,19 @@ async function generateApproach(leadId, mode = 'new') {
   }
 }
 
+
+function channelLabel(channel = 'generic') {
+  const labels = {
+    generic: 'Abordagem inicial',
+    whatsapp: 'Mensagem de WhatsApp',
+    email: 'E-mail comercial',
+    call: 'Roteiro de ligação',
+    objection: 'Tratamento de objeção',
+    followup: 'Follow-up',
+    proposal: 'Convite para diagnóstico'
+  };
+  return labels[String(channel || 'generic').toLowerCase()] || 'Peça comercial';
+}
 
 function engineLabel(data) {
   if (data.source === 'ai') return `IA ${data.providerLabel || data.provider || 'generativa'}`;
@@ -915,13 +928,25 @@ function renderSalesApproach(data, leadId = '') {
       ${explanation.length ? `<ul class="strategy-reasons">${explanation.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>` : ''}
       ${qualityChecklist.length ? `<p class="meta"><strong>Qualidade:</strong> ${qualityChecklist.map(escapeHtml).join(' · ')}</p>` : ''}
 
-      <h4>Mensagem pronta para enviar</h4>
+      <h4>${escapeHtml(channelLabel(data.channel || 'generic'))} pronta para usar</h4>
       <pre class="msg strategy-message">${escapeHtml(data.abordagem || '')}</pre>
       <div class="approach-actions">
-        <button type="button" class="copy" onclick='copyText(${JSON.stringify(data.abordagem || '')})'>Copiar abordagem</button>
-        ${leadId ? `<button type="button" class="secondary" onclick="generateApproach('${escapeAttr(leadId)}','variant')">🔄 Gerar outra versão</button>` : ''}
-        ${leadId ? `<button type="button" class="secondary" onclick="generateApproach('${escapeAttr(leadId)}','improve')">✨ Melhorar esta abordagem</button>` : ''}
+        <button type="button" class="copy" onclick='copyText(${JSON.stringify(data.abordagem || '')})'>Copiar texto</button>
+        ${leadId ? `<button type="button" class="secondary" onclick="generateApproach('${escapeAttr(leadId)}','variant','${escapeAttr(data.channel || 'generic')}')">🔄 Outra versão</button>` : ''}
+        ${leadId ? `<button type="button" class="secondary" onclick="generateApproach('${escapeAttr(leadId)}','improve','${escapeAttr(data.channel || 'generic')}')">✨ Melhorar</button>` : ''}
       </div>
+
+      ${leadId ? `
+        <h4>Gerar para outro canal</h4>
+        <div class="channel-actions">
+          <button type="button" class="secondary" onclick="generateApproach('${escapeAttr(leadId)}','new','whatsapp')">📱 WhatsApp</button>
+          <button type="button" class="secondary" onclick="generateApproach('${escapeAttr(leadId)}','new','email')">📧 E-mail</button>
+          <button type="button" class="secondary" onclick="generateApproach('${escapeAttr(leadId)}','new','call')">📞 Ligação</button>
+          <button type="button" class="secondary" onclick="generateApproach('${escapeAttr(leadId)}','followup','followup')">🔁 Follow-up</button>
+          <button type="button" class="secondary" onclick="generateApproach('${escapeAttr(leadId)}','new','objection')">🛡️ Objeção</button>
+          <button type="button" class="secondary" onclick="generateApproach('${escapeAttr(leadId)}','new','proposal')">🎯 Diagnóstico</button>
+        </div>
+      ` : ''}
 
       ${followUps.length ? `
         <h4>Sequência sugerida</h4>

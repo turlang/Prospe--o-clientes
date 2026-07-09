@@ -37,7 +37,26 @@ const CHANNEL_RULES = {
     'Canal: ligação.',
     'Crie um roteiro breve de abertura para ligação comercial.',
     'Inclua uma frase para pedir permissão antes de explicar a oportunidade.',
-    'Evite monólogo longo.'
+    'Evite monólogo longo.',
+    'A resposta deve parecer um script falado, com pausas e pergunta de confirmação.'
+  ],
+  objection: [
+    'Canal: tratamento de objeção.',
+    'Crie uma resposta para quando o lead disser que não tem interesse, já tem fornecedor, está sem tempo ou achou caro.',
+    'A resposta deve acolher a objeção, reduzir resistência e abrir uma próxima conversa sem insistência.',
+    'Não pressione, não discuta preço e não desqualifique fornecedores atuais.'
+  ],
+  followup: [
+    'Canal: follow-up.',
+    'Crie uma mensagem curta para retomar contato depois de uma primeira abordagem sem resposta.',
+    'Não cobre retorno. Reforce uma observação útil e faça uma pergunta simples.',
+    'A mensagem deve ser diferente da abordagem anterior.'
+  ],
+  proposal: [
+    'Canal: proposta curta.',
+    'Crie uma mensagem para levar o lead a aceitar uma conversa ou diagnóstico, sem enviar preço fechado.',
+    'Mostre o próximo passo de forma simples e segura.',
+    'Evite termos como contrato, implantação, escopo técnico ou automação.'
   ],
   generic: [
     'Canal: mensagem inicial genérica para WhatsApp ou e-mail curto.',
@@ -235,6 +254,7 @@ function buildPromptPayload({ lead = {}, leadContext = {}, localRecommendation =
         { day: 3, title: 'título', objective: 'objetivo', message: 'mensagem pronta' }
       ],
       explanation: ['por que a abordagem se aproxima deste lead'],
+      channelUse: 'onde usar esta peça: WhatsApp, e-mail, ligação, objeção, follow-up ou proposta',
       qualityChecklist: ['itens de qualidade atendidos']
     },
     regenerateKey

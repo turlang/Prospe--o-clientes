@@ -277,3 +277,16 @@ A geração de abordagem não envia apenas um texto simples para a IA. Antes da 
 - abordagem anterior, quando houver.
 
 Com isso, os botões **Gerar abordagem**, **Gerar outra versão** e **Melhorar esta abordagem** produzem mensagens menos genéricas, mais próximas da realidade do lead e com tom de vendedor experiente. A IA foi orientada a evitar jargões técnicos e traduzir tecnologia em benefícios simples, como mais chamadas no WhatsApp, mais agendamentos, mais pedidos, mais orçamentos e mais confiança. Cada abordagem gerada também é registrada na timeline comercial do lead para reduzir repetição nas próximas gerações.
+
+## Consultor IA Multicanal
+
+A partir da versão 20.8, o botão **Consultor IA** pode gerar peças comerciais específicas para cada canal:
+
+- WhatsApp;
+- E-mail;
+- Roteiro de ligação;
+- Follow-up;
+- Tratamento de objeção;
+- Convite para diagnóstico.
+
+Cada canal usa regras próprias no Prompt Engine. Quando Groq, Gemini ou OpenAI estiverem configurados, a IA externa gera a peça. Se a IA falhar ou não estiver configurada, o motor local adapta a mensagem automaticamente para o canal escolhido.

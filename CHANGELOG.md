@@ -232,3 +232,13 @@
 
 ### Testes
 - Adicionados testes garantindo prompt em linguagem simples e ausência de termos técnicos no fallback local.
+
+## 20.8.0 - Consultor IA Multicanal
+
+### Adicionado
+- Geração de peças comerciais por canal: WhatsApp, e-mail, roteiro de ligação, follow-up, objeção e convite para diagnóstico.
+- Botões rápidos no resultado do Consultor IA para alternar o canal sem sair do lead.
+- Prompt Engine com regras específicas por canal.
+
+### Alterado
+- O motor local agora adapta a mensagem ao canal quando a IA externa estiver indisponível.

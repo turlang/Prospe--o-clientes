@@ -306,8 +306,48 @@ function buildFollowUps(lead = {}, strategy, variationSeed) {
   ].map((step) => ({ ...step, strategy: strategy.name }));
 }
 
+
+function adaptMessageToChannel(message, lead = {}, channel = 'generic', mode = 'new') {
+  const businessName = lead.nome || 'sua empresa';
+  const segment = lead.segmentoComercial || lead.tipo || lead.segmentoBuscado || 'negócio local';
+  const clean = String(message || '').trim();
+
+  if (channel === 'email') {
+    return `Assunto: Ideias simples para facilitar novos contatos na ${businessName}\n\nOlá, tudo bem?\n\n${clean}\n\nSe fizer sentido, posso te enviar uma análise curta com 2 ou 3 pontos bem práticos.\n\nAbraço.`;
+  }
+
+  if (channel === 'call') {
+    return `Roteiro de ligação:\n\n1. Olá, falo com alguém responsável pela ${businessName}?\n\n2. Meu nome é [seu nome]. Encontrei a empresa pesquisando ${segment} na região e percebi uma oportunidade simples para facilitar que mais clientes chamem vocês.\n\n3. Posso te explicar em 30 segundos o que observei?\n\n4. Se a pessoa permitir: ${clean.replace(/\n+/g, ' ')}\n\n5. Fechamento: faz sentido eu te enviar isso por WhatsApp para você olhar com calma?`;
+  }
+
+  if (channel === 'objection') {
+    return `Entendo perfeitamente. Minha ideia não é te pressionar nem substituir algo que já funciona na ${businessName}.\n\nO ponto é só te mostrar uma visão simples de fora: às vezes existem pequenos ajustes que ajudam mais clientes a confiar e chamar vocês com menos dúvida.\n\nPosso te mandar essa observação de forma bem resumida, sem compromisso?`;
+  }
+
+  if (channel === 'followup' || mode === 'followup') {
+    return `Oi! Passando rapidamente só para retomar minha mensagem sobre a ${businessName}.\n\nA ideia era te mostrar um ponto simples que pode facilitar a chegada de novos clientes, sem complicar a rotina de vocês.\n\nQuer que eu te envie em poucas linhas o que eu observei?`;
+  }
+
+  if (channel === 'proposal') {
+    return `Pelo que vi da ${businessName}, eu começaria com um diagnóstico curto e bem prático: o que o cliente encontra hoje, onde pode ter dúvida e como facilitar o primeiro contato.\n\nA partir disso, dá para sugerir melhorias simples para gerar mais chamadas, orçamentos ou agendamentos.\n\nSe fizer sentido, posso montar essa primeira análise para vocês avaliarem com calma.`;
+  }
+
+  if (channel === 'whatsapp') {
+    return clean
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .slice(0, 4)
+      .join('\n\n');
+  }
+
+  return clean;
+}
+
 function buildSalesApproach(lead = {}, options = {}) {
   const variationSeed = options.variationSeed || options.regenerateKey || `${Date.now()}-${Math.random()}`;
+  const channel = String(options.channel || 'generic').toLowerCase();
+  const mode = String(options.mode || 'new').toLowerCase();
   const segmentGroup = inferSegmentGroup(lead);
   const primaryPain = getPrimaryPain(lead);
   const strategy = chooseStrategy(lead, segmentGroup);
@@ -323,12 +363,14 @@ function buildSalesApproach(lead = {}, options = {}) {
     variant: stableVariantIndex(variationSeed, 99)
   };
 
+  const baseMessage = buildMessage({ lead, strategy, segmentGroup, primaryPain, variationSeed });
+
   return {
     source: 'local',
     strategy,
-    diagnostics,
+    diagnostics: { ...diagnostics, recommendedChannel: channel },
     leadContext: buildLeadContext(lead, diagnostics),
-    abordagem: buildMessage({ lead, strategy, segmentGroup, primaryPain, variationSeed }),
+    abordagem: adaptMessageToChannel(baseMessage, lead, channel, mode),
     followUps: buildFollowUps(lead, strategy, variationSeed),
     explanation: [
       `Estratégia escolhida: ${strategy.name}.`,
@@ -346,5 +388,6 @@ module.exports = {
   inferSegmentGroup,
   inferOpportunityTags,
   getPrimaryPain,
-  stableVariantIndex
+  stableVariantIndex,
+  adaptMessageToChannel
 };

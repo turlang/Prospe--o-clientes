@@ -88,3 +88,13 @@ test('Prompt Engine orienta IA a vender tecnologia em linguagem simples', () => 
   assert.ok(prompt.includes('mais chamadas no WhatsApp'));
   assert.ok(prompt.includes('tom-v207'));
 });
+
+test('Prompt Engine possui regras por canal comercial', () => {
+  const { buildPromptPayload } = require('../src/services/commercialPromptEngine');
+
+  const emailPayload = buildPromptPayload({ channel: 'email' });
+  assert.ok(emailPayload.instructions.some((item) => /E-mail/i.test(item)));
+
+  const objectionPayload = buildPromptPayload({ channel: 'objection' });
+  assert.ok(objectionPayload.instructions.some((item) => /objeção/i.test(item)));
+});

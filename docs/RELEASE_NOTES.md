@@ -753,3 +753,10 @@ npm run check
 ```
 
 Resultado: 35 testes aprovados.
+
+## V20.8 — Consultor IA Multicanal
+
+- O Consultor IA passou a gerar materiais comerciais por canal.
+- Novos formatos: WhatsApp, e-mail, ligação, follow-up, tratamento de objeção e convite para diagnóstico.
+- O fallback local também adapta a mensagem ao canal escolhido.
+- A interface agora permite gerar outra versão ou melhorar o texto mantendo o canal selecionado.

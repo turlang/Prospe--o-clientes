@@ -42,3 +42,17 @@ test('motor local evita abordagem excessivamente técnica', () => {
   assert.ok(result.abordagem.includes('tecnologia de um jeito simples') || result.abordagem.includes('ajustes pequenos') || result.abordagem.includes('chamar vocês'));
   assert.equal(/SEO|landing page|CRM|automação|funil/i.test(result.abordagem), false);
 });
+
+test('Motor local adapta abordagem para canais comerciais', () => {
+  const { buildSalesApproach } = require('../src/services/salesStrategyEngine');
+  const lead = { nome: 'Barbearia Canal', segmentoComercial: 'Barbearia', telefone: '11999999999', score: 72 };
+
+  const email = buildSalesApproach(lead, { channel: 'email', variationSeed: 'canal-email' });
+  assert.ok(email.abordagem.includes('Assunto:'));
+
+  const call = buildSalesApproach(lead, { channel: 'call', variationSeed: 'canal-call' });
+  assert.ok(call.abordagem.includes('Roteiro de ligação'));
+
+  const objection = buildSalesApproach(lead, { channel: 'objection', variationSeed: 'canal-objection' });
+  assert.ok(/Entendo perfeitamente|sem compromisso/i.test(objection.abordagem));
+});

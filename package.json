@@ -1,7 +1,7 @@
 {
   "name": "agente-prospeccao-real",
-  "version": "20.7.0",
-  "description": "CRM comercial inteligente com Prompt Engine Comercial humanizado e Groq",
+  "version": "20.8.0",
+  "description": "CRM comercial inteligente com Consultor IA Multicanal",
   "main": "src/server.js",
   "type": "commonjs",
   "scripts": {
