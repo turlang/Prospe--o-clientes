@@ -66,6 +66,7 @@
             <li><button class="nav-btn" type="button" data-view="historico">Histórico</button></li>
             <li><button class="nav-btn" type="button" data-view="agenda">Agenda</button></li>
             <li><button class="nav-btn" type="button" data-view="relatorios">Relatórios</button></li>
+            <li><button class="nav-btn" type="button" data-view="propostas">Propostas</button></li>
             <li><button class="nav-btn" type="button" data-view="campanhas">Campanhas</button></li>
             <li><button class="nav-btn" type="button" data-view="planos">Planos</button></li>
           </ul>
@@ -244,6 +245,29 @@
           </div>
         </section>
 
+
+
+        <section id="view-propostas" class="view">
+          <div class="dashboard-header card-panel">
+            <div>
+              <p class="tag dark">Propostas</p>
+              <h2>Central de propostas</h2>
+              <p class="meta">Gere propostas comerciais simples a partir dos leads em negociação e acompanhe tudo em um só lugar.</p>
+            </div>
+            <div class="header-actions">
+              <button type="button" onclick="loadProposals()">Atualizar propostas</button>
+              <button type="button" class="secondary" onclick="switchView('crm')">Abrir CRM</button>
+            </div>
+          </div>
+          <div id="proposalSummary" class="agenda-summary-grid"></div>
+          <section class="card-panel">
+            <div class="section-title">
+              <h3>Propostas geradas</h3>
+              <p class="meta">Cada proposta fica registrada na timeline do lead e move a oportunidade para a etapa PROPOSTA.</p>
+            </div>
+            <div id="proposalList" class="proposal-list"></div>
+          </section>
+        </section>
 
         <section id="view-planos" class="view">
           <div class="dashboard-header card-panel">

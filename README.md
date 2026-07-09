@@ -10,6 +10,11 @@ O projeto demonstra uma aplicação SaaS com autenticação, CRM, planos editáv
 
 ## Principais funcionalidades
 
+### Central de Propostas
+
+A V21.2 adiciona uma central para gerar propostas comerciais simples a partir dos leads do CRM. A proposta registra a oportunidade na timeline, move o lead para a etapa `PROPOSTA` e pode ser copiada para envio manual por WhatsApp ou e-mail.
+
+
 - Assistente Comercial Inteligente V21 com priorização dinâmica, próxima melhor ação e oportunidades em risco.
 
 - Cadastro e login de usuários.

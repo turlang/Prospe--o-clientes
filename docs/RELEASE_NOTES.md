@@ -1,3 +1,11 @@
+## V21.2 — Central de propostas comerciais
+
+- Adicionada nova aba **Propostas**.
+- Criado endpoint `/api/proposals/generate` para gerar proposta a partir do lead.
+- Criado endpoint `/api/proposals/summary` para acompanhar propostas geradas.
+- Propostas ficam registradas na timeline do lead e movem o status para `PROPOSTA`.
+- Incluídos testes do serviço de propostas.
+
 ## V21.0 — Assistente Comercial Inteligente
 
 A V21 transforma o CRM em um copiloto comercial que orienta o vendedor sobre onde agir primeiro.

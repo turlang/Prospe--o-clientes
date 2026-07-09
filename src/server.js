@@ -40,6 +40,7 @@ const { generateAiEnhancedApproach, getAiProviderStatus } = require('./services/
 const { buildAgendaSummary } = require('./services/commercialAgendaService');
 const { buildCommercialIntelligence, buildObjectionResponse } = require('./services/commercialIntelligenceService');
 const { buildCommercialReport, buildCommercialReportCsv } = require('./services/commercialReportService');
+const { buildProposalFromApproach, buildProposalSummary } = require('./services/commercialProposalService');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -1038,6 +1039,74 @@ app.get('/api/commercial-intelligence/summary', requireAuth, async (req, res) =>
   }
 });
 
+
+
+app.get('/api/proposals/summary', requireAuth, async (req, res) => {
+  try {
+    const leads = await readLeads(req.user.sub);
+    res.json(buildProposalSummary(leads));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/proposals/generate', requireAuth, async (req, res) => {
+  try {
+    const { leadId, objective = '', previousProposal = '' } = req.body;
+    if (!leadId) return res.status(400).json({ error: 'Informe o leadId.' });
+
+    const leads = await readLeads(req.user.sub);
+    const lead = leads.find((item) => String(item.placeId || item.nome) === String(leadId));
+    if (!lead) return res.status(404).json({ error: 'Lead não encontrado.' });
+
+    const localRecommendation = buildSalesApproach(lead, {
+      variationSeed: `proposal-${Date.now()}`,
+      channel: 'proposal',
+      mode: 'new'
+    });
+
+    const recommendation = await generateAiEnhancedApproach({
+      lead,
+      leadContext: localRecommendation.leadContext,
+      localRecommendation,
+      regenerateKey: `proposal-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      previousApproach: previousProposal,
+      mode: 'new',
+      channel: 'proposal'
+    });
+
+    const proposal = buildProposalFromApproach({ lead, recommendation, objective });
+
+    const updated = await updateLeadStatus(leadId, 'PROPOSTA', {
+      data: new Date().toISOString(),
+      tipo: 'PROPOSTA_GERADA',
+      status: 'PROPOSTA',
+      propostaId: proposal.id,
+      titulo: proposal.title,
+      proposta: proposal.text,
+      valorReferencia: proposal.estimatedRange,
+      strategy: proposal.strategy,
+      provider: proposal.provider,
+      model: proposal.model,
+      resumo: 'Proposta comercial inicial gerada e lead movido para PROPOSTA.'
+    }, req.user.sub);
+
+    res.status(201).json({
+      ok: true,
+      leadId,
+      lead: updated,
+      proposal,
+      source: recommendation.source || 'local',
+      provider: recommendation.provider || 'local',
+      providerLabel: recommendation.providerLabel || proposal.provider,
+      model: recommendation.model || proposal.model,
+      aiStatus: recommendation.aiStatus || getAiProviderStatus(),
+      aiError: recommendation.aiError || null
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 app.get('/api/reports/commercial', requireAuth, async (req, res) => {
   try {

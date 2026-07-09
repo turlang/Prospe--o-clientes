@@ -1317,3 +1317,52 @@ body.modal-open {
     justify-content: flex-start;
   }
 }
+
+/* V21.2 - Central de propostas comerciais */
+.proposal-list {
+  display: grid;
+  gap: 14px;
+}
+
+.proposal-card,
+.proposal-output {
+  border: 1px solid rgba(15,23,42,0.08);
+  border-radius: 18px;
+  padding: 16px;
+  background: rgba(255,255,255,0.92);
+  box-shadow: 0 10px 25px rgba(15,23,42,0.05);
+}
+
+.proposal-card > div:first-child {
+  margin-bottom: 10px;
+}
+
+.proposal-card strong,
+.proposal-block strong {
+  color: #0f172a;
+}
+
+.proposal-card p,
+.proposal-block p {
+  margin: 5px 0;
+}
+
+.proposal-block {
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(15,23,42,0.07);
+}
+
+.proposal-block:last-of-type {
+  border-bottom: 0;
+}
+
+.proposal-block ul {
+  margin: 8px 0 0 18px;
+  color: #334155;
+}
+
+.compact-proposal {
+  max-height: 180px;
+  overflow: auto;
+  white-space: pre-wrap;
+}

@@ -53,6 +53,8 @@ const reportFunnel = document.querySelector('#reportFunnel');
 const reportRecommendations = document.querySelector('#reportRecommendations');
 const reportSegments = document.querySelector('#reportSegments');
 const reportStalled = document.querySelector('#reportStalled');
+const proposalSummary = document.querySelector('#proposalSummary');
+const proposalList = document.querySelector('#proposalList');
 
 let authToken = localStorage.getItem('authToken') || '';
 let currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
@@ -319,6 +321,7 @@ function switchView(view) {
   if (view === 'planos') renderPlans();
   if (view === 'agenda') loadAgenda();
   if (view === 'relatorios') loadCommercialReport();
+  if (view === 'propostas') loadProposals();
   if (view === 'campanhas') { loadAutomationActions(); loadFollowups(); }
 }
 
@@ -680,6 +683,7 @@ function openLeadDetail(leadId) {
       <button type="button" class="secondary" onclick="updateStatus('${escapeAttr(leadId)}','INTERESSADO')">Interessado</button>
       <button type="button" class="secondary" onclick="updateStatus('${escapeAttr(leadId)}','PROPOSTA')">Proposta</button>
       <button type="button" class="secondary" onclick="generateApproach('${escapeAttr(leadId)}', 'new', 'generic')">🧠 Consultor IA</button>
+      <button type="button" class="secondary" onclick="generateProposal('${escapeAttr(leadId)}')">📄 Gerar proposta</button>
       <button type="button" class="secondary" onclick="scheduleFollowup('${escapeAttr(leadId)}')">Agendar retorno</button>
     </div>
     <pre id="approach-modal-${escapeAttr(leadId)}" class="msg crm-approach-output"></pre>
@@ -777,6 +781,7 @@ function renderLead(lead) {
         <button type="button" class="secondary" onclick="saveLeadMeta('${escapeAttr(leadId)}')">Salvar CRM</button>
         <button type="button" class="approach-btn" onclick="generateApproach('${escapeAttr(leadId)}', 'new', 'generic')">🧠 Consultor IA</button>
         <button type="button" class="secondary" onclick="generateCampaign('${escapeAttr(leadId)}')">Sequência</button>
+        <button type="button" class="secondary" onclick="generateProposal('${escapeAttr(leadId)}')">Gerar proposta</button>
         <button type="button" class="secondary" onclick="scheduleFollowup('${escapeAttr(leadId)}')">Agendar follow-up</button>
       </div>
 
@@ -1688,6 +1693,118 @@ async function downloadCommercialReportCsv() {
 
 window.loadCommercialReport = loadCommercialReport;
 window.downloadCommercialReportCsv = downloadCommercialReportCsv;
+
+
+async function generateProposal(leadId) {
+  const output = document.getElementById(`approach-modal-${leadId}`) || document.getElementById(`approach-${leadId}`) || statusBox;
+  const previousProposal = approachHistory[`proposal-${leadId}`] || '';
+
+  output.innerHTML = '<p class="loading">Criando proposta comercial com base no lead e na abordagem consultiva...</p>';
+
+  try {
+    const response = await apiFetch('/api/proposals/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        leadId,
+        objective: 'vender serviço tecnológico simples para gerar mais contatos e oportunidades',
+        previousProposal
+      })
+    });
+    const data = await readJson(response);
+    if (!response.ok) throw new Error(data.error || 'Erro ao gerar proposta.');
+
+    approachHistory[`proposal-${leadId}`] = data.proposal?.text || previousProposal;
+    output.innerHTML = renderProposal(data.proposal, data);
+    statusBox.innerHTML = `<p>Proposta gerada para ${escapeHtml(data.proposal?.leadName || 'lead')} e lead movido para PROPOSTA.</p>`;
+
+    await carregarLeadsCRM();
+    await loadCommercialReport();
+    await loadProposals();
+  } catch (error) {
+    output.textContent = error.message;
+    showError(error.message);
+  }
+}
+
+function renderProposal(proposal = {}, meta = {}) {
+  const deliverables = Array.isArray(proposal.deliverables) ? proposal.deliverables : [];
+  return `
+    <section class="proposal-output">
+      <header class="strategy-head">
+        <div>
+          <small>Proposta comercial</small>
+          <strong>${escapeHtml(proposal.title || 'Proposta inicial')}</strong>
+        </div>
+        <span class="tag">${escapeHtml(meta.providerLabel || proposal.provider || 'Motor Local')}</span>
+      </header>
+      ${meta.aiError ? `<p class="warning">IA indisponível: ${escapeHtml(meta.aiError)}. Foi usada uma proposta local.</p>` : ''}
+      <div class="proposal-block"><strong>Diagnóstico</strong><p>${escapeHtml(proposal.diagnosis || '')}</p></div>
+      <div class="proposal-block"><strong>Solução recomendada</strong><p>${escapeHtml(proposal.recommendedSolution || '')}</p></div>
+      ${deliverables.length ? `<div class="proposal-block"><strong>O que entregar</strong><ul>${deliverables.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul></div>` : ''}
+      <div class="proposal-block"><strong>Referência comercial</strong><p>${escapeHtml(proposal.estimatedRange || 'A definir após diagnóstico')}</p></div>
+      <div class="proposal-block"><strong>Próximo passo</strong><p>${escapeHtml(proposal.nextStep || '')}</p></div>
+      <h4>Texto completo da proposta</h4>
+      <pre class="msg strategy-message">${escapeHtml(proposal.text || '')}</pre>
+      <div class="approach-actions">
+        <button type="button" class="copy" onclick='copyText(${JSON.stringify(proposal.text || '')})'>Copiar proposta</button>
+      </div>
+    </section>
+  `;
+}
+
+async function loadProposals() {
+  if (!authToken || !proposalList) return;
+  proposalList.innerHTML = '<p class="loading">Carregando propostas comerciais...</p>';
+  if (proposalSummary) proposalSummary.innerHTML = '';
+
+  try {
+    const response = await apiFetch('/api/proposals/summary');
+    const data = await readJson(response);
+    if (!response.ok) throw new Error(data.error || 'Erro ao carregar propostas.');
+
+    renderProposalSummary(data.summary || {});
+    renderProposalList(data.proposals || []);
+  } catch (error) {
+    proposalList.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
+  }
+}
+
+function renderProposalSummary(summary = {}) {
+  if (!proposalSummary) return;
+  proposalSummary.innerHTML = `
+    <article><small>Propostas geradas</small><strong>${Number(summary.generated || 0)}</strong><span>documentos comerciais criados</span></article>
+    <article><small>Em proposta</small><strong>${Number(summary.inProposalStage || 0)}</strong><span>negociações abertas</span></article>
+    <article><small>Fechados</small><strong>${Number(summary.closed || 0)}</strong><span>clientes convertidos</span></article>
+    <article><small>Receita prevista</small><strong>${formatMoney(summary.estimatedRevenue || 0)}</strong><span>em proposta e fechados</span></article>
+  `;
+}
+
+function renderProposalList(proposals = []) {
+  if (!proposalList) return;
+  if (!proposals.length) {
+    proposalList.innerHTML = '<p class="meta">Nenhuma proposta gerada ainda. Abra um lead no CRM e clique em Gerar proposta.</p>';
+    return;
+  }
+
+  proposalList.innerHTML = proposals.map((proposal) => `
+    <article class="proposal-card">
+      <div>
+        <strong>${escapeHtml(proposal.title || 'Proposta comercial')}</strong>
+        <p>${escapeHtml(proposal.leadName || 'Lead')} · ${escapeHtml(proposal.status || '')}</p>
+        <small>${formatDate(proposal.createdAt)} · ${escapeHtml(proposal.provider || 'Motor Local')} · ${escapeHtml(proposal.estimatedRange || '')}</small>
+      </div>
+      <pre class="msg compact-proposal">${escapeHtml(proposal.text || '')}</pre>
+      <div class="agenda-actions">
+        <button type="button" class="secondary" onclick="openLeadDetail('${escapeAttr(proposal.leadId)}')">Abrir lead</button>
+        <button type="button" class="copy" onclick='copyText(${JSON.stringify(proposal.text || '')})'>Copiar</button>
+      </div>
+    </article>
+  `).join('');
+}
+
+window.generateProposal = generateProposal;
+window.loadProposals = loadProposals;
 
 function showPaymentReturnMessage() {
   const params = new URLSearchParams(window.location.search);
