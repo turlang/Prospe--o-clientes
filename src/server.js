@@ -56,6 +56,7 @@ const {
   buildCampaignTasks
 } = require('./services/campaignAutomationService');
 const { buildAutonomousCommandCenter, answerCommercialCopilot } = require('./services/autonomousCommercialService');
+const { createSalesOsRoutes } = require('./core/routes/salesOsRoutes');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -141,6 +142,7 @@ app.get('/api/metrics', requireAuth, async (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/v23', createSalesOsRoutes({ requireAuth }));
 
 app.get('/api/plans', (_req, res) => {
   res.json(getAllPlans());

@@ -328,3 +328,19 @@
 
 ### Testes
 - Adicionados testes para classificação de leads, resumo de campanhas, cadência local, normalização de IA, tarefas e timeline.
+
+## 23.1.0 — Sales OS Core
+
+### Adicionado
+- Núcleo `src/core` para separar inteligência, IA, memória, aprendizado e automações.
+- Prompt Manager com prompts externos em Markdown.
+- AI Provider Manager unificando status e geração estruturada.
+- Commercial Intelligence Engine como fachada única para score e próxima melhor ação.
+- Sales Memory para eventos comerciais estruturados.
+- Learning Engine para medir desempenho de estratégias por segmento.
+- Automation Engine para detectar leads sem próximo passo.
+- Endpoints autenticados `/api/v23/status` e `/api/v23/snapshot`.
+
+### Alterado
+- Versão do produto atualizada para 23.1.0.
+- `server.js` passou a montar as rotas do Sales OS Core sem remover as APIs legadas.

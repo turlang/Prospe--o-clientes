@@ -853,3 +853,7 @@ O objetivo é ajudar o usuário a enxergar o negócio como gestor comercial, nã
 - Cada lead pode receber uma cadência criada por IA ou fallback local.
 - As etapas viram tarefas na agenda comercial.
 - O sistema não dispara mensagens automaticamente; tudo exige revisão humana.
+
+## V23.1 — Sales OS Core
+
+A base do CRM foi reorganizada com um núcleo dedicado a inteligência comercial, provedores de IA, prompts, memória, aprendizado e automações. A mudança foi feita de forma compatível com a V22 para evitar regressões.

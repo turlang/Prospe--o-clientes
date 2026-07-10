@@ -78,3 +78,11 @@ src/data/plans.json
 
 Módulo:
 src/planStore.js
+
+## V23
+
+- [x] Sprint 23.1 — Sales OS Core
+- [ ] Sprint 23.2 — Cockpit Comercial
+- [ ] Sprint 23.3 — Copiloto Comercial IA
+- [ ] Sprint 23.4 — Learning Engine persistente
+- [ ] Sprint 23.5 — Automações Inteligentes
