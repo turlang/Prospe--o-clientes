@@ -344,3 +344,17 @@
 ### Alterado
 - Versão do produto atualizada para 23.1.0.
 - `server.js` passou a montar as rotas do Sales OS Core sem remover as APIs legadas.
+
+## 23.2.0 — Cockpit Comercial
+
+### Adicionado
+- Nova Home em formato de cockpit operacional.
+- Plano de ação diário priorizado.
+- Timeline global de atividades do CRM.
+- Pipeline executivo com volume, valor e avanço por etapa.
+- Indicadores de oportunidades, tarefas, propostas e receita.
+- Endpoint `GET /api/v23/cockpit`.
+
+### Alterado
+- Central de Inteligência V22 substituída pelo Cockpit Comercial V23.2.
+- Sales OS Core atualizado para a versão 23.2.0.

@@ -10,7 +10,17 @@ function createSalesOsRoutes({ requireAuth }) {
   const core = new SalesOsCore();
 
   router.get('/status', requireAuth, (_req, res) => {
-    res.json({ version: '23.1.0', architecture: 'sales-os-core', ai: getProviderSnapshot(), prompts: listTemplates() });
+    res.json({ version: '23.2.0', architecture: 'sales-os-core', ai: getProviderSnapshot(), prompts: listTemplates() });
+  });
+
+
+  router.get('/cockpit', requireAuth, async (req, res) => {
+    try {
+      const [leads, tasks] = await Promise.all([readLeads(req.user.sub), listTasks(req.user.sub)]);
+      res.json(core.buildCockpit({ leads, tasks, userName: req.user.name || req.user.email || '' }));
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
   });
 
   router.get('/snapshot', requireAuth, async (req, res) => {

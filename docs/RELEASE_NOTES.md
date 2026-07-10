@@ -857,3 +857,7 @@ O objetivo é ajudar o usuário a enxergar o negócio como gestor comercial, nã
 ## V23.1 — Sales OS Core
 
 A base do CRM foi reorganizada com um núcleo dedicado a inteligência comercial, provedores de IA, prompts, memória, aprendizado e automações. A mudança foi feita de forma compatível com a V22 para evitar regressões.
+
+## V23.2 — Cockpit Comercial
+
+A tela inicial do Sales OS passa a conduzir o trabalho diário do vendedor, reunindo prioridades, métricas, pipeline, alertas, timeline global e acesso ao copiloto em uma única visão.

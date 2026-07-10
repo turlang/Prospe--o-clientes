@@ -85,35 +85,80 @@
 
 
         <section id="view-inteligencia" class="view active-view">
-          <div class="dashboard-header card-panel">
+          <div class="cockpit-header card-panel">
             <div>
-              <p class="tag dark">V22 · CRM Autônomo</p>
-              <h2>Central de Inteligência Comercial</h2>
-              <p class="meta">Veja o que exige atenção hoje, a saúde do pipeline e converse com o copiloto usando os dados reais do CRM.</p>
+              <p class="tag dark">V23.2 · Sales OS</p>
+              <h2>Cockpit Comercial</h2>
+              <p class="meta">Comece o dia sabendo onde agir, quanto existe no pipeline e o que aconteceu recentemente.</p>
             </div>
-            <button type="button" class="secondary" onclick="loadV22CommandCenter()">Atualizar central</button>
+            <div class="cockpit-header-actions">
+              <span id="v23LastUpdate" class="meta">Aguardando atualização</span>
+              <button id="v23RefreshButton" type="button" class="secondary">Atualizar cockpit</button>
+            </div>
           </div>
-          <section class="card-panel v22-hero-card">
-            <h3 id="v22Greeting">Preparando seu plano comercial...</h3>
-            <div id="v22Summary" class="agenda-summary-grid"></div>
+
+          <section class="card-panel cockpit-focus-card">
+            <div>
+              <p class="tag dark">Prioridade do momento</p>
+              <h3 id="v23Greeting">Preparando sua operação comercial...</h3>
+              <p id="v23FocusText" class="meta">O Sales OS está analisando leads, tarefas e pipeline.</p>
+            </div>
+            <button id="v23FocusButton" type="button" hidden>Abrir prioridade</button>
           </section>
-          <div class="dashboard-analytics">
-            <section class="card-panel">
-              <div class="section-title"><h3>Plano de ação de hoje</h3><p class="meta">Ações ordenadas por prioridade e risco.</p></div>
-              <div id="v22DailyPlan" class="history-list compact-list"></div>
+
+          <div id="v23Metrics" class="cockpit-metrics"></div>
+
+          <div class="cockpit-main-grid">
+            <section class="card-panel cockpit-actions-panel">
+              <div class="section-title">
+                <h3>Plano de ação de hoje</h3>
+                <p class="meta">Ações ordenadas por prioridade, risco e estágio comercial.</p>
+              </div>
+              <div id="v23DailyPlan" class="cockpit-action-list"></div>
             </section>
-            <section class="card-panel">
-              <div class="section-title"><h3>Saúde do pipeline</h3><p class="meta">Tempo parado, gargalos e taxas de avanço.</p></div>
-              <div id="v22PipelineHealth" class="history-list compact-list"></div>
+
+            <section class="card-panel cockpit-pipeline-panel">
+              <div class="section-title">
+                <h3>Pipeline executivo</h3>
+                <p class="meta">Volume, valor estimado e avanço em cada etapa.</p>
+              </div>
+              <div id="v23Pipeline" class="cockpit-pipeline"></div>
             </section>
           </div>
+
+          <div class="cockpit-main-grid cockpit-secondary-grid">
+            <section class="card-panel">
+              <div class="section-title">
+                <h3>Alertas e orientação</h3>
+                <p class="meta">Gargalos, riscos e recomendações do gerente comercial.</p>
+              </div>
+              <div id="v23Alerts" class="history-list compact-list"></div>
+            </section>
+
+            <section class="card-panel">
+              <div class="section-title">
+                <h3>Timeline global</h3>
+                <p class="meta">Últimas atividades realizadas em toda a operação.</p>
+              </div>
+              <div id="v23Timeline" class="global-timeline"></div>
+            </section>
+          </div>
+
           <section class="card-panel copilot-panel">
-            <div class="section-title"><h3>Copiloto Comercial</h3><p class="meta">Pergunte: “Quem devo contatar agora?”, “Quais leads estão em risco?” ou “Qual a previsão de receita?”.</p></div>
+            <div class="section-title">
+              <h3>Copiloto Comercial</h3>
+              <p class="meta">Pergunte sobre prioridades, riscos, receita prevista ou próximos contatos.</p>
+            </div>
+            <div class="copilot-suggestions" aria-label="Perguntas sugeridas">
+              <button type="button" class="secondary mini" data-copilot-question="Quem devo contatar agora?">Quem devo contatar agora?</button>
+              <button type="button" class="secondary mini" data-copilot-question="Quais oportunidades estão em risco?">Oportunidades em risco</button>
+              <button type="button" class="secondary mini" data-copilot-question="Qual é a previsão de receita?">Previsão de receita</button>
+            </div>
             <form id="v22CopilotForm" class="copilot-form">
               <input id="v22CopilotQuestion" placeholder="Digite uma pergunta sobre sua operação comercial" required minlength="3" />
               <button type="submit">Perguntar ao copiloto</button>
             </form>
-            <div id="v22CopilotAnswer" class="copilot-answer"><p class="meta">A resposta usará somente os dados disponíveis no seu CRM.</p></div>
+            <div id="v22CopilotAnswer" class="copilot-answer"><p class="meta">A resposta usará somente os dados disponíveis no CRM.</p></div>
           </section>
         </section>
 

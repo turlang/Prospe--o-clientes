@@ -86,3 +86,15 @@ src/planStore.js
 - [ ] Sprint 23.3 — Copiloto Comercial IA
 - [ ] Sprint 23.4 — Learning Engine persistente
 - [ ] Sprint 23.5 — Automações Inteligentes
+
+
+### Concluído — Sprint 23.2
+- Cockpit Comercial
+- Timeline global
+- Pipeline executivo
+- Plano diário priorizado
+
+### Próxima sprint — 23.3
+- Copiloto Comercial em formato de chat persistente
+- Perguntas contextuais e histórico de conversa
+- Ações diretas sugeridas pela IA

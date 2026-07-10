@@ -2,6 +2,7 @@ const { CommercialIntelligenceEngine } = require('../intelligence/commercialInte
 const { buildAutonomousCommandCenter } = require('../../services/autonomousCommercialService');
 const { getProviderSnapshot } = require('../ai/providerManager');
 const { listTemplates } = require('../prompts/promptManager');
+const { buildCockpit } = require('./cockpitService');
 
 class SalesOsCore {
   constructor() {
@@ -10,13 +11,17 @@ class SalesOsCore {
 
   buildSnapshot({ leads = [], tasks = [], now = new Date() } = {}) {
     return {
-      version: '23.1.0',
+      version: '23.2.0',
       generatedAt: now.toISOString(),
       commandCenter: buildAutonomousCommandCenter(leads, tasks, now),
       intelligence: this.intelligence.buildPortfolio(leads, tasks, now),
       ai: getProviderSnapshot(),
       prompts: listTemplates()
     };
+  }
+
+  buildCockpit({ leads = [], tasks = [], now = new Date(), userName = '' } = {}) {
+    return buildCockpit({ leads, tasks, now, userName });
   }
 }
 

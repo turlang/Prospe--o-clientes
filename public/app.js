@@ -61,10 +61,16 @@ const customerRecommendations = document.querySelector('#customerRecommendations
 const customerGrowthSummary = document.querySelector('#customerGrowthSummary');
 const customerGrowthList = document.querySelector('#customerGrowthList');
 
-const v22Greeting = document.querySelector('#v22Greeting');
-const v22Summary = document.querySelector('#v22Summary');
-const v22DailyPlan = document.querySelector('#v22DailyPlan');
-const v22PipelineHealth = document.querySelector('#v22PipelineHealth');
+const v23Greeting = document.querySelector('#v23Greeting');
+const v23FocusText = document.querySelector('#v23FocusText');
+const v23FocusButton = document.querySelector('#v23FocusButton');
+const v23Metrics = document.querySelector('#v23Metrics');
+const v23DailyPlan = document.querySelector('#v23DailyPlan');
+const v23Pipeline = document.querySelector('#v23Pipeline');
+const v23Alerts = document.querySelector('#v23Alerts');
+const v23Timeline = document.querySelector('#v23Timeline');
+const v23LastUpdate = document.querySelector('#v23LastUpdate');
+const v23RefreshButton = document.querySelector('#v23RefreshButton');
 const v22CopilotForm = document.querySelector('#v22CopilotForm');
 const v22CopilotQuestion = document.querySelector('#v22CopilotQuestion');
 const v22CopilotAnswer = document.querySelector('#v22CopilotAnswer');
@@ -211,7 +217,7 @@ form.addEventListener('submit', async (event) => {
     await refreshUsage();
     await loadHistory();
     await loadCommercialIntelligence();
-  await loadV22CommandCenter();
+  await loadV23Cockpit();
   } catch (error) {
     showError(error.message);
   }
@@ -329,6 +335,7 @@ function switchView(view) {
   // CRM, Histórico e Campanhas têm seus próprios containers.
   if (results) results.hidden = view !== 'prospectar';
 
+  if (view === 'inteligencia') loadV23Cockpit();
   if (view === 'crm') carregarLeadsCRM();
   if (view === 'dashboard') { loadSavedLeads(false, { renderCards: false }); loadCommercialIntelligence(); }
   if (view === 'historico') loadHistory();
@@ -2174,41 +2181,90 @@ function showPaymentReturnMessage() {
 }
 
 
-async function loadV22CommandCenter() {
-  if (!authToken || !v22Summary) return;
+async function loadV23Cockpit() {
+  if (!authToken || !v23Metrics) return;
+  if (v23RefreshButton) v23RefreshButton.disabled = true;
   try {
-    const response = await apiFetch('/api/v22/command-center');
+    const response = await apiFetch('/api/v23/cockpit');
     const data = await readJson(response);
-    if (!response.ok) throw new Error(data.error || 'Erro ao carregar a Central de Inteligência.');
-    renderV22CommandCenter(data);
+    if (!response.ok) throw new Error(data.error || 'Erro ao carregar o Cockpit Comercial.');
+    renderV23Cockpit(data);
   } catch (error) {
-    v22Summary.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
+    v23Metrics.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
+  } finally {
+    if (v23RefreshButton) v23RefreshButton.disabled = false;
   }
 }
 
-function renderV22CommandCenter(data) {
-  const summary = data.summary || {};
-  if (v22Greeting) v22Greeting.textContent = data.greeting || 'Sua central comercial está atualizada.';
-  v22Summary.innerHTML = `
-    <article><small>Prioridade alta</small><strong>${Number(summary.highPriority || 0)}</strong><span>agir primeiro</span></article>
-    <article><small>Em risco</small><strong>${Number(summary.atRisk || 0)}</strong><span>podem esfriar</span></article>
-    <article><small>Tarefas atrasadas</small><strong>${Number(summary.overdueTasks || 0)}</strong><span>exigem atenção</span></article>
-    <article><small>Previsão ponderada</small><strong>${formatMoney(Number(summary.weightedRevenue || 0))}</strong><span>${Number(summary.openOpportunities || 0)} oportunidades</span></article>`;
+function renderV23Cockpit(data) {
+  const metrics = data.metrics || {};
+  const focus = data.focus || null;
+  if (v23Greeting) v23Greeting.textContent = data.greeting || 'Sua operação comercial está atualizada.';
+  if (v23LastUpdate) v23LastUpdate.textContent = `Atualizado em ${formatDate(data.generatedAt)}`;
+
+  if (v23FocusText) {
+    v23FocusText.textContent = focus
+      ? `${focus.leadName}: ${focus.action}. ${focus.reason || ''}`
+      : 'Nenhuma ação urgente. Continue prospectando e acompanhando retornos.';
+  }
+  if (v23FocusButton) {
+    v23FocusButton.hidden = !focus?.leadId;
+    v23FocusButton.onclick = focus?.leadId ? () => openLeadDetail(String(focus.leadId)) : null;
+  }
+
+  v23Metrics.innerHTML = `
+    <article><small>Oportunidades ativas</small><strong>${Number(metrics.activeOpportunities || 0)}</strong><span>${Number(metrics.highPriority || 0)} em alta prioridade</span></article>
+    <article><small>Follow-ups de hoje</small><strong>${Number(metrics.dueToday || 0)}</strong><span>${Number(metrics.overdueTasks || 0)} atrasados</span></article>
+    <article><small>Propostas abertas</small><strong>${Number(metrics.proposals || 0)}</strong><span>${Number(metrics.atRisk || 0)} oportunidades em risco</span></article>
+    <article><small>Receita prevista</small><strong>${formatMoney(metrics.weightedRevenue || 0)}</strong><span>${formatMoney(metrics.closedRevenue || 0)} já fechados</span></article>`;
 
   const plan = Array.isArray(data.dailyPlan) ? data.dailyPlan : [];
-  v22DailyPlan.innerHTML = plan.length ? plan.map((item) => `
-    <article class="history-item priority-${escapeAttr(String(item.priority || '').toLowerCase())}">
-      <div><strong>${escapeHtml(item.leadName)} · ${escapeHtml(item.priority || 'MÉDIA')}</strong><p>${escapeHtml(item.action || '')}</p><small>${escapeHtml(item.reason || '')}</small></div>
-      <button type="button" class="secondary" onclick="openLeadDetail('${escapeAttr(item.leadId)}')">Abrir lead</button>
+  v23DailyPlan.innerHTML = plan.length ? plan.map((item, index) => `
+    <article class="cockpit-action priority-${escapeAttr(String(item.priority || '').toLowerCase())}">
+      <span class="action-rank">${index + 1}</span>
+      <div><strong>${escapeHtml(item.leadName || 'Lead')}</strong><p>${escapeHtml(item.action || '')}</p><small>${escapeHtml(item.reason || item.priority || '')}</small></div>
+      <button type="button" class="secondary mini" data-open-lead="${escapeAttr(item.leadId || '')}">Abrir</button>
     </article>`).join('') : '<p class="meta">Nenhuma ação urgente. Continue prospectando.</p>';
 
-  const health = data.pipelineHealth || {};
-  const rates = health.rates || {};
-  const stages = Array.isArray(health.stages) ? health.stages : [];
-  v22PipelineHealth.innerHTML = `
-    <article class="history-item"><div><strong>Taxas do funil</strong><p>Contato ${Number(rates.contactRate || 0)}% · Interesse ${Number(rates.interestRate || 0)}% · Proposta ${Number(rates.proposalRate || 0)}%</p></div></article>
-    ${stages.map((stage) => `<article class="history-item"><div><strong>${escapeHtml(stage.status)}</strong><p>${Number(stage.count || 0)} lead(s) · média de ${Number(stage.averageAge || 0)} dia(s) parado(s)</p><small>${Number(stage.stalled || 0)} possível(is) gargalo(s)</small></div></article>`).join('')}`;
+  v23DailyPlan.querySelectorAll('[data-open-lead]').forEach((button) => {
+    button.addEventListener('click', () => openLeadDetail(button.dataset.openLead));
+  });
+
+  const pipeline = Array.isArray(data.pipeline) ? data.pipeline : [];
+  const maxCount = Math.max(1, ...pipeline.map((item) => Number(item.count || 0)));
+  v23Pipeline.innerHTML = pipeline.map((stage) => `
+    <article class="pipeline-stage-row">
+      <div class="pipeline-stage-label"><strong>${escapeHtml(stage.status)}</strong><span>${Number(stage.count || 0)} lead(s)</span></div>
+      <div class="pipeline-stage-track"><span style="width:${Math.max(4, Math.round((Number(stage.count || 0) / maxCount) * 100))}%"></span></div>
+      <div class="pipeline-stage-value"><strong>${formatMoney(stage.value || 0)}</strong><small>${Number(stage.conversion || 0)}% avanço</small></div>
+    </article>`).join('') || '<p class="meta">O pipeline ainda não possui dados.</p>';
+
+  const alerts = Array.isArray(data.alerts) ? data.alerts : [];
+  const advice = Array.isArray(data.managerAdvice) ? data.managerAdvice : [];
+  v23Alerts.innerHTML = [
+    ...alerts.slice(0, 5).map((item) => `<article class="history-item"><div><strong>⚠ ${escapeHtml(item.leadName || 'Oportunidade')}</strong><p>${escapeHtml(item.reason || item.action || 'Requer atenção')}</p></div>${item.leadId ? `<button type="button" class="secondary mini" data-alert-lead="${escapeAttr(item.leadId)}">Abrir</button>` : ''}</article>`),
+    ...advice.slice(0, 4).map((item) => `<article class="history-item manager-advice"><div><strong>Orientação</strong><p>${escapeHtml(item)}</p></div></article>`)
+  ].join('') || '<p class="meta">Nenhum alerta crítico no momento.</p>';
+  v23Alerts.querySelectorAll('[data-alert-lead]').forEach((button) => button.addEventListener('click', () => openLeadDetail(button.dataset.alertLead)));
+
+  const timeline = Array.isArray(data.timeline) ? data.timeline : [];
+  v23Timeline.innerHTML = timeline.length ? timeline.slice(0, 12).map((event) => `
+    <article class="global-timeline-item">
+      <span class="timeline-dot"></span>
+      <div><strong>${escapeHtml(event.title || 'Atividade')}</strong><p>${escapeHtml(event.leadName || '')}${event.description ? ` · ${escapeHtml(event.description)}` : ''}</p><small>${formatDate(event.occurredAt)}</small></div>
+      ${event.leadId ? `<button type="button" class="ghost-button" data-timeline-lead="${escapeAttr(event.leadId)}" aria-label="Abrir ${escapeAttr(event.leadName || 'lead')}">↗</button>` : ''}
+    </article>`).join('') : '<p class="meta">As atividades recentes aparecerão aqui.</p>';
+  v23Timeline.querySelectorAll('[data-timeline-lead]').forEach((button) => button.addEventListener('click', () => openLeadDetail(button.dataset.timelineLead)));
 }
+
+if (v23RefreshButton) v23RefreshButton.addEventListener('click', loadV23Cockpit);
+document.querySelectorAll('[data-copilot-question]').forEach((button) => {
+  button.addEventListener('click', () => {
+    if (!v22CopilotQuestion) return;
+    v22CopilotQuestion.value = button.dataset.copilotQuestion || '';
+    v22CopilotQuestion.focus();
+  });
+});
 
 if (v22CopilotForm) {
   v22CopilotForm.addEventListener('submit', async (event) => {
@@ -2232,4 +2288,4 @@ if (v22CopilotForm) {
   });
 }
 
-window.loadV22CommandCenter = loadV22CommandCenter;
+window.loadV23Cockpit = loadV23Cockpit;

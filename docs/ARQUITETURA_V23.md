@@ -29,3 +29,8 @@ As rotas e serviços das versões anteriores continuam ativos. O núcleo V23 os 
 2. Persistir Sales Memory em MongoDB.
 3. Alimentar o Learning Engine com vendas ganhas e perdidas.
 4. Construir o Cockpit Comercial sobre `/api/v23/snapshot`.
+
+
+## Sprint 23.2 — Cockpit Comercial
+
+O módulo `src/core/commercial/cockpitService.js` agrega leads e tarefas em uma resposta única para a Home do Sales OS. A rota `GET /api/v23/cockpit` entrega métricas, prioridades, pipeline, alertas e timeline sem duplicar regras no frontend.

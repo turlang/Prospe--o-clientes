@@ -20,7 +20,7 @@ test('Sales OS Core cria snapshot integrado', () => {
     tasks: [],
     now: new Date('2026-07-09T12:00:00Z')
   });
-  assert.equal(snapshot.version, '23.1.0');
+  assert.equal(snapshot.version, '23.2.0');
   assert.equal(snapshot.intelligence.summary.activeLeads, 1);
   assert.ok(Array.isArray(snapshot.prompts));
   assert.ok(snapshot.ai.status);
