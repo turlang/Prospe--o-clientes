@@ -1,3 +1,31 @@
+# V22.0.0 — CRM Autônomo
+
+- Central de Inteligência Comercial com plano diário.
+- Copiloto comercial com Groq/Gemini/OpenAI e fallback local.
+- Saúde do pipeline, gargalos e previsão ponderada de receita.
+- Endpoints `/api/v22/command-center` e `/api/v22/copilot`.
+
+
+## 21.5.0 — Crescimento pós-venda
+
+### Adicionado
+- Módulo de crescimento pós-venda na aba Clientes.
+- Identificação de clientes prontos para indicação, expansão e recorrência.
+- Mensagem de pedido de indicação para clientes fechados.
+- Mensagem de expansão/upsell em linguagem simples.
+- Endpoints `/api/customer-growth/summary`, `/api/customer-growth/referral` e `/api/customer-growth/expansion`.
+- Testes do serviço `customerGrowthService`.
+
+
+## V21.4 — Carteira de clientes e pós-venda
+
+- Adicionada aba **Clientes** para acompanhar fechamentos e carteira ativa.
+- Criados endpoints `/api/customers/summary`, `/api/customers/close` e `/api/customers/lost`.
+- Leads podem ser marcados como **FECHADO** diretamente da ficha ou da central de propostas.
+- Cada cliente recebe plano simples de onboarding e próxima melhor ação.
+- Resumo exibe clientes fechados, receita fechada, ticket médio e pipeline aberto.
+- Adicionados testes do serviço de carteira de clientes.
+
 
 ## V21.3 — Propostas comerciais com IA
 
@@ -285,3 +313,18 @@
 
 ### Melhorado
 - Dashboard comercial passa a ter uma visão complementar para gestão e análise, além da operação diária do CRM.
+
+## 21.6.0 - Campanhas Comerciais Inteligentes
+
+### Adicionado
+- Serviço `campaignAutomationService` para criar campanhas comerciais revisáveis por lead.
+- Endpoint `GET /api/campaigns/summary` com leads prontos para campanha, prioridade e recomendações.
+- Endpoint `POST /api/campaigns/smart-sequence` para gerar cadência com IA ou fallback local.
+- Criação automática de tarefas da campanha na agenda comercial, sem envio automático de mensagens.
+- Aba **Campanhas** reorganizada para mostrar leads prontos para cadência e botões de criação de campanha.
+
+### Segurança Comercial
+- As campanhas continuam manuais: o sistema gera roteiro e tarefas, mas o vendedor revisa e envia.
+
+### Testes
+- Adicionados testes para classificação de leads, resumo de campanhas, cadência local, normalização de IA, tarefas e timeline.

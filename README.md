@@ -1,4 +1,4 @@
-# LeadHunter Pro
+# LeadHunter Pro — V22 CRM Autônomo
 
 SaaS de prospecção comercial, geração de leads, CRM, pipeline de vendas e gestão de assinaturas para pequenos negócios, vendedores, autônomos e agências.
 
@@ -11,6 +11,7 @@ O projeto demonstra uma aplicação SaaS com autenticação, CRM, planos editáv
 ## Principais funcionalidades
 
 - Propostas comerciais geradas por IA usando o mesmo provedor configurado para abordagens (Groq, Gemini ou OpenAI), com fallback local automático.
+- Campanhas comerciais inteligentes com IA/fallback local, tarefas na agenda e revisão humana antes de qualquer envio.
 
 ### Central de Propostas
 
@@ -304,3 +305,14 @@ Cada canal usa regras próprias no Prompt Engine. Quando Groq, Gemini ou OpenAI 
 
 
 - Relatórios comerciais gerenciais.
+
+
+## V21.4 — Carteira de clientes e pós-venda
+
+A versão 21.4 adiciona uma camada de fechamento comercial ao CRM. Depois que uma proposta é aceita, o usuário pode marcar o lead como **FECHADO**, acompanhar a carteira na aba **Clientes**, visualizar receita estimada, ticket médio e plano inicial de onboarding.
+
+Novos endpoints:
+
+- `GET /api/customers/summary`
+- `POST /api/customers/close`
+- `POST /api/customers/lost`

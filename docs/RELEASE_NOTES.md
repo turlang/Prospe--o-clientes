@@ -1,3 +1,32 @@
+# V22.0.0 — CRM Autônomo
+
+- Central de Inteligência Comercial com plano diário.
+- Copiloto comercial com Groq/Gemini/OpenAI e fallback local.
+- Saúde do pipeline, gargalos e previsão ponderada de receita.
+- Endpoints `/api/v22/command-center` e `/api/v22/copilot`.
+
+
+## V21.5 — Crescimento pós-venda
+
+A versão 21.5 amplia a aba Clientes para além do fechamento. O sistema agora recomenda ações de indicação, expansão e recorrência para clientes já fechados, ajudando o usuário a gerar novas oportunidades sem depender apenas de prospecção fria.
+
+Principais pontos:
+- clientes fechados analisados por tempo desde o fechamento;
+- identificação de clientes prontos para pedido de indicação;
+- identificação de clientes com potencial de expansão;
+- geração de mensagens prontas para copiar;
+- registro das ações na timeline do lead.
+
+
+## V21.4 — Carteira de clientes e pós-venda
+
+- Adicionada aba **Clientes** para acompanhar fechamentos e carteira ativa.
+- Criados endpoints `/api/customers/summary`, `/api/customers/close` e `/api/customers/lost`.
+- Leads podem ser marcados como **FECHADO** diretamente da ficha ou da central de propostas.
+- Cada cliente recebe plano simples de onboarding e próxima melhor ação.
+- Resumo exibe clientes fechados, receita fechada, ticket médio e pipeline aberto.
+- Adicionados testes do serviço de carteira de clientes.
+
 
 ## V21.3 — Propostas comerciais com IA
 
@@ -817,3 +846,10 @@ Esta versão adiciona uma camada de análise gerencial ao CRM:
 - exportação CSV do relatório.
 
 O objetivo é ajudar o usuário a enxergar o negócio como gestor comercial, não apenas como operador de prospecção.
+
+## 21.6.0 — Campanhas Comerciais Inteligentes
+
+- Criada central de campanhas orientada por prioridade comercial.
+- Cada lead pode receber uma cadência criada por IA ou fallback local.
+- As etapas viram tarefas na agenda comercial.
+- O sistema não dispara mensagens automaticamente; tudo exige revisão humana.

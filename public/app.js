@@ -55,6 +55,19 @@ const reportSegments = document.querySelector('#reportSegments');
 const reportStalled = document.querySelector('#reportStalled');
 const proposalSummary = document.querySelector('#proposalSummary');
 const proposalList = document.querySelector('#proposalList');
+const customerSummary = document.querySelector('#customerSummary');
+const customerList = document.querySelector('#customerList');
+const customerRecommendations = document.querySelector('#customerRecommendations');
+const customerGrowthSummary = document.querySelector('#customerGrowthSummary');
+const customerGrowthList = document.querySelector('#customerGrowthList');
+
+const v22Greeting = document.querySelector('#v22Greeting');
+const v22Summary = document.querySelector('#v22Summary');
+const v22DailyPlan = document.querySelector('#v22DailyPlan');
+const v22PipelineHealth = document.querySelector('#v22PipelineHealth');
+const v22CopilotForm = document.querySelector('#v22CopilotForm');
+const v22CopilotQuestion = document.querySelector('#v22CopilotQuestion');
+const v22CopilotAnswer = document.querySelector('#v22CopilotAnswer');
 
 let authToken = localStorage.getItem('authToken') || '';
 let currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
@@ -198,6 +211,7 @@ form.addEventListener('submit', async (event) => {
     await refreshUsage();
     await loadHistory();
     await loadCommercialIntelligence();
+  await loadV22CommandCenter();
   } catch (error) {
     showError(error.message);
   }
@@ -322,6 +336,7 @@ function switchView(view) {
   if (view === 'agenda') loadAgenda();
   if (view === 'relatorios') loadCommercialReport();
   if (view === 'propostas') loadProposals();
+  if (view === 'clientes') loadCustomers();
   if (view === 'campanhas') { loadAutomationActions(); loadFollowups(); }
 }
 
@@ -684,6 +699,8 @@ function openLeadDetail(leadId) {
       <button type="button" class="secondary" onclick="updateStatus('${escapeAttr(leadId)}','PROPOSTA')">Proposta</button>
       <button type="button" class="secondary" onclick="generateApproach('${escapeAttr(leadId)}', 'new', 'generic')">🧠 Consultor IA</button>
       <button type="button" class="secondary" onclick="generateProposal('${escapeAttr(leadId)}')">📄 Gerar proposta</button>
+      <button type="button" class="secondary" onclick="closeAsCustomer('${escapeAttr(leadId)}')">✅ Fechar cliente</button>
+      <button type="button" class="secondary" onclick="markAsLost('${escapeAttr(leadId)}')">Perdido</button>
       <button type="button" class="secondary" onclick="scheduleFollowup('${escapeAttr(leadId)}')">Agendar retorno</button>
     </div>
     <pre id="approach-modal-${escapeAttr(leadId)}" class="msg crm-approach-output"></pre>
@@ -782,6 +799,7 @@ function renderLead(lead) {
         <button type="button" class="approach-btn" onclick="generateApproach('${escapeAttr(leadId)}', 'new', 'generic')">🧠 Consultor IA</button>
         <button type="button" class="secondary" onclick="generateCampaign('${escapeAttr(leadId)}')">Sequência</button>
         <button type="button" class="secondary" onclick="generateProposal('${escapeAttr(leadId)}')">Gerar proposta</button>
+        <button type="button" class="secondary" onclick="closeAsCustomer('${escapeAttr(leadId)}')">Fechar cliente</button>
         <button type="button" class="secondary" onclick="scheduleFollowup('${escapeAttr(leadId)}')">Agendar follow-up</button>
       </div>
 
@@ -1260,40 +1278,109 @@ async function loadAutomationActions() {
   if (!automationActions || !authToken) return;
 
   try {
-    const response = await apiFetch('/api/automations/next-actions');
-    const data = await readJson(response);
-    if (!response.ok) throw new Error(data.error);
+    const [nextResponse, campaignResponse] = await Promise.all([
+      apiFetch('/api/automations/next-actions'),
+      apiFetch('/api/campaigns/summary')
+    ]);
+
+    const nextData = await readJson(nextResponse);
+    const campaignData = await readJson(campaignResponse);
+    if (!nextResponse.ok) throw new Error(nextData.error);
+    if (!campaignResponse.ok) throw new Error(campaignData.error);
 
     if (automationSummary) {
       automationSummary.innerHTML = `
-        <article><small>Follow-ups pendentes</small><strong>${data.summary.pendingTasks}</strong><span>tarefas abertas</span></article>
-        <article><small>Vencidos hoje</small><strong>${data.summary.dueToday}</strong><span>ações urgentes</span></article>
-        <article><small>Leads quentes</small><strong>${data.summary.hotLeads}</strong><span>alta prioridade</span></article>
+        <article><small>Leads para campanha</small><strong>${campaignData.summary.campaignable}</strong><span>prontos para cadência</span></article>
+        <article><small>Alta prioridade</small><strong>${campaignData.summary.highPriority}</strong><span>campanha hoje</span></article>
+        <article><small>Leads parados</small><strong>${campaignData.summary.stuck}</strong><span>reativar com cuidado</span></article>
+        <article><small>Tarefas de campanha</small><strong>${campaignData.summary.pendingCampaignTasks}</strong><span>pendentes</span></article>
       `;
     }
 
-    const items = [...(data.dueTasks || []), ...(data.hotLeads || [])];
+    const recommendations = (campaignData.recommendations || []).map((item) => `<li>${escapeHtml(item)}</li>`).join('');
+    const leads = campaignData.leads || [];
 
-    if (!items.length) {
-      automationActions.innerHTML = '<p class="meta">Nenhuma ação urgente no momento.</p>';
+    if (!leads.length) {
+      automationActions.innerHTML = `
+        <div class="card-panel soft">
+          <strong>Sem campanhas sugeridas agora</strong>
+          <p class="meta">Prospecte leads ou avance oportunidades no CRM para criar cadências inteligentes.</p>
+        </div>
+      `;
       return;
     }
 
-    automationActions.innerHTML = items.map((item) => `
-      <article class="history-item">
-        <strong>${escapeHtml(item.title)}</strong>
-        <p>${escapeHtml(item.leadName || 'Lead')}</p>
-        <p class="meta">Prioridade: ${escapeHtml(item.priority || 'MÉDIA')}</p>
-        ${item.dueAt ? `<p class="meta">Vencimento: ${new Date(item.dueAt).toLocaleString('pt-BR')}</p>` : ''}
-        <p>${escapeHtml(item.message || '')}</p>
-        ${item.type === 'HOT_LEAD'
-          ? `<button type="button" onclick="startAutomationSequence('${escapeAttr(item.leadId)}')">Criar sequência</button>`
-          : ''
-        }
-      </article>
-    `).join('');
+    automationActions.innerHTML = `
+      <div class="card-panel soft">
+        <strong>Orientações do gerente comercial</strong>
+        <ul>${recommendations}</ul>
+      </div>
+      ${leads.map((lead) => `
+        <article class="history-item campaign-suggestion">
+          <div>
+            <strong>${escapeHtml(lead.name)}</strong>
+            <p>${escapeHtml(lead.segment)} · ${escapeHtml(lead.status)} · Prioridade ${escapeHtml(lead.priority)}</p>
+            <p class="meta">Canal sugerido: ${escapeHtml(lead.recommendedChannel)} · Objetivo: ${escapeHtml(lead.objective)}</p>
+            <p>${escapeHtml(lead.reason)}</p>
+          </div>
+          <div class="actions-row">
+            <button type="button" onclick="createSmartCampaign('${escapeAttr(lead.id)}')">Criar campanha IA</button>
+            <button type="button" class="secondary" onclick="openLeadDetail('${escapeAttr(lead.id)}')">Ver lead</button>
+          </div>
+        </article>
+      `).join('')}
+    `;
   } catch (error) {
     automationActions.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
+  }
+}
+
+async function createSmartCampaign(leadId) {
+  try {
+    statusBox.innerHTML = '<p class="loading">Criando campanha inteligente para este lead...</p>';
+    const response = await apiFetch('/api/campaigns/smart-sequence', {
+      method: 'POST',
+      body: JSON.stringify({
+        leadId,
+        objective: 'vender serviço tecnológico de forma consultiva',
+        createTasks: true
+      })
+    });
+
+    const data = await readJson(response);
+    if (!response.ok) throw new Error(data.error);
+
+    const campaign = data.campaign || {};
+    const engine = campaign.source === 'ai'
+      ? `${campaign.providerLabel || 'IA'} · ${campaign.model || ''}`
+      : (campaign.aiError ? `Fallback local · ${campaign.aiError}` : 'Motor Local');
+
+    const steps = (campaign.steps || []).map((step) => `
+      <article class="campaign-step">
+        <strong>D+${step.day} — ${escapeHtml(step.title)}</strong>
+        <small>${escapeHtml(step.channel)} · ${escapeHtml(step.goal || '')}</small>
+        <textarea readonly>${escapeHtml(step.message)}</textarea>
+      </article>
+    `).join('');
+
+    statusBox.innerHTML = `
+      <div class="card-panel">
+        <p class="tag dark">Campanha criada</p>
+        <h3>${escapeHtml(campaign.campaignName || 'Campanha inteligente')}</h3>
+        <p class="meta">Motor: ${escapeHtml(engine)}</p>
+        <p><strong>Estratégia:</strong> ${escapeHtml(campaign.strategy || '-')}</p>
+        <p>${escapeHtml(campaign.reason || '')}</p>
+        ${steps}
+        <p class="meta">${(data.tasks || []).length} tarefa(s) foram adicionadas à agenda comercial.</p>
+      </div>
+    `;
+
+    await loadAutomationActions();
+    await loadFollowups();
+    await loadAgenda();
+    statusBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch (error) {
+    showError(error.message);
   }
 }
 
@@ -1797,6 +1884,7 @@ function renderProposalList(proposals = []) {
       <pre class="msg compact-proposal">${escapeHtml(proposal.text || '')}</pre>
       <div class="agenda-actions">
         <button type="button" class="secondary" onclick="openLeadDetail('${escapeAttr(proposal.leadId)}')">Abrir lead</button>
+        <button type="button" class="secondary" onclick="closeAsCustomer('${escapeAttr(proposal.leadId)}')">Marcar fechado</button>
         <button type="button" class="copy" onclick='copyText(${JSON.stringify(proposal.text || '')})'>Copiar</button>
       </div>
     </article>
@@ -1805,6 +1893,219 @@ function renderProposalList(proposals = []) {
 
 window.generateProposal = generateProposal;
 window.loadProposals = loadProposals;
+
+async function closeAsCustomer(leadId) {
+  const lead = (Array.isArray(lastLeads) ? lastLeads : []).find((item) => String(getLeadId(item)) === String(leadId)) || {};
+  const revenue = window.prompt('Valor fechado ou referência comercial:', lead.ticketEstimado || '');
+  if (revenue === null) return;
+  const note = window.prompt('Observação do fechamento:', 'Cliente fechado. Iniciar onboarding.') || '';
+
+  try {
+    const response = await apiFetch('/api/customers/close', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ leadId, revenue, note })
+    });
+    const data = await readJson(response);
+    if (!response.ok) throw new Error(data.error || 'Erro ao marcar cliente como fechado.');
+
+    statusBox.innerHTML = '<p>Cliente marcado como fechado. Carteira atualizada.</p>';
+    await carregarLeadsCRM();
+    await loadCustomers();
+    await loadProposals();
+    closeLeadModal();
+    switchView('clientes');
+  } catch (error) {
+    showError(error.message);
+  }
+}
+
+async function markAsLost(leadId) {
+  const reason = window.prompt('Motivo da perda:', 'Sem interesse no momento.') || '';
+  if (!reason) return;
+
+  try {
+    const response = await apiFetch('/api/customers/lost', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ leadId, reason })
+    });
+    const data = await readJson(response);
+    if (!response.ok) throw new Error(data.error || 'Erro ao marcar oportunidade como perdida.');
+
+    statusBox.innerHTML = '<p>Oportunidade marcada como perdida e funil atualizado.</p>';
+    await carregarLeadsCRM();
+    closeLeadModal();
+  } catch (error) {
+    showError(error.message);
+  }
+}
+
+async function loadCustomers() {
+  if (!authToken || !customerList) return;
+  customerList.innerHTML = '<p class="loading">Carregando carteira de clientes...</p>';
+  if (customerSummary) customerSummary.innerHTML = '';
+  if (customerRecommendations) customerRecommendations.innerHTML = '';
+
+  try {
+    const response = await apiFetch('/api/customers/summary');
+    const data = await readJson(response);
+    if (!response.ok) throw new Error(data.error || 'Erro ao carregar clientes.');
+    renderCustomerSummary(data.summary || {});
+    renderCustomerList(data.customers || []);
+    renderCustomerRecommendations(data.recommendations || []);
+    await loadCustomerGrowth();
+  } catch (error) {
+    customerList.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
+  }
+}
+
+function renderCustomerSummary(summary = {}) {
+  if (!customerSummary) return;
+  customerSummary.innerHTML = `
+    <article><small>Clientes</small><strong>${Number(summary.customers || 0)}</strong><span>fechamentos realizados</span></article>
+    <article><small>Receita fechada</small><strong>${formatMoney(summary.totalRevenue || 0)}</strong><span>valor estimado</span></article>
+    <article><small>Ticket médio</small><strong>${formatMoney(summary.averageTicket || 0)}</strong><span>por cliente</span></article>
+    <article><small>Pipeline aberto</small><strong>${formatMoney(summary.openPipeline || 0)}</strong><span>interessados e propostas</span></article>
+  `;
+}
+
+function renderCustomerList(customers = []) {
+  if (!customerList) return;
+  if (!customers.length) {
+    customerList.innerHTML = '<p class="meta">Nenhum cliente fechado ainda. Quando uma proposta for aceita, marque o lead como fechado.</p>';
+    return;
+  }
+
+  customerList.innerHTML = customers.map((customer) => {
+    const plan = Array.isArray(customer.onboardingPlan) ? customer.onboardingPlan : [];
+    return `
+      <article class="proposal-card customer-card">
+        <div>
+          <strong>${escapeHtml(customer.name || 'Cliente')}</strong>
+          <p>${escapeHtml(customer.segment || '')} · ${escapeHtml(customer.ticketLabel || '')}</p>
+          <small>Fechado em ${formatDate(customer.closedAt)} · Última interação: ${formatDate(customer.lastInteractionAt)}</small>
+        </div>
+        <div class="proposal-block"><strong>Próxima melhor ação</strong><p>${escapeHtml(customer.nextBestAction || '')}</p></div>
+        ${plan.length ? `<div class="proposal-block"><strong>Plano de onboarding</strong><ul>${plan.map((item) => `<li><strong>${escapeHtml(item.title)}</strong>: ${escapeHtml(item.detail)}</li>`).join('')}</ul></div>` : ''}
+        <div class="agenda-actions">
+          <button type="button" class="secondary" onclick="openLeadDetail('${escapeAttr(customer.id)}')">Abrir ficha</button>
+          ${customer.phone ? `<a class="secondary" href="https://wa.me/${String(customer.phone).replace(/\D/g, '').startsWith('55') ? String(customer.phone).replace(/\D/g, '') : `55${String(customer.phone).replace(/\D/g, '')}`}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
+        </div>
+      </article>
+    `;
+  }).join('');
+}
+
+function renderCustomerRecommendations(recommendations = []) {
+  if (!customerRecommendations) return;
+  customerRecommendations.innerHTML = recommendations.length ? recommendations.map((text) => `
+    <article class="history-item manager-advice"><div><strong>Recomendação</strong><p>${escapeHtml(text)}</p></div></article>
+  `).join('') : '<p class="meta">Nenhuma recomendação no momento.</p>';
+}
+
+window.closeAsCustomer = closeAsCustomer;
+window.markAsLost = markAsLost;
+window.loadCustomers = loadCustomers;
+
+
+async function loadCustomerGrowth() {
+  if (!authToken || !customerGrowthList) return;
+  customerGrowthList.innerHTML = '<p class="loading">Analisando indicações e oportunidades de expansão...</p>';
+  if (customerGrowthSummary) customerGrowthSummary.innerHTML = '';
+
+  try {
+    const response = await apiFetch('/api/customer-growth/summary');
+    const data = await readJson(response);
+    if (!response.ok) throw new Error(data.error || 'Erro ao carregar crescimento pós-venda.');
+    renderCustomerGrowthSummary(data.summary || {});
+    renderCustomerGrowthList(data.customers || [], data.recommendations || []);
+  } catch (error) {
+    customerGrowthList.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
+  }
+}
+
+function renderCustomerGrowthSummary(summary = {}) {
+  if (!customerGrowthSummary) return;
+  customerGrowthSummary.innerHTML = `
+    <article><small>Clientes</small><strong>${Number(summary.customers || 0)}</strong><span>base fechada</span></article>
+    <article><small>Prontos para indicação</small><strong>${Number(summary.referralReady || 0)}</strong><span>após entrega inicial</span></article>
+    <article><small>Expansão</small><strong>${Number(summary.expansionReady || 0)}</strong><span>upsell ou recorrência</span></article>
+    <article><small>Potencial expansão</small><strong>${formatMoney(summary.estimatedExpansionRevenue || 0)}</strong><span>estimativa conservadora</span></article>
+  `;
+}
+
+function renderCustomerGrowthList(customers = [], recommendations = []) {
+  if (!customerGrowthList) return;
+  if (!customers.length) {
+    customerGrowthList.innerHTML = '<p class="meta">Quando houver clientes fechados, o sistema sugerirá pedidos de indicação, expansão e ofertas recorrentes.</p>';
+    return;
+  }
+
+  const recommendationHtml = recommendations.length ? `
+    <div class="proposal-block"><strong>Recomendações gerais</strong><ul>${recommendations.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul></div>
+  ` : '';
+
+  customerGrowthList.innerHTML = recommendationHtml + customers.map((customer) => {
+    const opportunities = Array.isArray(customer.opportunities) ? customer.opportunities.slice(0, 4) : [];
+    return `
+      <article class="proposal-card customer-growth-card">
+        <div>
+          <strong>${escapeHtml(customer.name || 'Cliente')}</strong>
+          <p>${escapeHtml(customer.segment || '')} · ${escapeHtml(customer.stage || '')}</p>
+          <small>${customer.daysSinceClose === null || customer.daysSinceClose === undefined ? 'Fechamento recente' : `${customer.daysSinceClose} dia(s) desde o fechamento`}</small>
+        </div>
+        <div class="proposal-block"><strong>Próxima ação</strong><p>${escapeHtml(customer.nextAction || '')}</p></div>
+        ${opportunities.length ? `<div class="proposal-block"><strong>Oportunidades</strong><ul>${opportunities.map((item) => `<li><strong>${escapeHtml(item.title)}</strong>: ${escapeHtml(item.detail)}</li>`).join('')}</ul></div>` : ''}
+        <div class="agenda-actions">
+          <button type="button" class="secondary" onclick="requestReferralMessage('${escapeAttr(customer.id)}')">Gerar pedido de indicação</button>
+          <button type="button" class="secondary" onclick="requestExpansionMessage('${escapeAttr(customer.id)}')">Gerar expansão</button>
+          <button type="button" class="secondary" onclick="openLeadDetail('${escapeAttr(customer.id)}')">Abrir ficha</button>
+        </div>
+      </article>
+    `;
+  }).join('');
+}
+
+async function requestReferralMessage(leadId) {
+  try {
+    const response = await apiFetch('/api/customer-growth/referral', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ leadId })
+    });
+    const data = await readJson(response);
+    if (!response.ok) throw new Error(data.error || 'Erro ao gerar pedido de indicação.');
+    await copyText(data.message || '');
+    statusBox.innerHTML = '<p>Pedido de indicação gerado, copiado e registrado na timeline.</p>';
+    await carregarLeadsCRM();
+    await loadCustomers();
+  } catch (error) {
+    showError(error.message);
+  }
+}
+
+async function requestExpansionMessage(leadId) {
+  try {
+    const response = await apiFetch('/api/customer-growth/expansion', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ leadId })
+    });
+    const data = await readJson(response);
+    if (!response.ok) throw new Error(data.error || 'Erro ao gerar mensagem de expansão.');
+    await copyText(data.message || '');
+    statusBox.innerHTML = '<p>Mensagem de expansão gerada, copiada e registrada na timeline.</p>';
+    await carregarLeadsCRM();
+    await loadCustomers();
+  } catch (error) {
+    showError(error.message);
+  }
+}
+
+window.loadCustomerGrowth = loadCustomerGrowth;
+window.requestReferralMessage = requestReferralMessage;
+window.requestExpansionMessage = requestExpansionMessage;
 
 function showPaymentReturnMessage() {
   const params = new URLSearchParams(window.location.search);
@@ -1871,3 +2172,64 @@ function showPaymentReturnMessage() {
     }, 1200);
   }
 }
+
+
+async function loadV22CommandCenter() {
+  if (!authToken || !v22Summary) return;
+  try {
+    const response = await apiFetch('/api/v22/command-center');
+    const data = await readJson(response);
+    if (!response.ok) throw new Error(data.error || 'Erro ao carregar a Central de Inteligência.');
+    renderV22CommandCenter(data);
+  } catch (error) {
+    v22Summary.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
+  }
+}
+
+function renderV22CommandCenter(data) {
+  const summary = data.summary || {};
+  if (v22Greeting) v22Greeting.textContent = data.greeting || 'Sua central comercial está atualizada.';
+  v22Summary.innerHTML = `
+    <article><small>Prioridade alta</small><strong>${Number(summary.highPriority || 0)}</strong><span>agir primeiro</span></article>
+    <article><small>Em risco</small><strong>${Number(summary.atRisk || 0)}</strong><span>podem esfriar</span></article>
+    <article><small>Tarefas atrasadas</small><strong>${Number(summary.overdueTasks || 0)}</strong><span>exigem atenção</span></article>
+    <article><small>Previsão ponderada</small><strong>${formatMoney(Number(summary.weightedRevenue || 0))}</strong><span>${Number(summary.openOpportunities || 0)} oportunidades</span></article>`;
+
+  const plan = Array.isArray(data.dailyPlan) ? data.dailyPlan : [];
+  v22DailyPlan.innerHTML = plan.length ? plan.map((item) => `
+    <article class="history-item priority-${escapeAttr(String(item.priority || '').toLowerCase())}">
+      <div><strong>${escapeHtml(item.leadName)} · ${escapeHtml(item.priority || 'MÉDIA')}</strong><p>${escapeHtml(item.action || '')}</p><small>${escapeHtml(item.reason || '')}</small></div>
+      <button type="button" class="secondary" onclick="openLeadDetail('${escapeAttr(item.leadId)}')">Abrir lead</button>
+    </article>`).join('') : '<p class="meta">Nenhuma ação urgente. Continue prospectando.</p>';
+
+  const health = data.pipelineHealth || {};
+  const rates = health.rates || {};
+  const stages = Array.isArray(health.stages) ? health.stages : [];
+  v22PipelineHealth.innerHTML = `
+    <article class="history-item"><div><strong>Taxas do funil</strong><p>Contato ${Number(rates.contactRate || 0)}% · Interesse ${Number(rates.interestRate || 0)}% · Proposta ${Number(rates.proposalRate || 0)}%</p></div></article>
+    ${stages.map((stage) => `<article class="history-item"><div><strong>${escapeHtml(stage.status)}</strong><p>${Number(stage.count || 0)} lead(s) · média de ${Number(stage.averageAge || 0)} dia(s) parado(s)</p><small>${Number(stage.stalled || 0)} possível(is) gargalo(s)</small></div></article>`).join('')}`;
+}
+
+if (v22CopilotForm) {
+  v22CopilotForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const question = v22CopilotQuestion.value.trim();
+    if (!question) return;
+    v22CopilotAnswer.innerHTML = '<p class="loading">Analisando os dados do CRM...</p>';
+    try {
+      const response = await apiFetch('/api/v22/copilot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question })
+      });
+      const data = await readJson(response);
+      if (!response.ok) throw new Error(data.error || 'Erro ao consultar o copiloto.');
+      const actions = Array.isArray(data.recommendedActions) ? data.recommendedActions : [];
+      v22CopilotAnswer.innerHTML = `<article class="copilot-response"><span class="ai-badge">${escapeHtml(data.providerLabel || 'Motor Local')}</span><p>${escapeHtml(data.answer || '')}</p>${actions.length ? `<ul>${actions.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>` : ''}</article>`;
+    } catch (error) {
+      v22CopilotAnswer.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
+    }
+  });
+}
+
+window.loadV22CommandCenter = loadV22CommandCenter;

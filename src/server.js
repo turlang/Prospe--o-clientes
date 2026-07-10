@@ -41,6 +41,21 @@ const { buildAgendaSummary } = require('./services/commercialAgendaService');
 const { buildCommercialIntelligence, buildObjectionResponse } = require('./services/commercialIntelligenceService');
 const { buildCommercialReport, buildCommercialReportCsv } = require('./services/commercialReportService');
 const { buildAiProposal, buildProposalSummary } = require('./services/commercialProposalService');
+const { buildCustomerSuccessSummary, buildCloseInteraction, buildLostInteraction } = require('./services/customerSuccessService');
+const {
+  buildCustomerGrowthSummary,
+  buildReferralMessage,
+  buildExpansionMessage,
+  buildReferralInteraction,
+  buildExpansionInteraction
+} = require('./services/customerGrowthService');
+const {
+  buildCampaignSummary,
+  buildSmartCampaign,
+  buildCampaignInteraction,
+  buildCampaignTasks
+} = require('./services/campaignAutomationService');
+const { buildAutonomousCommandCenter, answerCommercialCopilot } = require('./services/autonomousCommercialService');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -977,6 +992,59 @@ app.post('/api/campaigns/sequence', requireAuth, async (req, res) => {
   }
 });
 
+app.get('/api/campaigns/summary', requireAuth, async (req, res) => {
+  try {
+    const [leads, tasks] = await Promise.all([
+      readLeads(req.user.sub),
+      listTasks(req.user.sub)
+    ]);
+    res.json(buildCampaignSummary(leads, tasks));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/campaigns/smart-sequence', requireAuth, async (req, res) => {
+  try {
+    const { leadId, objective, createTasks: shouldCreateTasks = true } = req.body;
+    if (!leadId) return res.status(400).json({ error: 'Informe o leadId.' });
+
+    const leads = await readLeads(req.user.sub);
+    const lead = leads.find((item) => String(item.placeId || item.nome) === String(leadId));
+    if (!lead) return res.status(404).json({ error: 'Lead não encontrado.' });
+
+    const previousMessages = (lead.interacoes || [])
+      .map((item) => item.mensagem || item.respostaSugerida || item.abordagem || '')
+      .filter(Boolean);
+
+    const campaign = await buildSmartCampaign({ lead, objective, previousMessages });
+    const createdTasks = [];
+
+    if (shouldCreateTasks) {
+      const taskPayloads = buildCampaignTasks({ userId: req.user.sub, lead, campaign });
+      for (const payload of taskPayloads) {
+        createdTasks.push(await createTask(payload));
+      }
+    }
+
+    const updatedLead = await updateLeadStatus(
+      leadId,
+      'CONTATADO',
+      buildCampaignInteraction({ campaign }),
+      req.user.sub
+    );
+
+    res.status(201).json({
+      ok: true,
+      lead: updatedLead,
+      campaign,
+      tasks: createdTasks
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post('/api/followups', requireAuth, async (req, res) => {
   try {
     const { leadId, title, message, days, priority, automationType } = req.body;
@@ -1022,6 +1090,27 @@ app.get('/api/agenda/summary', requireAuth, async (req, res) => {
   try {
     const tasks = await listTasks(req.user.sub);
     res.json(buildAgendaSummary(tasks));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+app.get('/api/v22/command-center', requireAuth, async (req, res) => {
+  try {
+    const [leads, tasks] = await Promise.all([readLeads(req.user.sub), listTasks(req.user.sub)]);
+    res.json(buildAutonomousCommandCenter(leads, tasks));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/v22/copilot', requireAuth, simpleRateLimit({ windowMs: 60_000, max: 20 }), async (req, res) => {
+  try {
+    const question = String(req.body?.question || '').trim();
+    if (question.length < 3) return res.status(400).json({ error: 'Digite uma pergunta comercial.' });
+    const [leads, tasks] = await Promise.all([readLeads(req.user.sub), listTasks(req.user.sub)]);
+    res.json(await answerCommercialCopilot({ question, leads, tasks }));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -1103,6 +1192,94 @@ app.post('/api/proposals/generate', requireAuth, async (req, res) => {
       aiStatus: proposal.aiStatus || recommendation.aiStatus || getAiProviderStatus(),
       aiError: proposal.aiError || recommendation.aiError || null
     });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+app.get('/api/customers/summary', requireAuth, async (req, res) => {
+  try {
+    const leads = await readLeads(req.user.sub);
+    res.json(buildCustomerSuccessSummary(leads));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/customers/close', requireAuth, async (req, res) => {
+  try {
+    const { leadId, revenue = '', note = '' } = req.body;
+    if (!leadId) return res.status(400).json({ error: 'Informe o leadId.' });
+
+    const updated = await updateLeadStatus(leadId, 'FECHADO', buildCloseInteraction({ revenue, note }), req.user.sub);
+    if (!updated) return res.status(404).json({ error: 'Lead não encontrado.' });
+
+    res.json({ ok: true, lead: updated, summary: buildCustomerSuccessSummary(await readLeads(req.user.sub)).summary });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/customers/lost', requireAuth, async (req, res) => {
+  try {
+    const { leadId, reason = '' } = req.body;
+    if (!leadId) return res.status(400).json({ error: 'Informe o leadId.' });
+
+    const updated = await updateLeadStatus(leadId, 'SEM_INTERESSE', buildLostInteraction({ reason }), req.user.sub);
+    if (!updated) return res.status(404).json({ error: 'Lead não encontrado.' });
+
+    res.json({ ok: true, lead: updated });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+app.get('/api/customer-growth/summary', requireAuth, async (req, res) => {
+  try {
+    const leads = await readLeads(req.user.sub);
+    res.json(buildCustomerGrowthSummary(leads));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/customer-growth/referral', requireAuth, async (req, res) => {
+  try {
+    const { leadId } = req.body;
+    if (!leadId) return res.status(400).json({ error: 'Informe o leadId.' });
+
+    const leads = await readLeads(req.user.sub);
+    const lead = leads.find((item) => String(item.placeId || item.nome) === String(leadId));
+    if (!lead) return res.status(404).json({ error: 'Cliente não encontrado.' });
+    if (String(lead.status || '').toUpperCase() !== 'FECHADO') {
+      return res.status(409).json({ error: 'Pedido de indicação só deve ser usado com clientes fechados.' });
+    }
+
+    const message = buildReferralMessage(lead);
+    const updated = await updateLeadStatus(leadId, 'FECHADO', buildReferralInteraction({ message }), req.user.sub);
+    res.json({ ok: true, lead: updated, message });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/customer-growth/expansion', requireAuth, async (req, res) => {
+  try {
+    const { leadId } = req.body;
+    if (!leadId) return res.status(400).json({ error: 'Informe o leadId.' });
+
+    const leads = await readLeads(req.user.sub);
+    const lead = leads.find((item) => String(item.placeId || item.nome) === String(leadId));
+    if (!lead) return res.status(404).json({ error: 'Cliente não encontrado.' });
+    if (String(lead.status || '').toUpperCase() !== 'FECHADO') {
+      return res.status(409).json({ error: 'Expansão só deve ser usada com clientes fechados.' });
+    }
+
+    const message = buildExpansionMessage(lead);
+    const updated = await updateLeadStatus(leadId, 'FECHADO', buildExpansionInteraction({ message }), req.user.sub);
+    res.json({ ok: true, lead: updated, message });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

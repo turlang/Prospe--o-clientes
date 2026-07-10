@@ -60,13 +60,15 @@
         <div id="aiStatusBox" class="ai-status-box"></div>
         <nav aria-label="Menu principal">
           <ul class="nav-list">
-            <li><button class="nav-btn active" type="button" data-view="dashboard">Visão geral</button></li>
+            <li><button class="nav-btn active" type="button" data-view="inteligencia">Central de Inteligência</button></li>
+            <li><button class="nav-btn" type="button" data-view="dashboard">Visão geral</button></li>
             <li><button class="nav-btn" type="button" data-view="prospectar">Prospectar</button></li>
             <li><button class="nav-btn" type="button" data-view="crm">CRM Kanban</button></li>
             <li><button class="nav-btn" type="button" data-view="historico">Histórico</button></li>
             <li><button class="nav-btn" type="button" data-view="agenda">Agenda</button></li>
             <li><button class="nav-btn" type="button" data-view="relatorios">Relatórios</button></li>
             <li><button class="nav-btn" type="button" data-view="propostas">Propostas</button></li>
+            <li><button class="nav-btn" type="button" data-view="clientes">Clientes</button></li>
             <li><button class="nav-btn" type="button" data-view="campanhas">Campanhas</button></li>
             <li><button class="nav-btn" type="button" data-view="planos">Planos</button></li>
           </ul>
@@ -81,7 +83,41 @@
         <div id="onboardingBox" class="onboarding-box card-panel"></div>
         <div id="stats" class="stats-grid"></div>
 
-        <section id="view-dashboard" class="view active-view">
+
+        <section id="view-inteligencia" class="view active-view">
+          <div class="dashboard-header card-panel">
+            <div>
+              <p class="tag dark">V22 · CRM Autônomo</p>
+              <h2>Central de Inteligência Comercial</h2>
+              <p class="meta">Veja o que exige atenção hoje, a saúde do pipeline e converse com o copiloto usando os dados reais do CRM.</p>
+            </div>
+            <button type="button" class="secondary" onclick="loadV22CommandCenter()">Atualizar central</button>
+          </div>
+          <section class="card-panel v22-hero-card">
+            <h3 id="v22Greeting">Preparando seu plano comercial...</h3>
+            <div id="v22Summary" class="agenda-summary-grid"></div>
+          </section>
+          <div class="dashboard-analytics">
+            <section class="card-panel">
+              <div class="section-title"><h3>Plano de ação de hoje</h3><p class="meta">Ações ordenadas por prioridade e risco.</p></div>
+              <div id="v22DailyPlan" class="history-list compact-list"></div>
+            </section>
+            <section class="card-panel">
+              <div class="section-title"><h3>Saúde do pipeline</h3><p class="meta">Tempo parado, gargalos e taxas de avanço.</p></div>
+              <div id="v22PipelineHealth" class="history-list compact-list"></div>
+            </section>
+          </div>
+          <section class="card-panel copilot-panel">
+            <div class="section-title"><h3>Copiloto Comercial</h3><p class="meta">Pergunte: “Quem devo contatar agora?”, “Quais leads estão em risco?” ou “Qual a previsão de receita?”.</p></div>
+            <form id="v22CopilotForm" class="copilot-form">
+              <input id="v22CopilotQuestion" placeholder="Digite uma pergunta sobre sua operação comercial" required minlength="3" />
+              <button type="submit">Perguntar ao copiloto</button>
+            </form>
+            <div id="v22CopilotAnswer" class="copilot-answer"><p class="meta">A resposta usará somente os dados disponíveis no seu CRM.</p></div>
+          </section>
+        </section>
+
+        <section id="view-dashboard" class="view">
           <div class="dashboard-header card-panel">
             <div>
               <p class="tag dark">Visão geral</p>
@@ -269,6 +305,47 @@
           </section>
         </section>
 
+
+
+        <section id="view-clientes" class="view">
+          <div class="dashboard-header card-panel">
+            <div>
+              <p class="tag dark">Clientes</p>
+              <h2>Carteira e fechamentos</h2>
+              <p class="meta">Acompanhe quem já virou cliente, receita fechada, onboarding e oportunidades que ainda precisam de fechamento.</p>
+            </div>
+            <div class="header-actions">
+              <button type="button" onclick="loadCustomers()">Atualizar clientes</button>
+              <button type="button" class="secondary" onclick="switchView('propostas')">Ver propostas</button>
+            </div>
+          </div>
+          <div id="customerSummary" class="agenda-summary-grid"></div>
+          <div class="dashboard-analytics">
+            <section class="card-panel">
+              <div class="section-title">
+                <h3>Clientes fechados</h3>
+                <p class="meta">Leads marcados como FECHADO aparecem aqui com plano de início do relacionamento.</p>
+              </div>
+              <div id="customerList" class="proposal-list"></div>
+            </section>
+            <section class="card-panel">
+              <div class="section-title">
+                <h3>Recomendações de fechamento</h3>
+                <p class="meta">Orientações para transformar propostas abertas em clientes e cuidar do pós-venda.</p>
+              </div>
+              <div id="customerRecommendations" class="history-list compact-list"></div>
+            </section>
+          </div>
+          <section class="card-panel customer-growth-panel">
+            <div class="section-title">
+              <h3>Crescimento pós-venda</h3>
+              <p class="meta">A V21.5 identifica clientes prontos para indicação, expansão e oferta recorrente.</p>
+            </div>
+            <div id="customerGrowthSummary" class="agenda-summary-grid"></div>
+            <div id="customerGrowthList" class="proposal-list"></div>
+          </section>
+        </section>
+
         <section id="view-planos" class="view">
           <div class="dashboard-header card-panel">
             <div>
@@ -286,24 +363,24 @@
             <div>
               <p class="tag dark">Campanhas</p>
               <h2>Sequências e follow-ups</h2>
-              <p class="meta">Esta aba serve para organizar retornos comerciais: próximas ações, leads quentes e agenda de follow-ups. Nenhuma mensagem é enviada automaticamente.</p>
+              <p class="meta">Esta aba cria cadências comerciais inteligentes com IA ou motor local. Nada é enviado automaticamente: o vendedor revisa, copia e executa cada etapa.</p>
             </div>
             <div class="actions-row">
-              <button type="button" onclick="loadAutomationActions()">Ver ações</button>
+              <button type="button" onclick="loadAutomationActions()">Ver campanhas sugeridas</button>
               <button type="button" class="secondary" onclick="loadFollowups()">Atualizar follow-ups</button>
             </div>
           </div>
 
           <div class="info-grid">
             <article><strong>Quando usar?</strong><span>Depois que um lead foi marcado como contatado ou demonstrou interesse.</span></article>
-            <article><strong>O que aparece aqui?</strong><span>Tarefas de follow-up, leads quentes e retornos pendentes.</span></article>
+            <article><strong>O que aparece aqui?</strong><span>Leads prontos para campanha, cadências sugeridas e tarefas de execução.</span></article>
             <article><strong>O que não faz?</strong><span>Não dispara WhatsApp ou e-mail sozinho; você copia e envia manualmente.</span></article>
           </div>
 
           <div class="stats-grid" id="automationSummary"></div>
 
           <div class="card-panel">
-            <h3>Ações comerciais sugeridas</h3>
+            <h3>Campanhas inteligentes sugeridas</h3>
             <div id="automationActions" class="history-list"></div>
           </div>
 
@@ -315,6 +392,6 @@
       </section>
     </section>
   </main>
-  <script src="app.js?v=v21-assistente-comercial"></script>
+  <script src="app.js?v=v21-6-campanhas"></script>
 </body>
 </html>

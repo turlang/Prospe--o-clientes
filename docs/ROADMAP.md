@@ -1,3 +1,11 @@
+
+## Próxima direção após V21.5
+
+- Melhorar o painel administrativo com métricas de uso e MRR.
+- Criar configurações visuais de IA por provedor.
+- Preparar integrações reais de WhatsApp/e-mail para envio supervisionado.
+- Evoluir pós-venda com contratos, recorrência e satisfação do cliente.
+
 # Roadmap — LeadHunter Pro
 
 ## Sprint 1 — Organização e estratégia comercial
