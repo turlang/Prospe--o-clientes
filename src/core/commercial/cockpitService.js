@@ -94,7 +94,7 @@ function buildCockpit({ leads = [], tasks = [], now = new Date(), userName = '' 
   const closedRevenue = closed.reduce((sum, lead) => sum + parseMoney(lead.ticketEstimado), 0);
 
   return {
-    version: '23.2.0',
+    version: '23.3.0',
     generatedAt: now.toISOString(),
     greeting: `Olá${userName ? `, ${userName}` : ''}. ${commandCenter.greeting}`,
     focus: commandCenter.dailyPlan?.[0] || null,

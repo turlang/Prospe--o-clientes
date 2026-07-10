@@ -1419,3 +1419,23 @@ body.modal-open {
 .manager-advice { background:#f0fdf4; border-color:#bbf7d0; }
 @media (max-width:1050px) { .cockpit-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); } .cockpit-main-grid,.cockpit-secondary-grid { grid-template-columns:1fr; } }
 @media (max-width:720px) { .cockpit-header,.cockpit-focus-card { align-items:flex-start; flex-direction:column; } .cockpit-header-actions { justify-content:flex-start; } .cockpit-metrics { grid-template-columns:1fr; } .pipeline-stage-row { grid-template-columns:92px minmax(70px,1fr) 95px; gap:8px; } .cockpit-action { grid-template-columns:30px minmax(0,1fr); } .cockpit-action button { grid-column:2; justify-self:start; } }
+
+/* V23.3 - Copiloto Comercial IA */
+.copilot-title-row { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; }
+.copilot-chat { min-height: 320px; max-height: 520px; overflow-y: auto; display: flex; flex-direction: column; gap: .85rem; padding: 1rem; margin: 1rem 0; border: 1px solid rgba(148,163,184,.25); border-radius: 18px; background: rgba(15,23,42,.42); }
+.copilot-message { display: flex; max-width: 88%; }
+.copilot-message > div { padding: .85rem 1rem; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,.08); }
+.copilot-message p { margin: .35rem 0; white-space: pre-wrap; line-height: 1.55; }
+.copilot-message ul { margin: .55rem 0 0 1.15rem; }
+.copilot-message small { display: block; opacity: .65; margin-top: .45rem; }
+.copilot-message.assistant { align-self: flex-start; }
+.copilot-message.assistant > div { background: rgba(30,41,59,.92); border: 1px solid rgba(56,189,248,.2); }
+.copilot-message.user { align-self: flex-end; justify-content: flex-end; }
+.copilot-message.user > div { background: rgba(37,99,235,.92); color: #fff; }
+.copilot-form { display: grid; grid-template-columns: 1fr auto; gap: .75rem; }
+.copilot-form input { min-height: 48px; }
+@media (max-width: 720px) {
+  .copilot-title-row { flex-direction: column; }
+  .copilot-message { max-width: 96%; }
+  .copilot-form { grid-template-columns: 1fr; }
+}

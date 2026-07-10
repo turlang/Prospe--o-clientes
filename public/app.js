@@ -74,6 +74,8 @@ const v23RefreshButton = document.querySelector('#v23RefreshButton');
 const v22CopilotForm = document.querySelector('#v22CopilotForm');
 const v22CopilotQuestion = document.querySelector('#v22CopilotQuestion');
 const v22CopilotAnswer = document.querySelector('#v22CopilotAnswer');
+const v23CopilotMessages = document.querySelector('#v23CopilotMessages');
+const v23CopilotClear = document.querySelector('#v23CopilotClear');
 
 let authToken = localStorage.getItem('authToken') || '';
 let currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
@@ -305,6 +307,8 @@ async function showDashboard() {
   await refreshStats();
   await loadSavedLeads(false, { renderCards: false });
   await loadHistory();
+  await loadV23Cockpit();
+  await loadV23CopilotHistory();
 }
 
 
@@ -335,7 +339,7 @@ function switchView(view) {
   // CRM, Histórico e Campanhas têm seus próprios containers.
   if (results) results.hidden = view !== 'prospectar';
 
-  if (view === 'inteligencia') loadV23Cockpit();
+  if (view === 'inteligencia') { loadV23Cockpit(); loadV23CopilotHistory(); }
   if (view === 'crm') carregarLeadsCRM();
   if (view === 'dashboard') { loadSavedLeads(false, { renderCards: false }); loadCommercialIntelligence(); }
   if (view === 'historico') loadHistory();
@@ -2258,6 +2262,36 @@ function renderV23Cockpit(data) {
 }
 
 if (v23RefreshButton) v23RefreshButton.addEventListener('click', loadV23Cockpit);
+function renderCopilotMessage(message) {
+  if (!v23CopilotMessages) return;
+  const role = message.role === 'user' ? 'user' : 'assistant';
+  const actions = Array.isArray(message.recommendedActions) ? message.recommendedActions : [];
+  const label = role === 'user' ? 'Você' : (message.provider && message.provider !== 'local' ? `Copiloto · ${message.provider}` : 'Copiloto');
+  const article = document.createElement('article');
+  article.className = `copilot-message ${role}`;
+  article.innerHTML = `<div><strong>${escapeHtml(label)}</strong><p>${escapeHtml(message.content || '')}</p>${actions.length ? `<ul>${actions.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>` : ''}<small>${message.createdAt ? formatDate(message.createdAt) : ''}</small></div>`;
+  v23CopilotMessages.appendChild(article);
+  v23CopilotMessages.scrollTop = v23CopilotMessages.scrollHeight;
+}
+
+async function loadV23CopilotHistory() {
+  if (!authToken || !v23CopilotMessages) return;
+  try {
+    const response = await apiFetch('/api/v23/copilot/history?limit=50');
+    const data = await readJson(response);
+    if (!response.ok) throw new Error(data.error || 'Erro ao carregar a conversa.');
+    const messages = Array.isArray(data.messages) ? data.messages : [];
+    v23CopilotMessages.innerHTML = '';
+    if (!messages.length) {
+      renderCopilotMessage({ role: 'assistant', content: 'Olá. Posso analisar seus dados comerciais e indicar prioridades, riscos e próximos passos.' });
+      return;
+    }
+    messages.forEach(renderCopilotMessage);
+  } catch (error) {
+    v23CopilotMessages.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
+  }
+}
+
 document.querySelectorAll('[data-copilot-question]').forEach((button) => {
   button.addEventListener('click', () => {
     if (!v22CopilotQuestion) return;
@@ -2266,26 +2300,58 @@ document.querySelectorAll('[data-copilot-question]').forEach((button) => {
   });
 });
 
+if (v23CopilotClear) {
+  v23CopilotClear.addEventListener('click', async () => {
+    if (!window.confirm('Limpar todo o histórico da conversa com o copiloto?')) return;
+    try {
+      const response = await apiFetch('/api/v23/copilot/history', { method: 'DELETE' });
+      const data = await readJson(response);
+      if (!response.ok) throw new Error(data.error || 'Não foi possível limpar a conversa.');
+      await loadV23CopilotHistory();
+    } catch (error) {
+      showError(error.message);
+    }
+  });
+}
+
 if (v22CopilotForm) {
   v22CopilotForm.addEventListener('submit', async (event) => {
     event.preventDefault();
     const question = v22CopilotQuestion.value.trim();
     if (!question) return;
-    v22CopilotAnswer.innerHTML = '<p class="loading">Analisando os dados do CRM...</p>';
+    renderCopilotMessage({ role: 'user', content: question, createdAt: new Date().toISOString() });
+    v22CopilotQuestion.value = '';
+    const submitButton = v22CopilotForm.querySelector('button[type="submit"]');
+    if (submitButton) submitButton.disabled = true;
+    const pending = document.createElement('article');
+    pending.className = 'copilot-message assistant loading-message';
+    pending.innerHTML = '<div><strong>Copiloto</strong><p class="loading">Analisando o CRM e preparando a recomendação...</p></div>';
+    v23CopilotMessages.appendChild(pending);
+    v23CopilotMessages.scrollTop = v23CopilotMessages.scrollHeight;
     try {
-      const response = await apiFetch('/api/v22/copilot', {
+      const response = await apiFetch('/api/v23/copilot/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question })
       });
       const data = await readJson(response);
       if (!response.ok) throw new Error(data.error || 'Erro ao consultar o copiloto.');
-      const actions = Array.isArray(data.recommendedActions) ? data.recommendedActions : [];
-      v22CopilotAnswer.innerHTML = `<article class="copilot-response"><span class="ai-badge">${escapeHtml(data.providerLabel || 'Motor Local')}</span><p>${escapeHtml(data.answer || '')}</p>${actions.length ? `<ul>${actions.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>` : ''}</article>`;
+      pending.remove();
+      renderCopilotMessage({
+        role: 'assistant',
+        content: data.answer || '',
+        provider: data.providerLabel || data.provider || 'local',
+        recommendedActions: data.recommendedActions || [],
+        createdAt: data.message?.createdAt || new Date().toISOString()
+      });
     } catch (error) {
-      v22CopilotAnswer.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
+      pending.remove();
+      renderCopilotMessage({ role: 'assistant', content: `Não consegui concluir a análise: ${error.message}` });
+    } finally {
+      if (submitButton) submitButton.disabled = false;
+      v22CopilotQuestion.focus();
     }
   });
 }
 
 window.loadV23Cockpit = loadV23Cockpit;
+window.loadV23CopilotHistory = loadV23CopilotHistory;

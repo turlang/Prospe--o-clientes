@@ -861,3 +861,10 @@ A base do CRM foi reorganizada com um núcleo dedicado a inteligência comercial
 ## V23.2 — Cockpit Comercial
 
 A tela inicial do Sales OS passa a conduzir o trabalho diário do vendedor, reunindo prioridades, métricas, pipeline, alertas, timeline global e acesso ao copiloto em uma única visão.
+
+## V23.3 — Copiloto Comercial IA
+- Chat comercial integrado aos dados reais do CRM.
+- Memória persistente das conversas.
+- Respostas fundamentadas em pipeline, agenda, propostas, campanhas, clientes e timeline.
+- Modo coach e planejamento diário.
+- Fallback local quando o provedor de IA estiver indisponível.

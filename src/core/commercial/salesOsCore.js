@@ -11,7 +11,7 @@ class SalesOsCore {
 
   buildSnapshot({ leads = [], tasks = [], now = new Date() } = {}) {
     return {
-      version: '23.2.0',
+      version: '23.3.0',
       generatedAt: now.toISOString(),
       commandCenter: buildAutonomousCommandCenter(leads, tasks, now),
       intelligence: this.intelligence.buildPortfolio(leads, tasks, now),

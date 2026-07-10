@@ -316,3 +316,18 @@ Novos endpoints:
 - `GET /api/customers/summary`
 - `POST /api/customers/close`
 - `POST /api/customers/lost`
+
+## V23.3 — Copiloto Comercial IA
+
+O Cockpit agora possui um chat persistente conectado aos dados reais da operação. O copiloto considera pipeline, agenda, histórico, propostas, campanhas, clientes e alertas antes de responder.
+
+Principais rotas:
+
+```text
+GET    /api/v23/copilot/history
+DELETE /api/v23/copilot/history
+GET    /api/v23/copilot/briefing
+POST   /api/v23/copilot/chat
+```
+
+O provedor continua sendo definido pelas mesmas variáveis `AI_PROVIDER`, `GROQ_API_KEY`, `GEMINI_API_KEY` ou `OPENAI_API_KEY`. Sem provedor disponível, o copiloto usa respostas locais fundamentadas nos dados do CRM.

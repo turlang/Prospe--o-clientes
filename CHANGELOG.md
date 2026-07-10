@@ -358,3 +358,12 @@
 ### Alterado
 - Central de Inteligência V22 substituída pelo Cockpit Comercial V23.2.
 - Sales OS Core atualizado para a versão 23.2.0.
+
+## [23.3.0] - 2026-07-09
+### Adicionado
+- Copiloto Comercial IA conectado ao contexto completo do CRM.
+- Memória persistente de conversas por usuário em MongoDB ou JSON local.
+- Histórico, limpeza de conversa e planejamento comercial diário.
+- Context Builder com pipeline, agenda, propostas, alertas, timeline e leads prioritários.
+- Endpoints `GET /api/v23/copilot/history`, `DELETE /api/v23/copilot/history`, `GET /api/v23/copilot/briefing` e `POST /api/v23/copilot/chat`.
+- Interface de chat com perguntas rápidas e ações recomendadas.

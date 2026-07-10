@@ -26,7 +26,7 @@ test('buildCockpit cria foco, métricas e timeline', () => {
     leads: [{ placeId: '1', nome: 'Empresa A', status: 'PROPOSTA', ticketEstimado: 'R$ 5.000', coletadoEm: '2026-07-08T10:00:00Z', interacoes: [] }],
     tasks: [{ id: 't1', leadId: '1', leadName: 'Empresa A', title: 'Ligar', dueAt: '2026-07-09T12:00:00Z', done: false }]
   });
-  assert.equal(cockpit.version, '23.2.0');
+  assert.equal(cockpit.version, '23.3.0');
   assert.match(cockpit.greeting, /Evandro/);
   assert.equal(cockpit.metrics.proposals, 1);
   assert.ok(Array.isArray(cockpit.timeline));

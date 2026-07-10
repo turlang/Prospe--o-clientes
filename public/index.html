@@ -87,7 +87,7 @@
         <section id="view-inteligencia" class="view active-view">
           <div class="cockpit-header card-panel">
             <div>
-              <p class="tag dark">V23.2 · Sales OS</p>
+              <p class="tag dark">V23.3 · Sales OS</p>
               <h2>Cockpit Comercial</h2>
               <p class="meta">Comece o dia sabendo onde agir, quanto existe no pipeline e o que aconteceu recentemente.</p>
             </div>
@@ -145,20 +145,28 @@
           </div>
 
           <section class="card-panel copilot-panel">
-            <div class="section-title">
-              <h3>Copiloto Comercial</h3>
-              <p class="meta">Pergunte sobre prioridades, riscos, receita prevista ou próximos contatos.</p>
+            <div class="section-title copilot-title-row">
+              <div>
+                <h3>Copiloto Comercial IA</h3>
+                <p class="meta">Converse com o CRM. O copiloto analisa pipeline, agenda, histórico, propostas, campanhas e clientes.</p>
+              </div>
+              <button id="v23CopilotClear" type="button" class="secondary mini">Limpar conversa</button>
             </div>
             <div class="copilot-suggestions" aria-label="Perguntas sugeridas">
-              <button type="button" class="secondary mini" data-copilot-question="Quem devo contatar agora?">Quem devo contatar agora?</button>
-              <button type="button" class="secondary mini" data-copilot-question="Quais oportunidades estão em risco?">Oportunidades em risco</button>
-              <button type="button" class="secondary mini" data-copilot-question="Qual é a previsão de receita?">Previsão de receita</button>
+              <button type="button" class="secondary mini" data-copilot-question="Quem devo contatar agora e por quê?">Quem devo contatar agora?</button>
+              <button type="button" class="secondary mini" data-copilot-question="Quais oportunidades estão em risco e qual ação devo fazer?">Oportunidades em risco</button>
+              <button type="button" class="secondary mini" data-copilot-question="Quais propostas estão paradas?">Propostas paradas</button>
+              <button type="button" class="secondary mini" data-copilot-question="Analise meu desempenho e aja como meu coach comercial.">Coach comercial</button>
+              <button type="button" class="secondary mini" data-copilot-question="Faça meu planejamento comercial de hoje.">Planejamento diário</button>
+            </div>
+            <div id="v23CopilotMessages" class="copilot-chat" aria-live="polite">
+              <article class="copilot-message assistant"><div><strong>Copiloto</strong><p>Olá. Posso analisar seus dados comerciais e indicar prioridades, riscos e próximos passos.</p></div></article>
             </div>
             <form id="v22CopilotForm" class="copilot-form">
-              <input id="v22CopilotQuestion" placeholder="Digite uma pergunta sobre sua operação comercial" required minlength="3" />
-              <button type="submit">Perguntar ao copiloto</button>
+              <input id="v22CopilotQuestion" placeholder="Ex.: quem devo ligar hoje e qual argumento usar?" required minlength="3" maxlength="1200" autocomplete="off" />
+              <button type="submit">Enviar</button>
             </form>
-            <div id="v22CopilotAnswer" class="copilot-answer"><p class="meta">A resposta usará somente os dados disponíveis no CRM.</p></div>
+            <div id="v22CopilotAnswer" class="copilot-answer" hidden></div>
           </section>
         </section>
 

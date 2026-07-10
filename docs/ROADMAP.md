@@ -98,3 +98,9 @@ src/planStore.js
 - Copiloto Comercial em formato de chat persistente
 - Perguntas contextuais e histórico de conversa
 - Ações diretas sugeridas pela IA
+
+### Concluído na Sprint 23.3
+- Copiloto Comercial IA conversacional.
+- Memória por usuário.
+- Contexto integrado da operação comercial.
+- Coach e planejamento diário.

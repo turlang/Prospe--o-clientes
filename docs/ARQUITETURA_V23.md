@@ -34,3 +34,6 @@ As rotas e serviços das versões anteriores continuam ativos. O núcleo V23 os 
 ## Sprint 23.2 — Cockpit Comercial
 
 O módulo `src/core/commercial/cockpitService.js` agrega leads e tarefas em uma resposta única para a Home do Sales OS. A rota `GET /api/v23/cockpit` entrega métricas, prioridades, pipeline, alertas e timeline sem duplicar regras no frontend.
+
+## Sprint 23.3 — Copiloto Comercial IA
+O módulo `commercialCopilot` recebe um contexto compacto criado pelo `copilotContextBuilder`, consulta o provedor configurado pelo `AI Provider Manager` e salva a conversa pelo `copilotMemoryStore`. A memória usa MongoDB em produção e JSON no desenvolvimento local.
