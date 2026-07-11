@@ -885,3 +885,10 @@ A tela inicial do Sales OS passa a conduzir o trabalho diário do vendedor, reun
 - Painel Admin redesenhado com visão executiva moderna.
 - Métricas de uso, conversão, ativação, MRR, receita e engajamento.
 - Gráficos de receita, consumo de leads, crescimento e distribuição de planos.
+
+## V23.6 — Visão Geral gráfica e funil interativo
+- Cards de ganhos por etapa.
+- Gráficos de prospecção e conversão.
+- Pipeline executivo na Visão Geral.
+- Rolagem no pipeline comercial e histórico.
+- Funil por etapa clicável com acesso aos leads.

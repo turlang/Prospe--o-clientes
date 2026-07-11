@@ -384,3 +384,12 @@
 - Painel Admin redesenhado com visão executiva moderna.
 - Métricas de uso, conversão, ativação, MRR, receita e engajamento.
 - Gráficos de receita, consumo de leads, crescimento e distribuição de planos.
+
+## 23.6.0
+
+### Alterado
+- Potencial de ganhos por etapa passou a usar cards individuais.
+- Níveis de prospecção e indicadores de conversão passaram a usar gráficos de colunas.
+- Pipeline executivo foi movido da Central de Inteligência para a Visão Geral.
+- Pipeline comercial e histórico de contatos receberam rolagem interna.
+- Cards do funil nos Relatórios agora abrem os leads da etapa selecionada.

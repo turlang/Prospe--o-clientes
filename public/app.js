@@ -58,6 +58,7 @@ const overviewContactChart = document.querySelector('#overviewContactChart');
 const overviewProposalChart = document.querySelector('#overviewProposalChart');
 const overviewProspectingChart = document.querySelector('#overviewProspectingChart');
 const overviewConversionChart = document.querySelector('#overviewConversionChart');
+const overviewPipelineExecutive = document.querySelector('#overviewPipelineExecutive');
 const overviewRefreshButton = document.querySelector('#overviewRefreshButton');
 const proposalSummary = document.querySelector('#proposalSummary');
 const proposalList = document.querySelector('#proposalList');
@@ -395,6 +396,33 @@ function renderHorizontalBars(container, rows, { valueFormatter = (value) => Str
   }).join('') : `<p class="meta">${escapeHtml(empty)}</p>`;
 }
 
+function renderColumnChart(container, rows, { valueFormatter = (value) => String(value), empty = 'Sem dados para exibir.' } = {}) {
+  if (!container) return;
+  const safeRows = Array.isArray(rows) ? rows : [];
+  const max = Math.max(...safeRows.map((row) => Number(row.value || 0)), 1);
+  if (!safeRows.some((row) => Number(row.value || 0) > 0)) {
+    container.innerHTML = `<p class="meta">${escapeHtml(empty)}</p>`;
+    return;
+  }
+  container.innerHTML = `<div class="column-chart">${safeRows.map((row) => {
+    const value = Number(row.value || 0);
+    const height = value ? Math.max(8, Math.round((value / max) * 100)) : 3;
+    return `<article class="column-chart-item" title="${escapeAttr(row.label)}: ${escapeAttr(valueFormatter(value))}"><div class="column-chart-value">${escapeHtml(valueFormatter(value))}</div><div class="column-chart-track"><span style="height:${height}%"></span></div><strong>${escapeHtml(row.label)}</strong><small>${escapeHtml(row.detail || '')}</small></article>`;
+  }).join('')}</div>`;
+}
+
+function renderRevenueStageCards(container, rows) {
+  if (!container) return;
+  const safeRows = Array.isArray(rows) ? rows : [];
+  container.innerHTML = safeRows.length ? safeRows.map((row) => `
+    <article class="revenue-stage-card">
+      <small>${escapeHtml(row.label)}</small>
+      <strong>${escapeHtml(formatMoney(row.value || 0))}</strong>
+      <span>${escapeHtml(row.detail || '')}</span>
+    </article>
+  `).join('') : '<p class="meta">Sem dados suficientes para calcular ganhos.</p>';
+}
+
 function renderDonut(container, segments, centerLabel, centerValue) {
   if (!container) return;
   const safe = (Array.isArray(segments) ? segments : []).map((item) => ({ ...item, value: Math.max(0, Number(item.value || 0)) }));
@@ -437,8 +465,8 @@ function renderExecutiveOverview(report = {}, leads = []) {
     const value = matching.reduce((sum, lead) => sum + estimateTicket(lead.ticketEstimado) * (weights[item.status] || 0), 0);
     return { label: overviewStatusLabel(item.status), value: Math.round(value), detail: `${Number(item.total || 0)} oportunidade(s)` };
   });
-  renderHorizontalBars(overviewRevenueChart, revenueByStage, { valueFormatter: formatMoney, empty: 'Prospete e mova leads no pipeline para calcular o potencial de ganhos.' });
-  renderHorizontalBars(overviewProspectingChart, funnel.map((item) => ({ label: overviewStatusLabel(item.status), value: item.total, detail: `${item.percentage}% da base` })), { valueFormatter: (v) => `${v}` });
+  renderRevenueStageCards(overviewRevenueChart, revenueByStage);
+  renderColumnChart(overviewProspectingChart, funnel.map((item) => ({ label: overviewStatusLabel(item.status), value: item.total, detail: `${item.percentage}%` })), { valueFormatter: (v) => `${v}`, empty: 'Sem níveis de prospecção para exibir.' });
 
   const contacted = Number(summary.contacted || 0);
   const notContacted = Math.max(0, Number(summary.totalLeads || 0) - contacted);
@@ -456,7 +484,14 @@ function renderExecutiveOverview(report = {}, leads = []) {
     { label: 'Fechamento', value: Number(summary.closeRate || 0), detail: `${accepted} cliente(s)` },
     { label: 'Pipeline ativo', value: Math.round((Number(summary.activeLeads || 0) / total) * 100), detail: formatMoney(summary.estimatedPipelineRevenue || 0) }
   ];
-  overviewConversionChart.innerHTML = indicators.map((item) => `<article><div><strong>${escapeHtml(item.label)}</strong><span>${escapeHtml(item.detail)}</span></div><div class="conversion-meter"><span style="width:${Math.min(100,item.value)}%"></span></div><b>${item.value}%</b></article>`).join('');
+  renderColumnChart(overviewConversionChart, indicators.map((item) => ({ label: item.label, value: item.value, detail: item.detail })), { valueFormatter: (v) => `${v}%`, empty: 'Sem indicadores de conversão para exibir.' });
+
+  if (overviewPipelineExecutive) {
+    overviewPipelineExecutive.innerHTML = funnel.map((item) => {
+      const stage = revenueByStage.find((row) => row.label === overviewStatusLabel(item.status));
+      return `<article class="overview-pipeline-card"><small>${escapeHtml(overviewStatusLabel(item.status))}</small><strong>${Number(item.total || 0)}</strong><span>${Number(item.percentage || 0)}% da base</span><b>${formatMoney(stage?.value || 0)}</b></article>`;
+    }).join('') || '<p class="meta">Sem dados no pipeline.</p>';
+  }
 }
 
 if (overviewRefreshButton) overviewRefreshButton.addEventListener('click', loadExecutiveOverview);
@@ -1837,13 +1872,17 @@ function renderCommercialReport(data = {}) {
   if (reportFunnel) {
     const funnel = Array.isArray(data.funnel) ? data.funnel : [];
     reportFunnel.innerHTML = funnel.length ? funnel.map((item) => `
-      <article class="report-metric-card">
+      <button type="button" class="report-metric-card funnel-click-card" data-funnel-status="${escapeAttr(item.status)}">
         <small>${escapeHtml(overviewStatusLabel(item.status))}</small>
         <strong>${Number(item.total || 0)}</strong>
         <span>${Number(item.percentage || 0)}% do funil</span>
         <div class="mini-card-meter"><span style="width:${Math.min(100, Number(item.percentage || 0))}%"></span></div>
-      </article>
+        <em>Ver leads desta etapa</em>
+      </button>
     `).join('') : '<p class="meta">Sem dados de funil.</p>';
+    reportFunnel.querySelectorAll('[data-funnel-status]').forEach((button) => {
+      button.addEventListener('click', () => openFunnelLeads(button.dataset.funnelStatus));
+    });
   }
 
   if (reportRecommendations) {
@@ -1876,6 +1915,34 @@ function renderCommercialReport(data = {}) {
     `).join('') : '<p class="meta">Nenhum lead parado encontrado.</p>';
   }
 }
+
+async function openFunnelLeads(status) {
+  try {
+    const response = await apiFetch(`/api/leads?status=${encodeURIComponent(status)}`);
+    const leads = await readJson(response);
+    if (!response.ok) throw new Error(leads.error || 'Erro ao carregar leads da etapa.');
+    const rows = Array.isArray(leads) ? leads : [];
+    const known = new Map((Array.isArray(lastLeads) ? lastLeads : []).map((lead) => [String(getLeadId(lead)), lead]));
+    rows.forEach((lead) => known.set(String(getLeadId(lead)), lead));
+    lastLeads = [...known.values()];
+
+    const modal = ensureLeadModal();
+    const content = modal.querySelector('#leadModalContent');
+    content.innerHTML = `
+      <div class="lead-detail-head"><div><p class="tag dark">Funil por etapa</p><h3 id="leadModalTitle">${escapeHtml(overviewStatusLabel(status))}</h3><p class="meta">${rows.length} lead(s) nesta etapa.</p></div></div>
+      <div class="funnel-lead-list">${rows.length ? rows.map((lead) => `
+        <article class="funnel-lead-item">
+          <div><strong>${escapeHtml(lead.nome || 'Lead')}</strong><p>${escapeHtml(lead.segmentoComercial || lead.tipo || 'Segmento não informado')}</p><small>${escapeHtml(lead.endereco || '')}</small></div>
+          <button type="button" class="secondary" data-open-funnel-lead="${escapeAttr(getLeadId(lead))}">Abrir ficha</button>
+        </article>`).join('') : '<p class="meta">Nenhum lead encontrado nesta etapa.</p>'}</div>`;
+    content.querySelectorAll('[data-open-funnel-lead]').forEach((button) => button.addEventListener('click', () => openLeadDetail(button.dataset.openFunnelLead)));
+    modal.hidden = false;
+    document.body.classList.add('modal-open');
+  } catch (error) {
+    showError(error.message);
+  }
+}
+window.openFunnelLeads = openFunnelLeads;
 
 async function downloadCommercialReportCsv() {
   try {
@@ -2339,13 +2406,15 @@ function renderV23Cockpit(data) {
   });
 
   const pipeline = Array.isArray(data.pipeline) ? data.pipeline : [];
-  const maxCount = Math.max(1, ...pipeline.map((item) => Number(item.count || 0)));
-  v23Pipeline.innerHTML = pipeline.map((stage) => `
-    <article class="pipeline-stage-row">
-      <div class="pipeline-stage-label"><strong>${escapeHtml(stage.status)}</strong><span>${Number(stage.count || 0)} lead(s)</span></div>
-      <div class="pipeline-stage-track"><span style="width:${Math.max(4, Math.round((Number(stage.count || 0) / maxCount) * 100))}%"></span></div>
-      <div class="pipeline-stage-value"><strong>${formatMoney(stage.value || 0)}</strong><small>${Number(stage.conversion || 0)}% avanço</small></div>
-    </article>`).join('') || '<p class="meta">O pipeline ainda não possui dados.</p>';
+  if (v23Pipeline) {
+    const maxCount = Math.max(1, ...pipeline.map((item) => Number(item.count || 0)));
+    v23Pipeline.innerHTML = pipeline.map((stage) => `
+      <article class="pipeline-stage-row">
+        <div class="pipeline-stage-label"><strong>${escapeHtml(stage.status)}</strong><span>${Number(stage.count || 0)} lead(s)</span></div>
+        <div class="pipeline-stage-track"><span style="width:${Math.max(4, Math.round((Number(stage.count || 0) / maxCount) * 100))}%"></span></div>
+        <div class="pipeline-stage-value"><strong>${formatMoney(stage.value || 0)}</strong><small>${Number(stage.conversion || 0)}% avanço</small></div>
+      </article>`).join('') || '<p class="meta">O pipeline ainda não possui dados.</p>';
+  }
 
   const alerts = Array.isArray(data.alerts) ? data.alerts : [];
   const advice = Array.isArray(data.managerAdvice) ? data.managerAdvice : [];

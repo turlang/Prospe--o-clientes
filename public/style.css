@@ -1539,3 +1539,36 @@ body.modal-open {
   .report-card-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
 }
 @media (max-width: 620px) { .report-card-grid { grid-template-columns: 1fr; } }
+
+/* V23.6 — Visão Geral e navegação operacional */
+.revenue-stage-card { padding: 16px; border: 1px solid #dbeafe; border-radius: 18px; background: linear-gradient(160deg,#ffffff,#eff6ff); display: grid; gap: 7px; min-height: 122px; }
+.revenue-stage-card small { color: #475569; text-transform: uppercase; letter-spacing: .05em; font-weight: 900; }
+.revenue-stage-card strong { font-size: 1.45rem; color: #0f172a; }
+.revenue-stage-card span { color: var(--muted); font-size: .84rem; }
+#overviewRevenueChart { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
+.column-chart { min-height: 250px; display: grid; grid-template-columns: repeat(auto-fit,minmax(90px,1fr)); gap: 14px; align-items: end; padding: 18px 8px 4px; overflow-x: auto; }
+.column-chart-item { min-width: 88px; min-height: 225px; display: grid; grid-template-rows: auto 150px auto auto; align-items: end; text-align: center; gap: 6px; }
+.column-chart-value { font-weight: 900; color: #0f172a; }
+.column-chart-track { width: 54px; height: 150px; border-radius: 15px 15px 6px 6px; background: #e2e8f0; overflow: hidden; display: flex; align-items: end; justify-self: center; }
+.column-chart-track span { display: block; width: 100%; background: linear-gradient(180deg,var(--cyan),var(--primary)); border-radius: inherit; min-height: 4px; }
+.column-chart-item strong { font-size: .82rem; line-height: 1.15; }
+.column-chart-item small { color: var(--muted); font-size: .72rem; min-height: 25px; }
+.overview-pipeline-panel { margin-top: 16px; }
+.overview-pipeline-cards { display: grid; grid-template-columns: repeat(6,minmax(145px,1fr)); gap: 12px; overflow-x: auto; padding-bottom: 8px; }
+.overview-pipeline-card { min-width: 145px; padding: 15px; border-radius: 18px; border: 1px solid #dbeafe; background: linear-gradient(160deg,#fff,#f8fafc); display: grid; gap: 6px; }
+.overview-pipeline-card small { text-transform: uppercase; letter-spacing: .04em; color: #475569; font-weight: 900; }
+.overview-pipeline-card strong { font-size: 1.75rem; }
+.overview-pipeline-card span { color: var(--muted); font-size: .78rem; }
+.overview-pipeline-card b { color: #1d4ed8; }
+.crm-pipeline-only .kanban-board { max-height: calc(100vh - 245px); overflow: auto; align-items: start; padding-right: 7px; padding-bottom: 10px; }
+.crm-pipeline-only .kanban-column { max-height: calc(100vh - 270px); }
+.crm-pipeline-only .kanban-list { max-height: calc(100vh - 355px); overflow-y: auto; padding-right: 5px; }
+#historyList { max-height: calc(100vh - 245px); overflow-y: auto; padding-right: 7px; }
+.funnel-click-card { width: 100%; text-align: left; color: inherit; cursor: pointer; font: inherit; }
+.funnel-click-card:hover { transform: translateY(-2px); border-color: #60a5fa; box-shadow: 0 12px 24px rgba(37,99,235,.12); }
+.funnel-click-card em { color: #2563eb; font-style: normal; font-size: .75rem; font-weight: 900; }
+.funnel-lead-list { display: grid; gap: 10px; max-height: 62vh; overflow-y: auto; padding-right: 6px; margin-top: 14px; }
+.funnel-lead-item { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; padding: 14px; border-radius: 16px; border: 1px solid #e2e8f0; background: #f8fafc; }
+.funnel-lead-item p, .funnel-lead-item small { margin: 3px 0 0; color: var(--muted); }
+@media (max-width: 900px) { #overviewRevenueChart { grid-template-columns: repeat(2,minmax(0,1fr)); } .overview-pipeline-cards { grid-template-columns: repeat(6,minmax(155px,72vw)); } }
+@media (max-width: 620px) { #overviewRevenueChart { grid-template-columns: 1fr; } .column-chart { grid-template-columns: repeat(6,minmax(90px,1fr)); } .funnel-lead-item { grid-template-columns: 1fr; } }
