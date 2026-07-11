@@ -1125,6 +1125,9 @@ app.post('/api/followups', requireAuth, async (req, res) => {
     const leads = await readLeads(req.user.sub);
     const lead = leads.find((item) => String(item.placeId || item.nome) === String(leadId));
     if (!lead) return res.status(404).json({ error: 'Lead não encontrado.' });
+    if (String(lead.status || 'NOVO').toUpperCase() === 'NOVO') {
+      return res.status(409).json({ error: 'Registre o primeiro contato antes de agendar um retorno.' });
+    }
 
     const task = await createTask({
       userId: req.user.sub,

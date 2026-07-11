@@ -53,6 +53,12 @@ const reportFunnel = document.querySelector('#reportFunnel');
 const reportRecommendations = document.querySelector('#reportRecommendations');
 const reportSegments = document.querySelector('#reportSegments');
 const reportStalled = document.querySelector('#reportStalled');
+const overviewRevenueChart = document.querySelector('#overviewRevenueChart');
+const overviewContactChart = document.querySelector('#overviewContactChart');
+const overviewProposalChart = document.querySelector('#overviewProposalChart');
+const overviewProspectingChart = document.querySelector('#overviewProspectingChart');
+const overviewConversionChart = document.querySelector('#overviewConversionChart');
+const overviewRefreshButton = document.querySelector('#overviewRefreshButton');
 const proposalSummary = document.querySelector('#proposalSummary');
 const proposalList = document.querySelector('#proposalList');
 const customerSummary = document.querySelector('#customerSummary');
@@ -306,6 +312,7 @@ async function showDashboard() {
   await renderPlans();
   await refreshStats();
   await loadSavedLeads(false, { renderCards: false });
+  await loadExecutiveOverview();
   await loadHistory();
   await loadV23Cockpit();
   await loadV23CopilotHistory();
@@ -341,7 +348,7 @@ function switchView(view) {
 
   if (view === 'inteligencia') { loadV23Cockpit(); loadV23CopilotHistory(); }
   if (view === 'crm') carregarLeadsCRM();
-  if (view === 'dashboard') { loadSavedLeads(false, { renderCards: false }); loadCommercialIntelligence(); }
+  if (view === 'dashboard') { loadSavedLeads(false, { renderCards: false }); loadExecutiveOverview(); }
   if (view === 'historico') loadHistory();
   if (view === 'planos') renderPlans();
   if (view === 'agenda') loadAgenda();
@@ -372,6 +379,88 @@ async function readJson(response) {
   try { return JSON.parse(text); }
   catch { throw new Error(`Resposta inválida do servidor (${response.status}). Confira o terminal do backend.`); }
 }
+
+function overviewStatusLabel(status) {
+  return ({ NOVO: 'Novos', CONTATADO: 'Contatados', INTERESSADO: 'Interessados', PROPOSTA: 'Propostas', FECHADO: 'Fechados', SEM_INTERESSE: 'Recusados' })[String(status || '').toUpperCase()] || status;
+}
+
+function renderHorizontalBars(container, rows, { valueFormatter = (value) => String(value), empty = 'Sem dados suficientes.' } = {}) {
+  if (!container) return;
+  const safeRows = Array.isArray(rows) ? rows : [];
+  const max = Math.max(...safeRows.map((row) => Number(row.value || 0)), 1);
+  container.innerHTML = safeRows.some((row) => Number(row.value || 0) > 0) ? safeRows.map((row) => {
+    const value = Number(row.value || 0);
+    const width = value ? Math.max(4, Math.round((value / max) * 100)) : 0;
+    return `<article class="executive-bar-row"><div><strong>${escapeHtml(row.label)}</strong><small>${escapeHtml(row.detail || '')}</small></div><div class="executive-bar-track"><span style="width:${width}%"></span></div><b>${escapeHtml(valueFormatter(value))}</b></article>`;
+  }).join('') : `<p class="meta">${escapeHtml(empty)}</p>`;
+}
+
+function renderDonut(container, segments, centerLabel, centerValue) {
+  if (!container) return;
+  const safe = (Array.isArray(segments) ? segments : []).map((item) => ({ ...item, value: Math.max(0, Number(item.value || 0)) }));
+  const total = safe.reduce((sum, item) => sum + item.value, 0);
+  let cursor = 0;
+  const palette = ['#2563eb', '#06b6d4', '#22c55e', '#f59e0b', '#ef4444'];
+  const stops = safe.map((item, index) => {
+    const start = total ? (cursor / total) * 360 : 0;
+    cursor += item.value;
+    const end = total ? (cursor / total) * 360 : 360;
+    return `${palette[index % palette.length]} ${start}deg ${end}deg`;
+  });
+  container.innerHTML = `<div class="donut-chart" style="background:conic-gradient(${stops.join(',') || '#e2e8f0 0deg 360deg'})"><div><strong>${escapeHtml(centerValue)}</strong><span>${escapeHtml(centerLabel)}</span></div></div><div class="donut-legend">${safe.map((item,index)=>`<span><i style="background:${palette[index%palette.length]}"></i><b>${escapeHtml(item.label)}</b><em>${item.value}</em></span>`).join('')}</div>`;
+}
+
+async function loadExecutiveOverview() {
+  if (!authToken || !overviewRevenueChart) return;
+  overviewRevenueChart.innerHTML = '<p class="loading">Atualizando indicadores...</p>';
+  try {
+    const [reportResponse, leadsResponse] = await Promise.all([
+      apiFetch('/api/reports/commercial'),
+      apiFetch('/api/leads')
+    ]);
+    const report = await readJson(reportResponse);
+    const leads = await readJson(leadsResponse);
+    if (!reportResponse.ok) throw new Error(report.error || 'Erro ao carregar indicadores.');
+    if (!leadsResponse.ok) throw new Error(leads.error || 'Erro ao carregar leads.');
+    renderExecutiveOverview(report, Array.isArray(leads) ? leads : []);
+  } catch (error) {
+    overviewRevenueChart.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
+  }
+}
+
+function renderExecutiveOverview(report = {}, leads = []) {
+  const summary = report.summary || {};
+  const funnel = Array.isArray(report.funnel) ? report.funnel : [];
+  const weights = { NOVO: .08, CONTATADO: .16, INTERESSADO: .34, PROPOSTA: .58, FECHADO: 1, SEM_INTERESSE: 0 };
+  const revenueByStage = funnel.map((item) => {
+    const matching = leads.filter((lead) => normalizeStatus(lead.status) === item.status);
+    const value = matching.reduce((sum, lead) => sum + estimateTicket(lead.ticketEstimado) * (weights[item.status] || 0), 0);
+    return { label: overviewStatusLabel(item.status), value: Math.round(value), detail: `${Number(item.total || 0)} oportunidade(s)` };
+  });
+  renderHorizontalBars(overviewRevenueChart, revenueByStage, { valueFormatter: formatMoney, empty: 'Prospete e mova leads no pipeline para calcular o potencial de ganhos.' });
+  renderHorizontalBars(overviewProspectingChart, funnel.map((item) => ({ label: overviewStatusLabel(item.status), value: item.total, detail: `${item.percentage}% da base` })), { valueFormatter: (v) => `${v}` });
+
+  const contacted = Number(summary.contacted || 0);
+  const notContacted = Math.max(0, Number(summary.totalLeads || 0) - contacted);
+  renderDonut(overviewContactChart, [{ label: 'Contatados', value: contacted }, { label: 'Não contatados', value: notContacted }], 'taxa de contato', `${Number(summary.contactRate || 0)}%`);
+
+  const accepted = Number(summary.closed || 0);
+  const rejected = leads.filter((lead) => normalizeStatus(lead.status) === 'SEM_INTERESSE').length;
+  const negotiating = Number(summary.proposals || 0);
+  renderDonut(overviewProposalChart, [{ label: 'Em negociação', value: negotiating }, { label: 'Aceitas', value: accepted }, { label: 'Recusadas', value: rejected }], 'propostas', `${negotiating + accepted + rejected}`);
+
+  const total = Math.max(1, Number(summary.totalLeads || 0));
+  const indicators = [
+    { label: 'Contato', value: Number(summary.contactRate || 0), detail: `${contacted} de ${summary.totalLeads || 0}` },
+    { label: 'Propostas', value: Math.round((negotiating / total) * 100), detail: `${negotiating} em negociação` },
+    { label: 'Fechamento', value: Number(summary.closeRate || 0), detail: `${accepted} cliente(s)` },
+    { label: 'Pipeline ativo', value: Math.round((Number(summary.activeLeads || 0) / total) * 100), detail: formatMoney(summary.estimatedPipelineRevenue || 0) }
+  ];
+  overviewConversionChart.innerHTML = indicators.map((item) => `<article><div><strong>${escapeHtml(item.label)}</strong><span>${escapeHtml(item.detail)}</span></div><div class="conversion-meter"><span style="width:${Math.min(100,item.value)}%"></span></div><b>${item.value}%</b></article>`).join('');
+}
+
+if (overviewRefreshButton) overviewRefreshButton.addEventListener('click', loadExecutiveOverview);
+window.loadExecutiveOverview = loadExecutiveOverview;
 
 async function refreshStats() {
   try {
@@ -1397,6 +1486,10 @@ async function createSmartCampaign(leadId) {
 
 async function scheduleFollowup(leadId) {
   try {
+    const lead = (Array.isArray(lastLeads) ? lastLeads : []).find((item) => String(getLeadId(item)) === String(leadId));
+    if (lead && normalizeStatus(lead.status) === 'NOVO') {
+      throw new Error('Faça e registre o primeiro contato antes de agendar um retorno.');
+    }
     const response = await apiFetch('/api/followups', {
       method: 'POST',
       body: JSON.stringify({
@@ -1454,12 +1547,32 @@ async function loadAgenda() {
   if (agendaSummary) agendaSummary.innerHTML = '';
 
   try {
-    const response = await apiFetch('/api/agenda/summary');
+    const [response, leadsResponse] = await Promise.all([
+      apiFetch('/api/agenda/summary'),
+      apiFetch('/api/leads')
+    ]);
     const data = await readJson(response);
+    const leads = await readJson(leadsResponse);
     if (!response.ok) throw new Error(data.error || 'Erro ao carregar agenda.');
+    if (!leadsResponse.ok) throw new Error(leads.error || 'Erro ao validar contatos da agenda.');
 
-    renderAgendaSummary(data.summary || {});
-    renderAgendaGroups(data.groups || {});
+    const contactedIds = new Set((Array.isArray(leads) ? leads : [])
+      .filter((lead) => normalizeStatus(lead.status) !== 'NOVO')
+      .map((lead) => String(getLeadId(lead))));
+    const filteredGroups = Object.fromEntries(Object.entries(data.groups || {}).map(([key, tasks]) => [
+      key,
+      (Array.isArray(tasks) ? tasks : []).filter((task) => !task.leadId || contactedIds.has(String(task.leadId)))
+    ]));
+    const allTasks = Object.values(filteredGroups).flat();
+    const filteredSummary = {
+      overdue: (filteredGroups.overdue || []).length,
+      today: (filteredGroups.today || []).length,
+      upcoming: (filteredGroups.upcoming || []).length,
+      highPriority: allTasks.filter((task) => !task.done && String(task.priority || '').toUpperCase() === 'ALTA').length,
+      nextTask: allTasks.find((task) => !task.done) || null
+    };
+    renderAgendaSummary(filteredSummary);
+    renderAgendaGroups(filteredGroups);
   } catch (error) {
     agendaList.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
   }
@@ -1488,7 +1601,7 @@ function renderAgendaGroups(groups) {
 
   const hasAny = sections.some((section) => Array.isArray(groups[section.key]) && groups[section.key].length);
   if (!hasAny) {
-    agendaList.innerHTML = '<p class="meta">Nenhuma tarefa comercial agendada. Abra um lead no CRM e clique em Agendar retorno.</p>';
+    agendaList.innerHTML = '<p class="meta">Nenhuma tarefa disponível. A agenda só começa depois que o primeiro contato com o lead for registrado.</p>';
     return;
   }
 
@@ -1724,38 +1837,29 @@ function renderCommercialReport(data = {}) {
   if (reportFunnel) {
     const funnel = Array.isArray(data.funnel) ? data.funnel : [];
     reportFunnel.innerHTML = funnel.length ? funnel.map((item) => `
-      <article class="funnel-item">
-        <div><strong>${escapeHtml(item.status)}</strong><small>${Number(item.percentage || 0)}% do funil</small></div>
-        <span>${Number(item.total || 0)}</span>
+      <article class="report-metric-card">
+        <small>${escapeHtml(overviewStatusLabel(item.status))}</small>
+        <strong>${Number(item.total || 0)}</strong>
+        <span>${Number(item.percentage || 0)}% do funil</span>
+        <div class="mini-card-meter"><span style="width:${Math.min(100, Number(item.percentage || 0))}%"></span></div>
       </article>
     `).join('') : '<p class="meta">Sem dados de funil.</p>';
   }
 
   if (reportRecommendations) {
     const recommendations = Array.isArray(data.recommendations) ? data.recommendations : [];
-    reportRecommendations.innerHTML = recommendations.length ? recommendations.map((text) => `
-      <article class="history-item manager-advice"><div><strong>Recomendação</strong><p>${escapeHtml(text)}</p></div></article>
+    reportRecommendations.innerHTML = recommendations.length ? recommendations.map((text, index) => `
+      <article class="recommendation-card"><span>${index + 1}</span><div><strong>Recomendação gerencial</strong><p>${escapeHtml(text)}</p></div></article>
     `).join('') : '<p class="meta">Nenhuma recomendação no momento.</p>';
   }
 
   if (reportSegments) {
     const rows = Array.isArray(data.bySegment) ? data.bySegment : [];
-    reportSegments.innerHTML = rows.length ? `
-      <table class="mini-report-table">
-        <thead><tr><th>Segmento</th><th>Total</th><th>Contatados</th><th>Propostas</th><th>Receita prevista</th></tr></thead>
-        <tbody>
-          ${rows.map((item) => `
-            <tr>
-              <td>${escapeHtml(item.name)}</td>
-              <td>${Number(item.total || 0)}</td>
-              <td>${Number(item.contacted || 0)}</td>
-              <td>${Number(item.proposals || 0)}</td>
-              <td>${formatMoney(item.estimatedRevenue || 0)}</td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    ` : '<p class="meta">Ainda não há segmentos suficientes para análise.</p>';
+    const maxRevenue = Math.max(...rows.map((item) => Number(item.estimatedRevenue || 0)), 1);
+    reportSegments.innerHTML = rows.length ? rows.map((item) => {
+      const width = Math.max(4, Math.round((Number(item.estimatedRevenue || 0) / maxRevenue) * 100));
+      return `<article class="segment-chart-row"><div><strong>${escapeHtml(item.name)}</strong><small>${Number(item.contacted || 0)} contatos · ${Number(item.proposals || 0)} propostas · ${Number(item.closed || 0)} fechados</small></div><div class="segment-chart-track"><span style="width:${width}%"></span></div><b>${formatMoney(item.estimatedRevenue || 0)}</b></article>`;
+    }).join('') : '<p class="meta">Ainda não há segmentos suficientes para análise.</p>';
   }
 
   if (reportStalled) {

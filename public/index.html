@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>LeadHunter Pro — Dashboard</title>
   <link rel="icon" href="data:," />
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=v23-5-overview-ux" />
 </head>
 <body>
   <main class="container">
@@ -60,8 +60,8 @@
         <div id="aiStatusBox" class="ai-status-box"></div>
         <nav aria-label="Menu principal">
           <ul class="nav-list">
-            <li><button class="nav-btn active" type="button" data-view="inteligencia">Central de Inteligência</button></li>
-            <li><button class="nav-btn" type="button" data-view="dashboard">Visão geral</button></li>
+            <li><button class="nav-btn active" type="button" data-view="dashboard">Visão geral</button></li>
+            <li><button class="nav-btn" type="button" data-view="inteligencia">Central de Inteligência</button></li>
             <li><button class="nav-btn" type="button" data-view="prospectar">Prospectar</button></li>
             <li><button class="nav-btn" type="button" data-view="crm">CRM Kanban</button></li>
             <li><button class="nav-btn" type="button" data-view="historico">Histórico</button></li>
@@ -80,11 +80,8 @@
       </aside>
 
       <section class="workspace">
-        <div id="onboardingBox" class="onboarding-box card-panel"></div>
-        <div id="stats" class="stats-grid"></div>
 
-
-        <section id="view-inteligencia" class="view active-view">
+        <section id="view-inteligencia" class="view">
           <div class="cockpit-header card-panel">
             <div>
               <p class="tag dark">V23.3 · Sales OS</p>
@@ -170,47 +167,38 @@
           </section>
         </section>
 
-        <section id="view-dashboard" class="view">
-          <div class="dashboard-header card-panel">
+        <section id="view-dashboard" class="view active-view">
+          <div class="dashboard-header card-panel overview-heading">
             <div>
               <p class="tag dark">Visão geral</p>
-              <h2>Dashboard informativo</h2>
-              <p class="meta">Resumo simples do desempenho: leads salvos, oportunidades quentes, contatos iniciados e potencial estimado.</p>
+              <h2>Painel de desempenho e potencial comercial</h2>
+              <p class="meta">Gráficos objetivos para acompanhar prospecção, contatos, propostas, conversão e possibilidades de ganho.</p>
             </div>
-            <button type="button" onclick="switchView('prospectar')">Prospectar agora</button>
+            <button id="overviewRefreshButton" type="button" class="secondary">Atualizar gráficos</button>
           </div>
-          <div id="executiveStats" class="executive-grid"></div>
-          <section class="card-panel intelligence-panel">
-            <div class="section-title">
-              <h3>Assistente Comercial Inteligente</h3>
-              <p class="meta">A V21 prioriza leads, identifica oportunidades em risco e recomenda a próxima melhor ação.</p>
-            </div>
-            <div id="commercialIntelligenceSummary" class="agenda-summary-grid"></div>
-            <div id="commercialIntelligenceAdvice" class="history-list compact-list"></div>
-          </section>
-          <div class="dashboard-analytics">
-            <section class="card-panel">
-              <div class="section-title"><h3>Funil comercial</h3><p class="meta">Acompanhe a evolução real dos leads dentro do CRM.</p></div>
-              <div id="dashboardFunnel" class="funnel-list"></div>
+
+          <div class="overview-chart-grid">
+            <section class="card-panel chart-panel chart-panel-wide">
+              <div class="section-title"><h3>Potencial de ganhos por etapa</h3><p class="meta">Estimativa ponderada conforme o avanço das oportunidades.</p></div>
+              <div id="overviewRevenueChart" class="executive-chart"></div>
             </section>
-            <section class="card-panel">
-              <div class="section-title"><h3>Próximas melhores ações</h3><p class="meta">Recomendações do gerente comercial inteligente.</p></div>
-              <div id="dashboardInsights" class="history-list compact-list"></div>
+            <section class="card-panel chart-panel">
+              <div class="section-title"><h3>Contatos realizados</h3><p class="meta">Comparação entre leads contatados e ainda não trabalhados.</p></div>
+              <div id="overviewContactChart" class="donut-chart-wrap"></div>
+            </section>
+            <section class="card-panel chart-panel">
+              <div class="section-title"><h3>Situação das propostas</h3><p class="meta">Em negociação, aceitas e recusadas.</p></div>
+              <div id="overviewProposalChart" class="donut-chart-wrap"></div>
+            </section>
+            <section class="card-panel chart-panel chart-panel-wide">
+              <div class="section-title"><h3>Níveis de prospecção</h3><p class="meta">Distribuição atual das oportunidades no pipeline.</p></div>
+              <div id="overviewProspectingChart" class="executive-chart"></div>
+            </section>
+            <section class="card-panel chart-panel chart-panel-wide">
+              <div class="section-title"><h3>Indicadores de conversão</h3><p class="meta">Percentuais que mostram a saúde da operação comercial.</p></div>
+              <div id="overviewConversionChart" class="conversion-chart"></div>
             </section>
           </div>
-          <section class="card-panel dashboard-info">
-            <div class="section-title">
-              <h3>Como interpretar este painel</h3>
-              <p class="meta">Esta tela é apenas informativa. A operação fica nas abas Prospectar, CRM, Histórico e Campanhas.</p>
-            </div>
-            <div class="info-grid">
-              <article><strong>Prospectar</strong><span>Buscar novos negócios por segmento e região.</span></article>
-              <article><strong>CRM</strong><span>Organizar leads, status, notas, abordagem e follow-up.</span></article>
-              <article><strong>Histórico</strong><span>Ver somente leads que tiveram tentativa real de contato.</span></article>
-              <article><strong>Agenda</strong><span>Ver follow-ups e tarefas comerciais pendentes.</span></article>
-              <article><strong>Campanhas</strong><span>Criar sequências e acompanhar retornos comerciais.</span></article>
-            </div>
-          </section>
         </section>
 
         <section id="view-prospectar" class="view">
@@ -236,38 +224,19 @@
         </section>
 
         <section id="view-crm" class="view">
-          <div class="dashboard-header card-panel">
-            <div>
-              <p class="tag dark">CRM</p>
-              <h2>Gestão dos leads salvos</h2>
-              <p class="meta">Use esta aba para acompanhar cada oportunidade no pipeline comercial. Clique em um card para abrir a ficha completa do lead em popup.</p>
+          <section class="kanban-preview card-panel crm-pipeline-only">
+            <div class="section-title pipeline-title-row">
+              <div><p class="tag dark">CRM</p><h2>Pipeline comercial</h2><p class="meta">Arraste os cards entre as etapas e clique no lead para abrir sua ficha em popup.</p></div>
+              <button id="loadSaved" type="button" class="secondary">Atualizar pipeline</button>
             </div>
-          </div>
-          <div class="info-grid crm-purpose">
-            <article><strong>NOVO</strong><span>Lead encontrado, mas ainda sem contato.</span></article>
-            <article><strong>CONTATADO</strong><span>Você já tentou contato por WhatsApp, ligação ou e-mail.</span></article>
-            <article><strong>INTERESSADO / PROPOSTA</strong><span>O lead respondeu ou recebeu uma oferta.</span></article>
-            <article><strong>FECHADO</strong><span>Virou cliente.</span></article>
-          </div>
-          <div class="toolbar card-panel">
-            <label for="searchLead">Buscar</label>
-            <input id="searchLead" name="searchLead" placeholder="Nome, endereço ou segmento" />
-            <label for="filterStatus">Status</label>
-            <select id="filterStatus" name="filterStatus"><option value="">Todos</option><option>NOVO</option><option>CONTATADO</option><option>INTERESSADO</option><option>PROPOSTA</option><option>FECHADO</option><option>SEM_INTERESSE</option></select>
-            <label class="check" for="filterFavorite"><input id="filterFavorite" name="filterFavorite" type="checkbox" /> Favoritos</label>
-            <button id="loadSaved" type="button" class="secondary" onclick="carregarLeadsCRM()">Atualizar pipeline</button>
-            <button id="exportCsv" type="button">Exportar CSV</button>
-          </div>
-          <div class="crm-workspace">
-            <section class="kanban-preview card-panel">
-              <div class="section-title"><h3>Pipeline comercial</h3><p class="meta">Arraste os cards entre as etapas. Clique em um lead para abrir a ficha completa, gerar abordagem e agendar follow-up.</p></div>
-              <div id="kanbanBoard" class="kanban-board"></div>
-            </section>
-            <aside id="leadDetailPanel" class="lead-detail card-panel">
-              <h3>Ficha do lead</h3>
-              <p class="meta">Clique em qualquer card do pipeline para abrir a ficha completa em popup.</p>
-            </aside>
-          </div>
+            <div class="pipeline-filters">
+              <input id="searchLead" name="searchLead" placeholder="Buscar nome, endereço ou segmento" aria-label="Buscar lead" />
+              <select id="filterStatus" name="filterStatus" aria-label="Filtrar status"><option value="">Todas as etapas</option><option>NOVO</option><option>CONTATADO</option><option>INTERESSADO</option><option>PROPOSTA</option><option>FECHADO</option><option>SEM_INTERESSE</option></select>
+              <label class="check" for="filterFavorite"><input id="filterFavorite" name="filterFavorite" type="checkbox" /> Favoritos</label>
+              <button id="exportCsv" type="button" class="secondary">Exportar CSV</button>
+            </div>
+            <div id="kanbanBoard" class="kanban-board"></div>
+          </section>
         </section>
 
         <section id="view-historico" class="view">
@@ -315,21 +284,21 @@
           <div class="dashboard-analytics">
             <section class="card-panel">
               <div class="section-title"><h3>Funil por etapa</h3><p class="meta">Distribuição dos leads no pipeline.</p></div>
-              <div id="reportFunnel" class="funnel-list"></div>
+              <div id="reportFunnel" class="report-card-grid"></div>
             </section>
             <section class="card-panel">
               <div class="section-title"><h3>Recomendações gerenciais</h3><p class="meta">Ações sugeridas com base nos dados do funil.</p></div>
-              <div id="reportRecommendations" class="history-list compact-list"></div>
+              <div id="reportRecommendations" class="report-card-grid recommendation-card-grid"></div>
             </section>
           </div>
           <div class="dashboard-analytics">
             <section class="card-panel">
-              <div class="section-title"><h3>Melhores segmentos</h3><p class="meta">Ranking por potencial comercial estimado.</p></div>
-              <div id="reportSegments" class="report-table-wrap"></div>
+              <div class="section-title"><h3>Melhores segmentos</h3><p class="meta">Comparação visual do potencial de receita por segmento.</p></div>
+              <div id="reportSegments" class="segment-performance-chart"></div>
             </section>
             <section class="card-panel">
               <div class="section-title"><h3>Leads parados</h3><p class="meta">Oportunidades ativas sem próximo passo ou sem interação recente.</p></div>
-              <div id="reportStalled" class="history-list compact-list"></div>
+              <div id="reportStalled" class="history-list compact-list report-scroll-list"></div>
             </section>
           </div>
         </section>
@@ -445,6 +414,6 @@
       </section>
     </section>
   </main>
-  <script src="app.js?v=v21-6-campanhas"></script>
+  <script src="app.js?v=v23-5-overview-ux"></script>
 </body>
 </html>

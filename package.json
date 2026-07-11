@@ -1,6 +1,6 @@
 {
   "name": "agente-prospeccao-real",
-  "version": "23.4.0",
+  "version": "23.5.0",
   "description": "Sales OS V23.4 com Copiloto IA, menu navegável e painel administrativo executivo",
   "main": "src/server.js",
   "type": "commonjs",

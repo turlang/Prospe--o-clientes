@@ -1,3 +1,12 @@
+## 23.5.0 — Visão Geral Analítica e UX Comercial
+
+- Visão Geral passa a abrir antes da Central de Inteligência e exibe somente gráficos executivos.
+- Novos gráficos de potencial de ganhos, níveis de prospecção, contatos, propostas e conversão.
+- CRM simplificado para conter apenas o pipeline e seus filtros essenciais.
+- Agenda restrita a leads que já receberam o primeiro contato.
+- Relatórios com funil e recomendações em cards, desempenho por segmento em gráfico e listas com rolagem interna.
+- Sidebar corrigida para evitar sobreposição entre uso diário, status da IA e menu.
+
 # V22.0.0 — CRM Autônomo
 
 - Central de Inteligência Comercial com plano diário.
