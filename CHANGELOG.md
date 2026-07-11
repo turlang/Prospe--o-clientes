@@ -367,3 +367,11 @@
 - Context Builder com pipeline, agenda, propostas, alertas, timeline e leads prioritários.
 - Endpoints `GET /api/v23/copilot/history`, `DELETE /api/v23/copilot/history`, `GET /api/v23/copilot/briefing` e `POST /api/v23/copilot/chat`.
 - Interface de chat com perguntas rápidas e ações recomendadas.
+
+
+## 23.4.0 — Administração Executiva e Navegação
+
+- Menu lateral com rolagem própria em telas menores.
+- Painel Admin redesenhado com visão executiva moderna.
+- Métricas de uso, conversão, ativação, MRR, receita e engajamento.
+- Gráficos de receita, consumo de leads, crescimento e distribuição de planos.

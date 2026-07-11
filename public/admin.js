@@ -7,6 +7,10 @@ const adminPlans = document.querySelector('#adminPlans');
 const adminAudit = document.querySelector('#adminAudit');
 const adminStatus = document.querySelector('#adminStatus');
 const adminSearch = document.querySelector('#adminSearch');
+const revenueChart = document.querySelector('#revenueChart');
+const planChart = document.querySelector('#planChart');
+const usageChart = document.querySelector('#usageChart');
+const growthChart = document.querySelector('#growthChart');
 
 if (!adminToken) {
   window.location.replace('/app');
@@ -20,6 +24,7 @@ document.querySelector('#adminLogout').addEventListener('click', () => {
 
 document.querySelector('#adminReloadBtn').addEventListener('click', loadAdmin);
 document.querySelector('#adminSearchBtn').addEventListener('click', () => loadUsers(adminSearch.value));
+document.querySelector('#adminClearSearchBtn').addEventListener('click', () => { adminSearch.value = ''; loadUsers(); });
 adminSearch.addEventListener('keydown', (event) => {
   if (event.key === 'Enter') loadUsers(adminSearch.value);
 });
@@ -43,6 +48,68 @@ function money(value) {
   return Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
+function number(value, decimals = 0) {
+  return Number(value || 0).toLocaleString('pt-BR', { maximumFractionDigits: decimals });
+}
+
+function formatPercent(value) {
+  return `${Number(value || 0).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`;
+}
+
+function safeSeries(items, key = 'value') {
+  return (Array.isArray(items) ? items : []).map((item) => ({ ...item, [key]: Number(item[key] || 0) }));
+}
+
+function lineChart(items, labelKey, valueKey, formatter = number) {
+  const data = safeSeries(items, valueKey);
+  if (!data.length || data.every((item) => item[valueKey] === 0)) return '<div class="chart-empty">Ainda não há dados suficientes.</div>';
+  const width = 720; const height = 220; const padX = 42; const padY = 24;
+  const max = Math.max(...data.map((item) => item[valueKey]), 1);
+  const points = data.map((item, index) => {
+    const x = padX + (index * (width - padX * 2)) / Math.max(data.length - 1, 1);
+    const y = height - padY - (item[valueKey] / max) * (height - padY * 2);
+    return { x, y, item };
+  });
+  const polyline = points.map((point) => `${point.x},${point.y}`).join(' ');
+  const area = `${padX},${height-padY} ${polyline} ${width-padX},${height-padY}`;
+  const labels = points.filter((_, index) => index % Math.max(Math.ceil(points.length / 6), 1) === 0 || index === points.length - 1).map((point) => `<text x="${point.x}" y="213" text-anchor="middle" fill="#71869f" font-size="10">${escapeHtml(shortLabel(point.item[labelKey]))}</text>`).join('');
+  const dots = points.map((point) => `<circle cx="${point.x}" cy="${point.y}" r="3.5" fill="#38bdf8"><title>${escapeHtml(String(point.item[labelKey]))}: ${escapeHtml(formatter(point.item[valueKey]))}</title></circle>`).join('');
+  return `<svg class="chart-svg" viewBox="0 0 ${width} ${height}" role="img"><defs><linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#38bdf8" stop-opacity=".38"/><stop offset="1" stop-color="#38bdf8" stop-opacity=".02"/></linearGradient></defs><line x1="${padX}" y1="${height-padY}" x2="${width-padX}" y2="${height-padY}" stroke="#20364e"/><polygon points="${area}" fill="url(#chartFill)"/><polyline points="${polyline}" fill="none" stroke="#38bdf8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>${dots}${labels}</svg>`;
+}
+
+function barChart(items, labelKey, valueKey, formatter = number) {
+  const data = safeSeries(items, valueKey);
+  if (!data.length || data.every((item) => item[valueKey] === 0)) return '<div class="chart-empty">Ainda não há dados suficientes.</div>';
+  const width=720, height=220, padX=35, padY=27, gap=12;
+  const max=Math.max(...data.map((item)=>item[valueKey]),1);
+  const barWidth=Math.max(12,(width-padX*2-gap*(data.length-1))/data.length);
+  const bars=data.map((item,index)=>{const h=(item[valueKey]/max)*(height-padY*2);const x=padX+index*(barWidth+gap);const y=height-padY-h;return `<rect x="${x}" y="${y}" width="${barWidth}" height="${h}" rx="6" fill="#22c55e"><title>${escapeHtml(String(item[labelKey]))}: ${escapeHtml(formatter(item[valueKey]))}</title></rect><text x="${x+barWidth/2}" y="213" text-anchor="middle" fill="#71869f" font-size="10">${escapeHtml(shortLabel(item[labelKey]))}</text>`}).join('');
+  return `<svg class="chart-svg" viewBox="0 0 ${width} ${height}" role="img"><line x1="${padX}" y1="${height-padY}" x2="${width-padX}" y2="${height-padY}" stroke="#20364e"/>${bars}</svg>`;
+}
+
+function donutChart(items) {
+  const data=safeSeries(items,'value'); const total=data.reduce((sum,item)=>sum+item.value,0);
+  if (!total) return '<div class="chart-empty">Nenhum usuário cadastrado.</div>';
+  const colors=['#38bdf8','#22c55e','#a78bfa']; let offset=0;
+  const circles=data.map((item,index)=>{const portion=item.value/total;const dash=portion*251.2;const circle=`<circle cx="110" cy="110" r="40" fill="none" stroke="${colors[index%colors.length]}" stroke-width="24" stroke-dasharray="${dash} ${251.2-dash}" stroke-dashoffset="${-offset}" transform="rotate(-90 110 110)"><title>${escapeHtml(item.label)}: ${item.value}</title></circle>`;offset+=dash;return circle}).join('');
+  const legend=data.map((item,index)=>`<span><i style="background:${colors[index%colors.length]}"></i>${escapeHtml(item.label)}: <strong>${item.value}</strong></span>`).join('');
+  return `<svg class="chart-svg" viewBox="0 0 220 220" role="img">${circles}<text x="110" y="105" text-anchor="middle" fill="#94a3b8" font-size="12">Usuários</text><text x="110" y="128" text-anchor="middle" fill="#fff" font-size="24" font-weight="800">${total}</text></svg><div class="legend">${legend}</div>`;
+}
+
+function shortLabel(value) {
+  const text=String(value || '');
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text.slice(8,10)+'/'+text.slice(5,7);
+  if (/^\d{4}-\d{2}$/.test(text)) return text.slice(5,7)+'/'+text.slice(2,4);
+  return text.length>10?text.slice(0,9)+'…':text;
+}
+
+function renderAdminCharts(charts) {
+  revenueChart.innerHTML = barChart(charts.revenueMonthly, 'month', 'value', money);
+  planChart.innerHTML = donutChart(charts.planDistribution);
+  usageChart.innerHTML = lineChart(charts.usageDaily, 'day', 'count', number);
+  growthChart.innerHTML = barChart(charts.userGrowthMonthly, 'month', 'value', number);
+}
+
 function date(value) {
   return value ? new Date(value).toLocaleString('pt-BR') : '-';
 }
@@ -62,13 +129,17 @@ async function loadAdmin() {
     if (!response.ok) throw new Error(data.error || 'Erro ao carregar painel.');
 
     adminStats.innerHTML = `
-      <article class="admin-card"><small>Usuários</small><strong>${data.users.total}</strong><span>${data.users.active} ativos</span></article>
-      <article class="admin-card"><small>Pro</small><strong>${data.users.pro}</strong><span>assinantes Pro</span></article>
-      <article class="admin-card"><small>Agência</small><strong>${data.users.agency}</strong><span>assinantes Agência</span></article>
-      <article class="admin-card"><small>Receita aprovada</small><strong>${money(data.payments.revenue)}</strong><span>${data.payments.approved} pagamentos</span></article>
-      <article class="admin-card"><small>Auditoria</small><strong>${data.audit?.total || 0}</strong><span>ações registradas</span></article>
+      <article class="admin-card"><small>Usuários ativos</small><strong>${data.users.active}</strong><span>${data.users.new30d || 0} novos nos últimos 30 dias</span></article>
+      <article class="admin-card"><small>Assinantes pagos</small><strong>${data.users.paid || 0}</strong><span>${formatPercent(data.business?.paidConversionRate)} de conversão da base</span></article>
+      <article class="admin-card"><small>MRR estimado</small><strong>${money(data.payments.mrr)}</strong><span>Receita mensal recorrente atual</span></article>
+      <article class="admin-card"><small>Receita aprovada</small><strong>${money(data.payments.revenue)}</strong><span>${data.payments.approved} pagamentos confirmados</span></article>
+      <article class="admin-card"><small>Leads em 30 dias</small><strong>${number(data.usage?.leads30d)}</strong><span>${number(data.usage?.searches30d)} pesquisas executadas</span></article>
+      <article class="admin-card"><small>Usuários engajados</small><strong>${number(data.usage?.activeUsers30d)}</strong><span>Média de ${number(data.usage?.averagePerActiveUser, 1)} leads por usuário ativo</span></article>
+      <article class="admin-card"><small>Taxa de ativação</small><strong>${formatPercent(data.business?.activationRate)}</strong><span>Usuários que avançaram no produto</span></article>
+      <article class="admin-card"><small>Ticket por assinante</small><strong>${money(data.payments.arpu)}</strong><span>Receita aprovada por cliente pago</span></article>
     `;
 
+    renderAdminCharts(data.charts || {});
     renderUsers(data.recentUsers || []);
     renderPayments(data.recentPayments || []);
     await loadSecurity();

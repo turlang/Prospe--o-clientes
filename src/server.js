@@ -19,6 +19,7 @@ const { simpleRateLimit } = require('./middleware/rateLimit');
 const { connectDatabase, hasMongoUri, getMongoStatus, mustRequireMongo } = require('./db');
 const User = require('./models/User');
 const Payment = require('./models/Payment');
+const Usage = require('./models/Usage');
 const AdminAuditLog = require('./models/AdminAuditLog');
 const TrialGuard = require('./models/TrialGuard');
 const PasswordReset = require('./models/PasswordReset');
@@ -573,64 +574,133 @@ app.get('/api/admin/overview', requireAuth, requireAdmin, async (_req, res) => {
   try {
     if (!hasMongoUri()) {
       return res.json({
-        users: { total: 0, trial: 0, pro: 0, agency: 0, active: 0, suspended: 0 },
-        payments: { total: 0, approved: 0, created: 0, revenue: 0 },
-        recentUsers: [],
-        recentPayments: []
+        users: { total: 0, trial: 0, pro: 0, agency: 0, paid: 0, active: 0, suspended: 0, new30d: 0 },
+        payments: { total: 0, approved: 0, created: 0, revenue: 0, mrr: 0, arpu: 0 },
+        usage: { leads30d: 0, searches30d: 0, activeUsers30d: 0, averagePerActiveUser: 0 },
+        business: { paidConversionRate: 0, activationRate: 0 },
+        charts: { usageDaily: [], revenueMonthly: [], userGrowthMonthly: [], planDistribution: [] },
+        audit: { total: 0 }, recentUsers: [], recentPayments: []
       });
     }
 
-    const [users, payments, auditCount] = await Promise.all([
-      User.find({}).sort({ createdAt: -1 }).limit(100).lean(),
-      Payment.find({}).sort({ createdAt: -1 }).limit(100).lean(),
-      AdminAuditLog.countDocuments({})
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+
+    const [
+      users,
+      payments,
+      auditCount,
+      usageRows,
+      searches30d,
+      activeUsageUsers
+    ] = await Promise.all([
+      User.find({}).sort({ createdAt: -1 }).lean(),
+      Payment.find({}).sort({ createdAt: -1 }).lean(),
+      AdminAuditLog.countDocuments({}),
+      Usage.find({ day: { $gte: thirtyDaysAgo.toISOString().slice(0, 10) } }).lean(),
+      SearchHistory.countDocuments({ createdAt: { $gte: thirtyDaysAgo } }),
+      Usage.distinct('userId', { day: { $gte: thirtyDaysAgo.toISOString().slice(0, 10) }, count: { $gt: 0 } })
     ]);
+
+    const paidUsers = users.filter((u) => ['pro', 'agency'].includes(u.plan) && u.isActive !== false);
+    const activeUsers = users.filter((u) => u.isActive !== false);
+    const newUsers30d = users.filter((u) => new Date(u.createdAt) >= thirtyDaysAgo).length;
+    const activatedUsers = users.filter((u) => ['pro', 'agency'].includes(u.plan) || Number(u.totalLeadLimit) > 0 || u.subscriptionStatus === 'active').length;
 
     const userStats = {
       total: users.length,
       trial: users.filter((u) => u.plan === 'trial').length,
       pro: users.filter((u) => u.plan === 'pro').length,
       agency: users.filter((u) => u.plan === 'agency').length,
-      active: users.filter((u) => u.isActive !== false).length,
-      suspended: users.filter((u) => u.isActive === false).length
+      paid: paidUsers.length,
+      active: activeUsers.length,
+      suspended: users.filter((u) => u.isActive === false).length,
+      new30d: newUsers30d
     };
 
     const approvedPayments = payments.filter((p) => p.status === 'approved');
+    const revenue = approvedPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+    const proPrice = Number(String(getPlan('pro').priceLabel || '59').replace(/[^0-9,]/g, '').replace(',', '.')) || 59;
+    const agencyPrice = Number(String(getPlan('agency').priceLabel || '199').replace(/[^0-9,]/g, '').replace(',', '.')) || 199;
+    const mrr = userStats.pro * proPrice + userStats.agency * agencyPrice;
     const paymentStats = {
       total: payments.length,
       approved: approvedPayments.length,
       created: payments.filter((p) => p.status === 'created').length,
-      revenue: approvedPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0)
+      revenue,
+      mrr,
+      arpu: paidUsers.length ? revenue / paidUsers.length : 0
     };
+
+    const leads30d = usageRows.reduce((sum, row) => sum + Number(row.count || 0), 0);
+    const usageStats = {
+      leads30d,
+      searches30d,
+      activeUsers30d: activeUsageUsers.length,
+      averagePerActiveUser: activeUsageUsers.length ? leads30d / activeUsageUsers.length : 0
+    };
+
+    const business = {
+      paidConversionRate: users.length ? (paidUsers.length / users.length) * 100 : 0,
+      activationRate: users.length ? (activatedUsers / users.length) * 100 : 0
+    };
+
+    const usageByDay = new Map();
+    for (let i = 29; i >= 0; i -= 1) {
+      const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+      usageByDay.set(date.toISOString().slice(0, 10), 0);
+    }
+    usageRows.forEach((row) => usageByDay.set(row.day, (usageByDay.get(row.day) || 0) + Number(row.count || 0)));
+    const usageDaily = Array.from(usageByDay.entries()).map(([day, count]) => ({ day, count }));
+
+    function monthKey(dateValue) {
+      const date = new Date(dateValue);
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    }
+    const monthKeys = [];
+    for (let i = 5; i >= 0; i -= 1) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      monthKeys.push(monthKey(date));
+    }
+    const revenueMap = new Map(monthKeys.map((key) => [key, 0]));
+    approvedPayments.filter((p) => new Date(p.createdAt) >= sixMonthsAgo).forEach((p) => {
+      const key = monthKey(p.createdAt);
+      if (revenueMap.has(key)) revenueMap.set(key, revenueMap.get(key) + Number(p.amount || 0));
+    });
+    const userGrowthMap = new Map(monthKeys.map((key) => [key, 0]));
+    users.filter((u) => new Date(u.createdAt) >= sixMonthsAgo).forEach((u) => {
+      const key = monthKey(u.createdAt);
+      if (userGrowthMap.has(key)) userGrowthMap.set(key, userGrowthMap.get(key) + 1);
+    });
 
     res.json({
       users: userStats,
       payments: paymentStats,
+      usage: usageStats,
+      business,
       audit: { total: auditCount },
+      charts: {
+        usageDaily,
+        revenueMonthly: monthKeys.map((month) => ({ month, value: revenueMap.get(month) || 0 })),
+        userGrowthMonthly: monthKeys.map((month) => ({ month, value: userGrowthMap.get(month) || 0 })),
+        planDistribution: [
+          { label: 'Trial', value: userStats.trial },
+          { label: 'Pro', value: userStats.pro },
+          { label: 'Agência', value: userStats.agency }
+        ]
+      },
       recentUsers: users.slice(0, 20).map((u) => ({
-        id: String(u._id),
-        name: u.name,
-        email: u.email,
-        plan: u.plan,
-        role: u.role || 'user',
-        isActive: u.isActive !== false,
-        subscriptionStatus: u.subscriptionStatus,
-        dailyLeadLimit: u.dailyLeadLimit,
-        totalLeadLimit: u.totalLeadLimit,
-        createdAt: u.createdAt,
-        planExpiresAt: u.planExpiresAt
+        id: String(u._id), name: u.name, email: u.email, plan: u.plan,
+        role: u.role || 'user', isActive: u.isActive !== false,
+        subscriptionStatus: u.subscriptionStatus, dailyLeadLimit: u.dailyLeadLimit,
+        totalLeadLimit: u.totalLeadLimit, createdAt: u.createdAt, planExpiresAt: u.planExpiresAt
       })),
       recentPayments: payments.slice(0, 20).map((p) => ({
-        id: String(p._id),
-        userId: String(p.userId || ''),
-        plan: p.plan,
-        status: p.status,
-        amount: p.amount,
-        provider: p.provider,
-        paymentId: p.paymentId,
-        preferenceId: p.preferenceId,
-        createdAt: p.createdAt,
-        updatedAt: p.updatedAt
+        id: String(p._id), userId: String(p.userId || ''), plan: p.plan,
+        status: p.status, amount: p.amount, provider: p.provider,
+        paymentId: p.paymentId, preferenceId: p.preferenceId,
+        createdAt: p.createdAt, updatedAt: p.updatedAt
       }))
     });
   } catch (error) {

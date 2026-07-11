@@ -1,7 +1,7 @@
 {
   "name": "agente-prospeccao-real",
-  "version": "23.3.0",
-  "description": "Sales OS V23.3 com Copiloto Comercial IA, memória de conversas e contexto integrado do CRM",
+  "version": "23.4.0",
+  "description": "Sales OS V23.4 com Copiloto IA, menu navegável e painel administrativo executivo",
   "main": "src/server.js",
   "type": "commonjs",
   "scripts": {

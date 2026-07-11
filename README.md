@@ -331,3 +331,11 @@ POST   /api/v23/copilot/chat
 ```
 
 O provedor continua sendo definido pelas mesmas variáveis `AI_PROVIDER`, `GROQ_API_KEY`, `GEMINI_API_KEY` ou `OPENAI_API_KEY`. Sem provedor disponível, o copiloto usa respostas locais fundamentadas nos dados do CRM.
+
+
+## V23.4 — Administração Executiva
+
+- Menu lateral com rolagem própria em telas menores.
+- Painel Admin redesenhado com visão executiva moderna.
+- Métricas de uso, conversão, ativação, MRR, receita e engajamento.
+- Gráficos de receita, consumo de leads, crescimento e distribuição de planos.

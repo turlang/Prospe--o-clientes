@@ -1439,3 +1439,30 @@ body.modal-open {
   .copilot-message { max-width: 96%; }
   .copilot-form { grid-template-columns: 1fr; }
 }
+
+
+/* V23.4 Admin & Navigation UX */
+@media (min-width: 901px) {
+  .sidebar {
+    max-height: calc(100vh - 36px);
+    overflow: hidden;
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+  }
+
+  .sidebar nav {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-right: 7px;
+    scrollbar-width: thin;
+    scrollbar-color: #93c5fd transparent;
+  }
+
+  .sidebar nav::-webkit-scrollbar { width: 7px; }
+  .sidebar nav::-webkit-scrollbar-track { background: transparent; }
+  .sidebar nav::-webkit-scrollbar-thumb {
+    background: #bfdbfe;
+    border-radius: 999px;
+  }
+  .sidebar nav::-webkit-scrollbar-thumb:hover { background: #60a5fa; }
+}

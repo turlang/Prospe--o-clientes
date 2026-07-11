@@ -868,3 +868,11 @@ A tela inicial do Sales OS passa a conduzir o trabalho diário do vendedor, reun
 - Respostas fundamentadas em pipeline, agenda, propostas, campanhas, clientes e timeline.
 - Modo coach e planejamento diário.
 - Fallback local quando o provedor de IA estiver indisponível.
+
+
+## V23.4 — Administração Executiva
+
+- Menu lateral com rolagem própria em telas menores.
+- Painel Admin redesenhado com visão executiva moderna.
+- Métricas de uso, conversão, ativação, MRR, receita e engajamento.
+- Gráficos de receita, consumo de leads, crescimento e distribuição de planos.
