@@ -1,5 +1,11 @@
 # Changelog
 
+## 23.9.1 — Correção de inicialização no Render
+
+- Corrigida a injeção do middleware `simpleRateLimit` em `commercialRoutes`.
+- Removido o índice duplicado de `PasswordReset.expiresAt`, preservando o índice TTL.
+- Adicionado teste de regressão que instancia `createApp` e registra todas as rotas.
+
 ## 23.9.0 — Reinicialização administrativa segura do banco
 
 - Adicionada zona de perigo no painel administrativo com prévia de exclusões.

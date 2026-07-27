@@ -283,6 +283,7 @@ function createApp() {
     buildCampaignTasks,
     buildAutonomousCommandCenter,
     answerCommercialCopilot,
+    simpleRateLimit,
     sendApiError,
     startedAt,
     publicBaseUrl,

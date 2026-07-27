@@ -15,7 +15,7 @@ const passwordResetSchema = new mongoose.Schema(
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true, required: true },
     email: { type: String, trim: true, lowercase: true, index: true, required: true },
     tokenHash: { type: String, required: true, index: true },
-    expiresAt: { type: Date, required: true, index: true },
+    expiresAt: { type: Date, required: true },
     usedAt: { type: Date, default: null },
     requestedIp: { type: String, default: '' },
     userAgent: { type: String, default: '' }

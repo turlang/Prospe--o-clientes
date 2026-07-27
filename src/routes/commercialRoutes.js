@@ -54,6 +54,7 @@ function registerCommercialRoutes(app, context) {
     buildCampaignTasks,
     buildAutonomousCommandCenter,
     answerCommercialCopilot,
+    simpleRateLimit,
     sendApiError
   } = context;
 

@@ -1,6 +1,6 @@
 {
   "name": "agente-prospeccao-real",
-  "version": "23.9.0",
+  "version": "23.9.1",
   "description": "Motor de inteligência comercial, CRM e automação de funil para negócios locais",
   "main": "src/server.js",
   "type": "commonjs",

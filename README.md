@@ -1,6 +1,10 @@
-# LeadHunter Pro 23.9.0
+# LeadHunter Pro 23.9.1
 
 Sistema web para prospecção de estabelecimentos, qualificação de leads, CRM, automação comercial, relatórios e administração de assinaturas.
+
+## Correção de implantação 23.9.1
+
+Esta versão corrige a falha de bootstrap no Render causada pela ausência da injeção de `simpleRateLimit` em `commercialRoutes`. Também elimina o aviso de índice duplicado no modelo de recuperação de senha e inclui testes de regressão da composição das rotas.
 
 ## Reinicialização administrativa segura 23.9.0
 
