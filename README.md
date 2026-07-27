@@ -1,20 +1,20 @@
-# LeadHunter Pro 23.7.1
+# LeadHunter Pro 23.9.0
 
 Sistema web para prospecção de estabelecimentos, qualificação de leads, CRM, automação comercial, relatórios e administração de assinaturas.
 
-## Motor de inteligência comercial 23.8.0
+## Reinicialização administrativa segura 23.9.0
 
-O CRM agora transforma cada lead em um fluxo orientado: gera uma mensagem curta para WhatsApp, mapeia os canais públicos disponíveis e registra a próxima tarefa do funil. Respostas positivas avançam para diagnóstico; reuniões conduzem à proposta; propostas criam acompanhamento; oportunidades ganhas permanecem em clientes ativos.
+O painel administrativo agora possui uma zona de perigo para reinicializar os dados operacionais com segurança. A ferramenta calcula uma prévia, exige reautenticação pela senha atual, confirmação textual e confirmação final, remove usuários comuns e preserva todas as contas administrativas.
 
-A especificação completa está em [`docs/MOTOR_INTELIGENCIA_COMERCIAL_23.8.0.md`](docs/MOTOR_INTELIGENCIA_COMERCIAL_23.8.0.md).
+A especificação completa está em [`docs/REINICIALIZACAO_BANCO_23.9.0.md`](docs/REINICIALIZACAO_BANCO_23.9.0.md). O motor comercial da versão 23.8.0 permanece documentado em [`docs/MOTOR_INTELIGENCIA_COMERCIAL_23.8.0.md`](docs/MOTOR_INTELIGENCIA_COMERCIAL_23.8.0.md).
 
 ## Estado da versão
 
-A versão 23.8.0 mantém a arquitetura acadêmica da série 23.7 e acrescenta o motor de inteligência comercial e automação do funil:
+A versão 23.9.0 mantém a arquitetura acadêmica da série 23.7, o motor comercial 23.8.0 e acrescenta a manutenção administrativa segura:
 
 - bootstrap separado da composição Express;
 - aplicação criada pelo padrão Application Factory;
-- 58 rotas agrupadas por domínio;
+- rotas agrupadas por domínio;
 - módulos identificados com `@fileoverview`;
 - contratos centrais documentados com JSDoc;
 - requisitos, arquitetura, API, testes e rastreabilidade formalizados;
@@ -33,7 +33,7 @@ A versão 23.8.0 mantém a arquitetura acadêmica da série 23.7 e acrescenta o 
 - relatórios executivos e exportação CSV;
 - planos Trial, Pro e Agência;
 - integração com Mercado Pago;
-- painel administrativo e auditoria;
+- painel administrativo, auditoria e reinicialização controlada do banco;
 - controles antiabuso e segurança de URLs.
 
 ## Arquitetura
@@ -150,3 +150,7 @@ Uso único por usuário/dispositivo
 ## Uso responsável
 
 A ferramenta deve ser utilizada de acordo com a legislação aplicável, termos dos provedores e boas práticas de privacidade. A existência de um dado público não autoriza mensagens abusivas, coleta excessiva ou disparos não solicitados.
+
+### Manutenção administrativa
+
+O painel `/admin` possui uma zona de perigo para reinicializar os dados operacionais. A ferramenta mostra uma prévia, exige a senha atual e a frase `REINICIAR LEADHUNTER`, remove usuários comuns e preserva todas as contas administrativas. Consulte `docs/REINICIALIZACAO_BANCO_23.9.0.md` antes de usar em produção.

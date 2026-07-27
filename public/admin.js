@@ -18,6 +18,13 @@ const adminPayments = document.querySelector('#adminPayments');
 const adminSecurity = document.querySelector('#adminSecurity');
 const adminPlans = document.querySelector('#adminPlans');
 const adminAudit = document.querySelector('#adminAudit');
+const databaseResetPreview = document.querySelector('#databaseResetPreview');
+const databaseResetForm = document.querySelector('#databaseResetForm');
+const databaseResetPassword = document.querySelector('#databaseResetPassword');
+const databaseResetConfirmation = document.querySelector('#databaseResetConfirmation');
+const databaseResetPhraseElement = document.querySelector('#databaseResetPhrase');
+const databaseResetBtn = document.querySelector('#databaseResetBtn');
+let databaseResetPhrase = 'REINICIAR LEADHUNTER';
 const adminStatus = document.querySelector('#adminStatus');
 const adminSearch = document.querySelector('#adminSearch');
 const revenueChart = document.querySelector('#revenueChart');
@@ -41,6 +48,12 @@ document.querySelector('#adminClearSearchBtn').addEventListener('click', () => {
 adminSearch.addEventListener('keydown', (event) => {
   if (event.key === 'Enter') loadUsers(adminSearch.value);
 });
+
+if (databaseResetForm) {
+  databaseResetForm.addEventListener('submit', requestDatabaseReset);
+  databaseResetPassword.addEventListener('input', updateDatabaseResetButton);
+  databaseResetConfirmation.addEventListener('input', updateDatabaseResetButton);
+}
 
 function adminFetch(url, options = {}) {
   return fetch(url, {
@@ -163,6 +176,7 @@ async function loadAdmin() {
     await loadSecurity();
     await loadPlans();
     await loadAuditLogs();
+    await loadDatabaseResetPreview();
     showStatus('Painel carregado.');
   } catch (error) {
     showStatus(error.message, true);
@@ -413,6 +427,94 @@ async function clearSecurityByEmail(email) {
     await loadAuditLogs();
   } catch (error) {
     showStatus(error.message, true);
+  }
+}
+
+
+// -----------------------------------------------------------------------------
+// Reinicialização administrativa do banco de dados
+// -----------------------------------------------------------------------------
+const DATABASE_RESET_LABELS = Object.freeze({
+  nonAdminUsers: 'Usuários comuns',
+  leads: 'Leads e funil',
+  searchHistory: 'Pesquisas realizadas',
+  tasks: 'Tarefas e agenda',
+  usage: 'Registros de uso',
+  payments: 'Pagamentos',
+  trialGuards: 'Controles antiabuso',
+  passwordResets: 'Recuperações de senha',
+  copilotConversations: 'Conversas do copiloto',
+  auditLogs: 'Auditoria anterior'
+});
+
+function updateDatabaseResetButton() {
+  if (!databaseResetBtn) return;
+  const phraseMatches = String(databaseResetConfirmation.value || '').trim().toUpperCase() === databaseResetPhrase;
+  databaseResetBtn.disabled = !databaseResetPassword.value || !phraseMatches;
+}
+
+async function loadDatabaseResetPreview() {
+  if (!databaseResetPreview) return;
+
+  try {
+    const response = await adminFetch('/api/admin/database-reset/preview');
+    const data = await readJson(response);
+    if (!response.ok) throw new Error(data.error || 'Erro ao calcular a prévia da limpeza.');
+
+    databaseResetPhrase = String(data.confirmationPhrase || 'REINICIAR LEADHUNTER').trim().toUpperCase();
+    if (databaseResetPhraseElement) databaseResetPhraseElement.textContent = databaseResetPhrase;
+    if (databaseResetConfirmation) databaseResetConfirmation.placeholder = databaseResetPhrase;
+
+    const entries = Object.entries(data.counts || {});
+    databaseResetPreview.innerHTML = `
+      <div class="reset-preview">
+        <article><small>Modo de armazenamento</small><strong>${escapeHtml(data.mode === 'mongodb' ? 'MongoDB' : 'JSON local')}</strong></article>
+        <article><small>Administradores preservados</small><strong>${number(data.adminsPreserved)}</strong></article>
+        <article><small>Total estimado de exclusões</small><strong>${number(data.totalToDelete)}</strong></article>
+        ${entries.map(([key, value]) => `<article><small>${escapeHtml(DATABASE_RESET_LABELS[key] || key)}</small><strong>${number(value)}</strong></article>`).join('')}
+      </div>
+      <p class="meta">A prévia é informativa. Novos registros criados antes da confirmação também serão removidos.</p>
+    `;
+    updateDatabaseResetButton();
+  } catch (error) {
+    databaseResetPreview.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
+  }
+}
+
+async function requestDatabaseReset(event) {
+  event.preventDefault();
+  updateDatabaseResetButton();
+  if (databaseResetBtn.disabled) return;
+
+  const finalConfirmation = window.confirm(
+    'Esta ação apagará os dados operacionais e todos os usuários comuns. Somente administradores serão preservados. Deseja continuar?'
+  );
+  if (!finalConfirmation) return;
+
+  databaseResetBtn.disabled = true;
+  databaseResetBtn.textContent = 'Reinicializando...';
+
+  try {
+    const response = await adminFetch('/api/admin/database-reset', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        password: databaseResetPassword.value,
+        confirmation: databaseResetConfirmation.value
+      })
+    });
+    const data = await readJson(response);
+    if (!response.ok) throw new Error(data.error || 'Erro ao reinicializar o banco.');
+
+    const successMessage = `${data.message} ${number(data.result?.totalDeleted)} registro(s) removido(s).`;
+    databaseResetForm.reset();
+    await loadAdmin();
+    showStatus(successMessage);
+  } catch (error) {
+    showStatus(error.message, true);
+  } finally {
+    databaseResetBtn.textContent = 'Reinicializar banco';
+    updateDatabaseResetButton();
   }
 }
 

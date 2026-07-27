@@ -1,5 +1,3 @@
-const { simpleRateLimit } = require('../middleware/rateLimit');
-
 /**
  * @fileoverview Rotas de automação, agenda, inteligência comercial, propostas, clientes e relatórios.
  *

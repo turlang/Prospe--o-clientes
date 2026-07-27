@@ -34,7 +34,7 @@ Adapta o protocolo HTTP aos serviços:
 - `systemRoutes.js`: páginas, saúde e diagnóstico;
 - `billingRoutes.js`: consumo, checkout e reconciliação;
 - `leadRoutes.js`: prospecção, CRM e exportação;
-- `adminRoutes.js`: usuários, planos, segurança e auditoria;
+- `adminRoutes.js`: usuários, planos, segurança, auditoria e reinicialização controlada;
 - `commercialRoutes.js`: campanhas, agenda, propostas, clientes e relatórios.
 
 ### `src/services/`
@@ -106,3 +106,10 @@ As decisões relevantes ficam em `docs/decisoes/` e não devem ser alteradas sil
 ## Vocabulário centralizado do funil
 
 A partir da versão 23.7.1, `src/domain/leadStatus.js` é a fonte única de verdade das etapas comerciais. Serviços não devem criar nomes próprios de status. Intenções como “qualificando” e eventos como “respondeu” pertencem à timeline de interações; a posição do lead deve usar exclusivamente as etapas descritas em `docs/FUNIL_COMERCIAL.md`.
+
+
+## 7. Reinicialização administrativa
+
+`databaseResetService.js` concentra a política destrutiva fora da camada HTTP. A rota apenas autentica, repassa a solicitação e grava o recibo de auditoria. O serviço opera por adaptadores para MongoDB e JSON local, exige reautenticação e preserva todas as contas administrativas.
+
+A exclusão é ordenada: dados operacionais primeiro e usuários comuns por último. Em instalações MongoDB sem replica set, essa estratégia oferece repetibilidade e preservação do acesso administrativo mesmo sem transações multidocumento.

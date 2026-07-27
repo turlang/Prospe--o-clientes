@@ -16,3 +16,4 @@
 | RNF-01 | `src/middleware/`, `src/security/` | testes de segurança e SSRF |
 | RNF-04 | `src/app.js`, `src/routes/`, documentação | `modularization.test.js`, `check-documentation.js` |
 | RNF-07 | `src/utils/jsonFileStore.js`, `src/db.js` | `jsonFileStore.test.js` |
+| RF-ADM-RESET-01 a 03 | `src/services/databaseResetService.js`, `src/routes/adminRoutes.js`, `public/admin.js` | `databaseResetService.test.js`, `adminDatabaseResetRegression.test.js` |

@@ -118,3 +118,23 @@ Move o lead para `PROPOSTA`, conclui tarefas anteriores e agenda o acompanhament
 ### `POST /api/customers/close`
 
 Move para `FECHADO`, conclui tarefas automáticas e devolve `movedToActiveCustomers: true`.
+
+
+## Reinicialização administrativa do banco
+
+### `GET /api/admin/database-reset/preview`
+
+Retorna o modo de armazenamento, quantidade de administradores preservados e estimativa dos registros que serão removidos. Exige token de usuário com função `admin`.
+
+### `POST /api/admin/database-reset`
+
+Executa a limpeza destrutiva. Exige token administrativo e corpo JSON:
+
+```json
+{
+  "password": "senha atual do administrador",
+  "confirmation": "REINICIAR LEADHUNTER"
+}
+```
+
+A operação preserva todas as contas com função `admin` e remove os demais usuários e dados operacionais. A senha nunca é registrada na auditoria.

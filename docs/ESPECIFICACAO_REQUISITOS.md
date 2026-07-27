@@ -69,3 +69,16 @@ O LeadHunter Pro é uma aplicação SaaS para prospecção de estabelecimentos, 
 **Pré-condições:** pagamento conhecido pelo provedor.  
 **Fluxo principal:** receber identificador → consultar provedor → validar proprietário, valor e moeda → registrar pagamento → ativar plano.  
 **Exceções:** pagamento divergente, usuário não associado ou ambiente sem credenciais.
+
+
+### RF-ADM-RESET-01 — Prévia de reinicialização
+O sistema deve permitir que administradores consultem uma estimativa dos registros que serão excluídos.
+
+### RF-ADM-RESET-02 — Limpeza integral controlada
+O sistema deve remover pesquisas, leads, tarefas, uso, pagamentos, registros de segurança, conversas do copiloto, auditoria anterior e usuários não administradores.
+
+### RF-ADM-RESET-03 — Preservação administrativa
+O sistema deve preservar todas as contas cuja função seja `admin` e bloquear a operação quando nenhuma conta administrativa puder ser preservada.
+
+### RNF-SEG-RESET-01 — Confirmação reforçada
+A operação deve exigir sessão administrativa válida, senha atual, frase exata de confirmação e confirmação explícita na interface.

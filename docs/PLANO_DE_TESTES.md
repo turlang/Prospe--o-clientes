@@ -51,3 +51,14 @@ npm test
 - solicitar e concluir redefinição de senha;
 - suspender usuário e confirmar bloqueio da sessão;
 - alterar um plano no painel e confirmar novo limite.
+
+
+## Reinicialização administrativa
+
+- Validar que frase incorreta bloqueia a operação.
+- Validar que senha incorreta bloqueia a operação.
+- Validar que usuários comuns são removidos e administradores preservados.
+- Validar limpeza de leads, tarefas, uso e conversas no modo JSON local.
+- Validar limpeza das coleções operacionais no modo MongoDB simulado.
+- Validar que as rotas exigem autenticação e função administrativa.
+- Validar a presença da zona de perigo, prévia e confirmação final na interface.

@@ -33,6 +33,9 @@ function registerAdminRoutes(app, context) {
     updatePlan,
     getPlanExpirationDate,
     writeAdminAudit,
+    getDatabaseResetPreview,
+    executeDatabaseReset,
+    databaseResetConfirmationPhrase,
     sendApiError,
     sanitizeSearchText,
     escapeRegExp
@@ -354,6 +357,52 @@ function registerAdminRoutes(app, context) {
     }
   });
 
+
+
+  // Reinicialização destrutiva e controlada do ambiente operacional.
+  app.get('/api/admin/database-reset/preview', requireAuth, requireAdmin, async (_req, res) => {
+    try {
+      const preview = await getDatabaseResetPreview();
+      res.json({
+        ...preview,
+        confirmationPhrase: databaseResetConfirmationPhrase,
+        warning: 'A operação é irreversível e preserva apenas contas com função admin.'
+      });
+    } catch (error) {
+      sendApiError(res, error, 'Não foi possível calcular a prévia da reinicialização.');
+    }
+  });
+
+  app.post('/api/admin/database-reset', requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const result = await executeDatabaseReset({
+        adminUser: req.adminUser,
+        password: req.body.password,
+        confirmation: req.body.confirmation
+      });
+
+      // Os registros antigos de auditoria fazem parte da limpeza. Esta entrada é
+      // criada depois da reinicialização para manter somente o recibo da ação.
+      await writeAdminAudit(req, 'ADMIN_DATABASE_RESET_COMPLETED', {
+        before: { requestedBy: String(req.adminUser?._id || req.adminUser?.id || req.user?.sub || '') },
+        after: {
+          mode: result.mode,
+          adminsPreserved: result.adminsPreserved,
+          deleted: result.deleted,
+          totalDeleted: result.totalDeleted,
+          completedAt: result.completedAt
+        }
+      });
+
+      res.json({
+        ok: true,
+        message: 'Banco reinicializado. Somente as contas administrativas foram preservadas.',
+        result
+      });
+    } catch (error) {
+      sendApiError(res, error, 'Não foi possível reinicializar o banco de dados.');
+    }
+  });
 
 
   // Administração de planos, auditoria e pagamentos.

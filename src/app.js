@@ -14,6 +14,7 @@ require('dotenv').config({ path: path.join(process.cwd(), '.env') });
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const bcrypt = require('bcryptjs');
 const { format } = require('@fast-csv/format');
 const { searchPlaces, testGoogleConnection } = require('./places');
 const { scoreLead, filterActionable } = require('./scorer');
@@ -33,6 +34,9 @@ const Usage = require('./models/Usage');
 const AdminAuditLog = require('./models/AdminAuditLog');
 const TrialGuard = require('./models/TrialGuard');
 const PasswordReset = require('./models/PasswordReset');
+const Lead = require('./models/Lead');
+const Task = require('./models/Task');
+const CopilotConversation = require('./models/CopilotConversation');
 const { getAllPlans, getPlan, normalizePlan, updatePlan } = require('./planConfig');
 const { getDailyUsage, getTotalUsage, addDailyUsage } = require('./localUsageStore');
 const { findUserById, updateLocalUserPlan } = require('./localUserStore');
@@ -71,6 +75,8 @@ const {
 const { buildAutonomousCommandCenter, answerCommercialCopilot } = require('./services/autonomousCommercialService');
 const { createSalesOsRoutes } = require('./core/routes/salesOsRoutes');
 const { sendApiError } = require('./utils/httpError');
+const { readJsonFile, writeJsonFileAtomic, withJsonFileLock } = require('./utils/jsonFileStore');
+const { createDatabaseResetService, RESET_CONFIRMATION_PHRASE } = require('./services/databaseResetService');
 const { LEAD_STATUS_SET } = require('./domain/leadStatus');
 
 const { registerSystemRoutes } = require('./routes/systemRoutes');
@@ -98,6 +104,26 @@ function createApp() {
   function planRank(planId) {
     return ({ trial: 0, pro: 1, agency: 2 })[planId] ?? 0;
   }
+
+  const databaseResetService = createDatabaseResetService({
+    hasMongoUri,
+    models: {
+      User,
+      Lead,
+      SearchHistory,
+      Task,
+      Usage,
+      Payment,
+      TrialGuard,
+      PasswordReset,
+      CopilotConversation,
+      AdminAuditLog
+    },
+    readJsonFile,
+    writeJsonFileAtomic,
+    withJsonFileLock,
+    verifyPassword: bcrypt.compare
+  });
 
   const ALLOWED_LEAD_STATUSES = new Set(LEAD_STATUS_SET);
 
@@ -166,6 +192,14 @@ function createApp() {
   app.use((req, _res, next) => { req.body = req.body && typeof req.body === 'object' ? req.body : {}; next(); });
   app.use(requestLogger);
   app.use('/api', simpleRateLimit({ windowMs: 60_000, max: 120 }));
+  app.use('/api', (req, res, next) => {
+    const isMutation = ['POST', 'PATCH', 'PUT', 'DELETE'].includes(req.method);
+    if (isMutation && databaseResetService.isResetInProgress()) {
+      res.setHeader('Retry-After', '5');
+      return res.status(503).json({ error: 'O banco está em manutenção administrativa. Tente novamente em alguns segundos.' });
+    }
+    return next();
+  });
   app.use(express.static('public', { index: false, maxAge: process.env.NODE_ENV === 'production' ? '1h' : 0 }));
 
   const routeContext = {
@@ -220,6 +254,9 @@ function createApp() {
     isSimulatedBillingAllowed,
     reconcileMercadoPagoPayment,
     writeAdminAudit,
+    getDatabaseResetPreview: databaseResetService.getPreview,
+    executeDatabaseReset: databaseResetService.executeReset,
+    databaseResetConfirmationPhrase: RESET_CONFIRMATION_PHRASE,
     buildSalesApproach,
     buildCommercialEngineOutput,
     buildNextTaskPlan,

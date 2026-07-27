@@ -1,4 +1,4 @@
-# Auditoria de engenharia — LeadHunter Pro 23.8.0
+# Auditoria de engenharia — LeadHunter Pro 23.9.0
 
 ## Parecer
 
@@ -42,3 +42,14 @@ O projeto foi reestruturado para um padrão mais adequado à manutenção profis
 - faltam testes HTTP reais com banco e provedores em ambiente isolado.
 
 Essas limitações estão registradas para evitar que sejam confundidas com decisões permanentes.
+
+
+## Evolução funcional da versão 23.9.0
+
+- serviço isolado para reinicialização controlada de MongoDB e JSON local;
+- prévia de impacto antes da exclusão;
+- reautenticação por senha e frase destrutiva exata;
+- preservação obrigatória de contas administrativas;
+- exclusão ordenada e bloqueio de execuções concorrentes;
+- recibo administrativo criado depois da limpeza;
+- testes de domínio, persistência, autorização e interface.

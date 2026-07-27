@@ -1,5 +1,17 @@
 # Changelog
 
+## 23.9.0 — Reinicialização administrativa segura do banco
+
+- Adicionada zona de perigo no painel administrativo com prévia de exclusões.
+- Implementada reinicialização para MongoDB e armazenamento JSON local.
+- A operação remove pesquisas, leads, tarefas, uso, pagamentos, segurança, conversas do copiloto, auditoria anterior e usuários comuns.
+- Todas as contas com função `admin` são preservadas.
+- A execução exige autenticação administrativa, senha atual, frase exata de confirmação e confirmação final no navegador.
+- Reinicializações concorrentes são bloqueadas.
+- Usuários comuns são removidos por último para preservar acesso administrativo em caso de falha intermediária.
+- Criado recibo de auditoria após a limpeza.
+- Adicionados testes de domínio, persistência local, MongoDB simulado, autorização e interface.
+
 ## 23.8.0 — Motor de inteligência comercial e automação de funil
 
 - Implementado `commercialFunnelEngine` com abordagem hiper-humana para WhatsApp.
