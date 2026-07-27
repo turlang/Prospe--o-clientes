@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Esquema Mongoose e modelo de persistência `AdminAuditLog`.
+ *
+ * Responsabilidade delimitada conforme a arquitetura descrita em
+ * `docs/ARQUITETURA.md`. Alterações neste arquivo devem preservar os contratos
+ * documentados e ser acompanhadas por testes quando afetarem regras de negócio.
+ *
+ * @module src/models/AdminAuditLog
+ */
+
 const mongoose = require('mongoose');
 
 const adminAuditLogSchema = new mongoose.Schema(

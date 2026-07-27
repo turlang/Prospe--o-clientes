@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Testes automatizados de regressão para o componente `publicUrlSecurity.test`.
+ *
+ * Responsabilidade delimitada conforme a arquitetura descrita em
+ * `docs/ARQUITETURA.md`. Alterações neste arquivo devem preservar os contratos
+ * documentados e ser acompanhadas por testes quando afetarem regras de negócio.
+ *
+ * @module tests/publicUrlSecurity.test
+ */
+
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const {

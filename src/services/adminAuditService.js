@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Serviço de domínio `adminAuditService` responsável por regras comerciais reutilizáveis.
+ *
+ * Responsabilidade delimitada conforme a arquitetura descrita em
+ * `docs/ARQUITETURA.md`. Alterações neste arquivo devem preservar os contratos
+ * documentados e ser acompanhadas por testes quando afetarem regras de negócio.
+ *
+ * @module src/services/adminAuditService
+ */
+
 const AdminAuditLog = require('../models/AdminAuditLog');
 const { hasMongoUri } = require('../db');
 

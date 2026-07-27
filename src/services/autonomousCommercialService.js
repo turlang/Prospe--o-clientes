@@ -1,4 +1,14 @@
 /**
+ * @fileoverview Serviço de domínio `autonomousCommercialService` responsável por regras comerciais reutilizáveis.
+ *
+ * Responsabilidade delimitada conforme a arquitetura descrita em
+ * `docs/ARQUITETURA.md`. Alterações neste arquivo devem preservar os contratos
+ * documentados e ser acompanhadas por testes quando afetarem regras de negócio.
+ *
+ * @module src/services/autonomousCommercialService
+ */
+
+/**
  * autonomousCommercialService.js
  * -----------------------------------------------------------------------------
  * V22 - CRM Autônomo.
@@ -29,8 +39,8 @@ function daysSince(value, now = new Date()) {
 }
 
 function buildPipelineHealth(leads = [], now = new Date()) {
-  const active = (Array.isArray(leads) ? leads : []).filter((lead) => !['FECHADO', 'SEM_INTERESSE', 'PERDIDO'].includes(normalizeStatus(lead.status)));
-  const byStatus = ['NOVO', 'CONTATADO', 'INTERESSADO', 'PROPOSTA'].map((status) => {
+  const active = (Array.isArray(leads) ? leads : []).filter((lead) => !['FECHADO', 'SEM_INTERESSE'].includes(normalizeStatus(lead.status)));
+  const byStatus = ['NOVO', 'CONTATADO', 'INTERESSADO', 'REUNIAO', 'PROPOSTA'].map((status) => {
     const rows = active.filter((lead) => normalizeStatus(lead.status) === status);
     const ages = rows.map((lead) => daysSince(getLastInteractionAt(lead), now)).filter((value) => value !== null);
     const averageAge = ages.length ? Math.round(ages.reduce((sum, value) => sum + value, 0) / ages.length) : 0;
@@ -39,8 +49,8 @@ function buildPipelineHealth(leads = [], now = new Date()) {
   });
 
   const total = active.length || 1;
-  const contacted = active.filter((lead) => ['CONTATADO', 'INTERESSADO', 'PROPOSTA'].includes(normalizeStatus(lead.status))).length;
-  const interested = active.filter((lead) => ['INTERESSADO', 'PROPOSTA'].includes(normalizeStatus(lead.status))).length;
+  const contacted = active.filter((lead) => ['CONTATADO', 'INTERESSADO', 'REUNIAO', 'PROPOSTA'].includes(normalizeStatus(lead.status))).length;
+  const interested = active.filter((lead) => ['INTERESSADO', 'REUNIAO', 'PROPOSTA'].includes(normalizeStatus(lead.status))).length;
   const proposals = active.filter((lead) => normalizeStatus(lead.status) === 'PROPOSTA').length;
 
   return {
@@ -55,10 +65,11 @@ function buildPipelineHealth(leads = [], now = new Date()) {
 }
 
 function buildForecast(leads = []) {
-  const open = (Array.isArray(leads) ? leads : []).filter((lead) => ['INTERESSADO', 'PROPOSTA'].includes(normalizeStatus(lead.status)));
+  const open = (Array.isArray(leads) ? leads : []).filter((lead) => ['INTERESSADO', 'REUNIAO', 'PROPOSTA'].includes(normalizeStatus(lead.status)));
   const weighted = open.reduce((sum, lead) => {
     const amount = parseMoney(lead.ticketEstimado);
-    const factor = normalizeStatus(lead.status) === 'PROPOSTA' ? 0.65 : 0.35;
+    const status = normalizeStatus(lead.status);
+    const factor = status === 'PROPOSTA' ? 0.65 : status === 'REUNIAO' ? 0.5 : 0.35;
     return sum + amount * factor;
   }, 0);
   return {

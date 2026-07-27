@@ -1,4 +1,14 @@
 /**
+ * @fileoverview Serviço de domínio `customerGrowthService` responsável por regras comerciais reutilizáveis.
+ *
+ * Responsabilidade delimitada conforme a arquitetura descrita em
+ * `docs/ARQUITETURA.md`. Alterações neste arquivo devem preservar os contratos
+ * documentados e ser acompanhadas por testes quando afetarem regras de negócio.
+ *
+ * @module src/services/customerGrowthService
+ */
+
+/**
  * customerGrowthService.js
  * -----------------------------------------------------------------------------
  * V21.5 — Crescimento pós-venda: indicação, recompra e expansão.
@@ -10,8 +20,10 @@
 
 const { estimateTicketValue } = require('./customerSuccessService');
 
-function normalizeStatus(status = '') {
-  return String(status || 'NOVO').trim().toUpperCase();
+const { normalizeLeadStatus } = require('../domain/leadStatus');
+
+function normalizeStatus(status = ''){
+  return normalizeLeadStatus(status);
 }
 
 function getLeadId(lead = {}) {

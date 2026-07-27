@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Integração com provedores de busca de estabelecimentos e normalização de resultados.
+ *
+ * Responsabilidade delimitada conforme a arquitetura descrita em
+ * `docs/ARQUITETURA.md`. Alterações neste arquivo devem preservar os contratos
+ * documentados e ser acompanhadas por testes quando afetarem regras de negócio.
+ *
+ * @module src/places
+ */
+
 const PLACES_TEXT_SEARCH_NEW_ENDPOINT = 'https://places.googleapis.com/v1/places:searchText';
 const PLACES_DETAILS_NEW_ENDPOINT = 'https://places.googleapis.com/v1/places/';
 

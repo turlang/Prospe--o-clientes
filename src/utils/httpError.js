@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Utilitário compartilhado `httpError` sem dependência de regras de apresentação.
+ *
+ * Responsabilidade delimitada conforme a arquitetura descrita em
+ * `docs/ARQUITETURA.md`. Alterações neste arquivo devem preservar os contratos
+ * documentados e ser acompanhadas por testes quando afetarem regras de negócio.
+ *
+ * @module src/utils/httpError
+ */
+
 function isProduction() {
   return String(process.env.NODE_ENV || '').toLowerCase() === 'production';
 }

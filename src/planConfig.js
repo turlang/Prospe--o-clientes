@@ -1,4 +1,14 @@
 /**
+ * @fileoverview Fonte única de configuração, normalização e persistência dos planos comerciais.
+ *
+ * Responsabilidade delimitada conforme a arquitetura descrita em
+ * `docs/ARQUITETURA.md`. Alterações neste arquivo devem preservar os contratos
+ * documentados e ser acompanhadas por testes quando afetarem regras de negócio.
+ *
+ * @module src/planConfig
+ */
+
+/**
  * planConfig.js
  * -----------------------------------------------------------------------------
  * Fonte única dos planos comerciais.

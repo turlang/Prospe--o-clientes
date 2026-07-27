@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Middleware HTTP `rateLimit` aplicado à cadeia de requisições da API.
+ *
+ * Responsabilidade delimitada conforme a arquitetura descrita em
+ * `docs/ARQUITETURA.md`. Alterações neste arquivo devem preservar os contratos
+ * documentados e ser acompanhadas por testes quando afetarem regras de negócio.
+ *
+ * @module src/middleware/rateLimit
+ */
+
 function simpleRateLimit({ windowMs = 60_000, max = 90, keyGenerator = null } = {}) {
   const bucket = new Map();
   let requestsSinceSweep = 0;

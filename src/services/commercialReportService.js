@@ -1,4 +1,14 @@
 /**
+ * @fileoverview Serviço de domínio `commercialReportService` responsável por regras comerciais reutilizáveis.
+ *
+ * Responsabilidade delimitada conforme a arquitetura descrita em
+ * `docs/ARQUITETURA.md`. Alterações neste arquivo devem preservar os contratos
+ * documentados e ser acompanhadas por testes quando afetarem regras de negócio.
+ *
+ * @module src/services/commercialReportService
+ */
+
+/**
  * commercialReportService.js
  * -----------------------------------------------------------------------------
  * V21.1 - Relatórios Comerciais.
@@ -11,14 +21,13 @@
  * - previsão conservadora de receita.
  */
 
-const PIPELINE_ORDER = ['NOVO', 'CONTATADO', 'INTERESSADO', 'PROPOSTA', 'FECHADO', 'SEM_INTERESSE'];
-const ACTIVE_STATUSES = new Set(['NOVO', 'CONTATADO', 'INTERESSADO', 'PROPOSTA']);
+const { normalizeLeadStatus } = require('../domain/leadStatus');
+
+const PIPELINE_ORDER = ['NOVO', 'CONTATADO', 'INTERESSADO', 'REUNIAO', 'PROPOSTA', 'FECHADO', 'SEM_INTERESSE'];
+const ACTIVE_STATUSES = new Set(['NOVO', 'CONTATADO', 'INTERESSADO', 'REUNIAO', 'PROPOSTA']);
 
 function normalizeStatus(status) {
-  const value = String(status || 'NOVO').trim().toUpperCase();
-  if (value === 'REUNIAO' || value === 'REUNIÃO' || value === 'NEGOCIACAO' || value === 'NEGOCIAÇÃO') return 'PROPOSTA';
-  if (value === 'SEM INTERESSE') return 'SEM_INTERESSE';
-  return PIPELINE_ORDER.includes(value) ? value : 'NOVO';
+  return normalizeLeadStatus(status);
 }
 
 function getLeadId(lead = {}) {
@@ -62,6 +71,7 @@ function conversionWeight(status) {
     NOVO: 0.08,
     CONTATADO: 0.16,
     INTERESSADO: 0.34,
+    REUNIAO: 0.46,
     PROPOSTA: 0.58,
     FECHADO: 1,
     SEM_INTERESSE: 0
@@ -76,7 +86,7 @@ function groupBy(items, keyGetter) {
     const status = normalizeStatus(item.status);
     current.total += 1;
     if (status !== 'NOVO') current.contacted += 1;
-    if (status === 'INTERESSADO') current.interested += 1;
+    if (['INTERESSADO', 'REUNIAO'].includes(status)) current.interested += 1;
     if (status === 'PROPOSTA') current.proposals += 1;
     if (status === 'FECHADO') current.closed += 1;
     current.estimatedRevenue += estimateTicketValue(item.ticketEstimado) * conversionWeight(status);

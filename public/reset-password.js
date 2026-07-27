@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Fluxo do navegador para validação do token e redefinição de senha.
+ *
+ * Responsabilidade delimitada conforme a arquitetura descrita em
+ * `docs/ARQUITETURA.md`. Alterações neste arquivo devem preservar os contratos
+ * documentados e ser acompanhadas por testes quando afetarem regras de negócio.
+ *
+ * @module public/reset-password
+ */
+
 const form = document.querySelector('#resetForm');
 const statusBox = document.querySelector('#resetStatus');
 const params = new URLSearchParams(window.location.search);

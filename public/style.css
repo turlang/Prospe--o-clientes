@@ -1,3 +1,10 @@
+/**
+ * @fileoverview Estilos da aplicação autenticada e dos módulos comerciais.
+ *
+ * A folha é organizada por componentes visuais e estados responsivos. Variáveis
+ * globais ficam no início para evitar valores repetidos e facilitar manutenção.
+ */
+
 :root {
   --bg-0: #06111f;
   --bg-1: #0a1627;
@@ -1572,3 +1579,21 @@ body.modal-open {
 .funnel-lead-item p, .funnel-lead-item small { margin: 3px 0 0; color: var(--muted); }
 @media (max-width: 900px) { #overviewRevenueChart { grid-template-columns: repeat(2,minmax(0,1fr)); } .overview-pipeline-cards { grid-template-columns: repeat(6,minmax(155px,72vw)); } }
 @media (max-width: 620px) { #overviewRevenueChart { grid-template-columns: 1fr; } .column-chart { grid-template-columns: repeat(6,minmax(90px,1fr)); } .funnel-lead-item { grid-template-columns: 1fr; } }
+
+/* Fluxo de resposta dentro da ficha do CRM. */
+.reply-workflow {
+  margin: 16px 0;
+}
+
+.reply-workflow textarea {
+  width: 100%;
+  min-height: 96px;
+  margin-top: 8px;
+  resize: vertical;
+}
+
+.reply-analysis-result {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}

@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Testes unitários das políticas puras de cobrança e duração de planos.
+ *
+ * Responsabilidade delimitada conforme a arquitetura descrita em
+ * `docs/ARQUITETURA.md`. Alterações neste arquivo devem preservar os contratos
+ * documentados e ser acompanhadas por testes quando afetarem regras de negócio.
+ *
+ * @module tests/billingService.test
+ */
+
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const {
@@ -5,7 +15,7 @@ const {
   getPlanDurationDays,
   getPlanExpirationDate,
   parsePlanPrice
-} = require('../src/services/billingService');
+} = require('../src/domain/billingPolicy');
 
 test('billing service calcula preço dos planos pagos', () => {
   assert.equal(getPlanPrice('pro'), 59);

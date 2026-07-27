@@ -1,3 +1,10 @@
+/**
+ * @fileoverview Estilos da página pública de apresentação.
+ *
+ * A folha é organizada por componentes visuais e estados responsivos. Variáveis
+ * globais ficam no início para evitar valores repetidos e facilitar manutenção.
+ */
+
 :root {
   --bg: #080b13;
   --panel: rgba(255,255,255,.075);

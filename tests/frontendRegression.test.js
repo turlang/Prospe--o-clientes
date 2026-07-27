@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Testes automatizados de regressão para o componente `frontendRegression.test`.
+ *
+ * Responsabilidade delimitada conforme a arquitetura descrita em
+ * `docs/ARQUITETURA.md`. Alterações neste arquivo devem preservar os contratos
+ * documentados e ser acompanhadas por testes quando afetarem regras de negócio.
+ *
+ * @module tests/frontendRegression.test
+ */
+
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -28,4 +38,20 @@ test('cópia de conteúdo usa o texto renderizado em vez de código inline dinâ
   assert.match(app, /function copyNearestText\(/);
   assert.match(app, /copyNearestText\(this, '.strategy-message'\)/);
   assert.match(app, /copyNearestText\(this, '.compact-proposal'\)/);
+});
+
+
+test('ficha do CRM registra resposta e atualiza uma etapa visível', () => {
+  assert.match(app, /id="reply-modal-\$\{escapeAttr\(leadId\)\}"/);
+  assert.match(app, /Analisar e atualizar funil/);
+  assert.match(app, /function applyLeadUpdate\(/);
+  assert.match(app, /Lead movido de \$\{transition\.from\} para \$\{transition\.to\}/);
+});
+
+test('pipeline apresenta reunião e converte status legados', () => {
+  assert.match(app, /key: 'REUNIAO'/);
+  assert.match(html, /<option>REUNIAO<\/option>/);
+  assert.match(app, /RESPONDEU: 'INTERESSADO'/);
+  assert.match(app, /QUALIFICANDO: 'INTERESSADO'/);
+  assert.match(app, /PERDIDO: 'SEM_INTERESSE'/);
 });

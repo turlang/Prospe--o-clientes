@@ -1,4 +1,14 @@
 /**
+ * @fileoverview Motor determinístico de sequências, prioridades e datas de follow-up.
+ *
+ * Responsabilidade delimitada conforme a arquitetura descrita em
+ * `docs/ARQUITETURA.md`. Alterações neste arquivo devem preservar os contratos
+ * documentados e ser acompanhadas por testes quando afetarem regras de negócio.
+ *
+ * @module src/campaignEngine
+ */
+
+/**
  * campaignEngine.js
  * -----------------------------------------------------------------------------
  * Campanhas: motor de campanhas e follow-up.
@@ -14,6 +24,13 @@ function normalizeName(name) {
   return String(name || 'tudo bem').split('-')[0].trim();
 }
 
+/**
+ * Gera uma cadência manual de mensagens para um lead.
+ *
+ * @param {import('./types/domain').Lead|object} lead Contexto comercial do lead.
+ * @param {string} [objective='vender site personalizado'] Objetivo da campanha.
+ * @returns {Array<object>} Etapas prontas para revisão humana.
+ */
 function buildCampaignSequence(lead, objective = 'vender site personalizado') {
   const nome = normalizeName(lead.nome);
   const segmento = lead.segmentoComercial || lead.tipo || 'negócio local';
@@ -50,15 +67,25 @@ function buildCampaignSequence(lead, objective = 'vender site personalizado') {
   }));
 }
 
+/**
+ * Calcula a data sugerida para um próximo contato.
+ *
+ * @param {number} [days=2] Quantidade de dias a acrescentar.
+ * @returns {string} Data no formato ISO 8601.
+ */
 function nextFollowUpDate(days = 2) {
   const date = new Date();
   date.setDate(date.getDate() + Number(days || 2));
   return date.toISOString();
 }
 
-module.exports = { buildCampaignSequence, nextFollowUpDate };
 
-
+/**
+ * Classifica prioridade e cadência sem depender de serviços externos.
+ *
+ * @param {object} lead Lead qualificado.
+ * @returns {{priority:string, days:number[], label:string}} Perfil de automação.
+ */
 function getPriorityFromLead(lead) {
   const score = Number(lead.score || lead.pontuacao || 0);
   const status = String(lead.status || 'NOVO').toUpperCase();
@@ -70,6 +97,13 @@ function getPriorityFromLead(lead) {
   return { priority: 'BAIXA', days: [1, 4, 8], label: 'Nutrição leve' };
 }
 
+/**
+ * Combina conteúdo de campanha, prioridade e datas de execução.
+ *
+ * @param {object} lead Lead associado à automação.
+ * @param {string} [objective='vender website personalizado'] Objetivo comercial.
+ * @returns {Array<object>} Plano revisável de follow-up.
+ */
 function buildAutomationPlan(lead, objective = 'vender website personalizado') {
   const profile = getPriorityFromLead(lead);
   const sequence = buildCampaignSequence(lead, objective);

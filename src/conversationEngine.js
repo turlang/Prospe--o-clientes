@@ -1,4 +1,14 @@
 /**
+ * @fileoverview Análise de respostas comerciais e recomendação da próxima ação no funil.
+ *
+ * Responsabilidade delimitada conforme a arquitetura descrita em
+ * `docs/ARQUITETURA.md`. Alterações neste arquivo devem preservar os contratos
+ * documentados e ser acompanhadas por testes quando afetarem regras de negócio.
+ *
+ * @module src/conversationEngine
+ */
+
+/**
  * conversationEngine.js
  * -----------------------------------------------------------------------------
  * Módulo responsável pela estratégia de comunicação comercial do agente.
@@ -11,6 +21,8 @@
  * - Prospecção responsável: o sistema gera mensagens para revisão humana e não faz
  *   disparo massivo automático.
  */
+
+const { normalizeLeadStatus, resolveResponseStatus } = require('./domain/leadStatus');
 
 const POSITIVE_TERMS = [
   'sim', 'pode', 'claro', 'manda', 'mandar', 'envia', 'enviar', 'quero',
@@ -64,60 +76,77 @@ function buildNegativeReply() {
   return 'Sem problemas. Agradeço pela atenção e desejo muito sucesso para a empresa. Caso precise de algum website ou solução digital personalizada no futuro, fico à disposição.';
 }
 
+function buildResponseAnalysis({ intent, suggestedStatus, proximoPasso, respostaSugerida }, lead) {
+  const previousStatus = normalizeLeadStatus(lead.status || 'CONTATADO');
+  const status = resolveResponseStatus(previousStatus, suggestedStatus);
+
+  return {
+    intent,
+    status,
+    previousStatus,
+    statusChanged: status !== previousStatus,
+    proximoPasso,
+    respostaSugerida
+  };
+}
+
 function analyzeLeadResponse(text, lead = {}) {
   const normalized = normalize(text);
 
   if (!normalized) {
+    const previousStatus = normalizeLeadStatus(lead.status || 'CONTATADO');
     return {
       intent: 'SEM_RESPOSTA',
-      status: lead.status || 'CONTATADO',
+      status: previousStatus,
+      previousStatus,
+      statusChanged: false,
       proximoPasso: 'Aguardar resposta ou realizar follow-up posteriormente.',
       respostaSugerida: ''
     };
   }
 
   if (containsAny(normalized, NEGATIVE_TERMS)) {
-    return {
+    return buildResponseAnalysis({
       intent: 'NEGATIVA',
-      status: 'PERDIDO',
+      suggestedStatus: 'SEM_INTERESSE',
       proximoPasso: 'Encerrar contato de forma educada e manter registro no CRM.',
       respostaSugerida: buildNegativeReply()
-    };
+    }, lead);
   }
 
   if (containsAny(normalized, PRICE_TERMS)) {
-    return {
+    return buildResponseAnalysis({
       intent: 'PRECO',
-      status: 'QUALIFICANDO',
-      proximoPasso: 'Fazer perguntas de qualificação antes de enviar orçamento.',
+      suggestedStatus: 'INTERESSADO',
+      proximoPasso: 'Qualificar a necessidade antes de preparar orçamento ou proposta.',
       respostaSugerida: buildPriceReply()
-    };
+    }, lead);
   }
 
   if (containsAny(normalized, WHAT_TERMS)) {
-    return {
+    return buildResponseAnalysis({
       intent: 'PEDIU_DETALHES',
-      status: 'INTERESSADO',
-      proximoPasso: 'Enviar resumo do diagnóstico e tentar conduzir para reunião curta.',
+      suggestedStatus: 'INTERESSADO',
+      proximoPasso: 'Enviar o diagnóstico resumido e conduzir para uma conversa curta.',
       respostaSugerida: buildWhatFoundReply(lead)
-    };
+    }, lead);
   }
 
   if (containsAny(normalized, POSITIVE_TERMS)) {
-    return {
+    return buildResponseAnalysis({
       intent: 'POSITIVA',
-      status: 'INTERESSADO',
-      proximoPasso: 'Enviar análise resumida e sugerir conversa rápida de 10 minutos.',
+      suggestedStatus: 'INTERESSADO',
+      proximoPasso: 'Enviar a análise resumida e sugerir uma conversa rápida de 10 minutos.',
       respostaSugerida: buildPositiveReply(lead)
-    };
+    }, lead);
   }
 
-  return {
+  return buildResponseAnalysis({
     intent: 'NEUTRA',
-    status: 'RESPONDEU',
-    proximoPasso: 'Responder com cordialidade, esclarecer a proposta e buscar autorização para enviar a análise.',
+    suggestedStatus: 'INTERESSADO',
+    proximoPasso: 'Responder com cordialidade, esclarecer a proposta e pedir autorização para enviar a análise.',
     respostaSugerida: 'Obrigado pelo retorno. A ideia é compartilhar uma análise rápida, sem compromisso, mostrando alguns pontos de melhoria que podem fortalecer a presença digital da empresa. Posso enviar?'
-  };
+  }, lead);
 }
 
 function containsAny(text, terms) {

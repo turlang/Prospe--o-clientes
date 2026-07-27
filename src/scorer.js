@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Regras determinísticas de qualificação, priorização e filtragem de leads.
+ *
+ * Responsabilidade delimitada conforme a arquitetura descrita em
+ * `docs/ARQUITETURA.md`. Alterações neste arquivo devem preservar os contratos
+ * documentados e ser acompanhadas por testes quando afetarem regras de negócio.
+ *
+ * @module src/scorer
+ */
+
 const { hasOwnDomain } = require('./siteAuditor');
 const { buildInitialMessage } = require('./conversationEngine');
 

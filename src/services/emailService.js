@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Serviço de domínio `emailService` responsável por regras comerciais reutilizáveis.
+ *
+ * Responsabilidade delimitada conforme a arquitetura descrita em
+ * `docs/ARQUITETURA.md`. Alterações neste arquivo devem preservar os contratos
+ * documentados e ser acompanhadas por testes quando afetarem regras de negócio.
+ *
+ * @module src/services/emailService
+ */
+
 async function sendPasswordResetEmail({ email, resetUrl }) {
   const appName = process.env.APP_NAME || 'LeadHunter Pro';
   const from = process.env.MAIL_FROM || 'LeadHunter Pro <noreply@leadhunter.local>';

@@ -1,3 +1,8 @@
+<!--
+  @fileoverview Aplicação autenticada, CRM e módulos comerciais do LeadHunter Pro.
+  As regiões principais usam elementos semânticos e identificadores consumidos
+  pelos controladores JavaScript documentados na pasta public/.
+-->
 <!doctype html>
 <html lang="pt-BR">
 <head>
@@ -16,6 +21,7 @@
       <p>Busque empresas reais, audite presença digital, priorize oportunidades e organize seus contatos em um CRM profissional.</p>
     </section>
 
+    <!-- Autenticação e criação de conta. -->
     <section id="authCard" class="card auth-card">
       <div class="auth-copy">
         <p class="tag">SaaS comercial</p>
@@ -47,7 +53,9 @@
 
     <section id="status" aria-live="polite"></section>
 
+    <!-- Shell principal exibido somente após autenticação. -->
     <section id="dashboard" hidden class="app-shell">
+      <!-- Navegação persistente e contexto da assinatura. -->
       <aside class="sidebar card-panel">
         <div class="sidebar-account">
           <div>
@@ -80,6 +88,7 @@
         </div>
       </aside>
 
+      <!-- Views funcionais alternadas pelo controlador da interface. -->
       <section class="workspace">
 
         <section id="view-inteligencia" class="view">
@@ -237,7 +246,7 @@
             </div>
             <div class="pipeline-filters">
               <input id="searchLead" name="searchLead" placeholder="Buscar nome, endereço ou segmento" aria-label="Buscar lead" />
-              <select id="filterStatus" name="filterStatus" aria-label="Filtrar status"><option value="">Todas as etapas</option><option>NOVO</option><option>CONTATADO</option><option>INTERESSADO</option><option>PROPOSTA</option><option>FECHADO</option><option>SEM_INTERESSE</option></select>
+              <select id="filterStatus" name="filterStatus" aria-label="Filtrar status"><option value="">Todas as etapas</option><option>NOVO</option><option>CONTATADO</option><option>INTERESSADO</option><option>REUNIAO</option><option>PROPOSTA</option><option>FECHADO</option><option>SEM_INTERESSE</option></select>
               <label class="check" for="filterFavorite"><input id="filterFavorite" name="filterFavorite" type="checkbox" /> Favoritos</label>
               <button id="exportCsv" type="button" class="secondary">Exportar CSV</button>
             </div>

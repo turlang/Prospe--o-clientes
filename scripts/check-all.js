@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Validador de sintaxe JavaScript executado no pipeline de qualidade do projeto.
+ *
+ * Responsabilidade delimitada conforme a arquitetura descrita em
+ * `docs/ARQUITETURA.md`. Alterações neste arquivo devem preservar os contratos
+ * documentados e ser acompanhadas por testes quando afetarem regras de negócio.
+ *
+ * @module scripts/check-all
+ */
+
 const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');

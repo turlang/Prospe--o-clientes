@@ -1,4 +1,14 @@
 /**
+ * @fileoverview Persistência local de tarefas e follow-ups com escrita serializada.
+ *
+ * Responsabilidade delimitada conforme a arquitetura descrita em
+ * `docs/ARQUITETURA.md`. Alterações neste arquivo devem preservar os contratos
+ * documentados e ser acompanhadas por testes quando afetarem regras de negócio.
+ *
+ * @module src/localTaskStore
+ */
+
+/**
  * Agenda de follow-ups manuais.
  * Não envia mensagens automaticamente; apenas persiste lembretes do usuário.
  */

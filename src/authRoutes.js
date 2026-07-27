@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Rotas de autenticação, registro, sessão e recuperação segura de senha.
+ *
+ * Responsabilidade delimitada conforme a arquitetura descrita em
+ * `docs/ARQUITETURA.md`. Alterações neste arquivo devem preservar os contratos
+ * documentados e ser acompanhadas por testes quando afetarem regras de negócio.
+ *
+ * @module src/authRoutes
+ */
+
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');

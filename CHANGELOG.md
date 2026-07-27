@@ -1,3 +1,40 @@
+# Changelog
+
+## [23.7.1] - 2026-07-27
+
+### Corrigido
+- Corrigido o desaparecimento de leads após o registro de uma resposta recebida.
+- Estados internos `RESPONDEU`, `QUALIFICANDO` e `PERDIDO` agora são convertidos para etapas canônicas visíveis.
+- A etapa `REUNIAO` passou a existir no Kanban, filtros, relatórios, cockpit e inteligência comercial.
+- A resposta recebida agora pode ser registrada diretamente na ficha em popup do CRM.
+- A interface atualiza imediatamente o card, a timeline, os indicadores e informa a transição realizada.
+- Respostas não podem rebaixar automaticamente oportunidades que já estão em `REUNIAO` ou `PROPOSTA`.
+- O clique no WhatsApp registra o primeiro contato sem rebaixar leads já avançados.
+
+### Testes
+- Adicionados testes do vocabulário do funil, análise de respostas, rota HTTP e regressão visual.
+- Suíte completa: 110 testes aprovados.
+
+## [23.7.0] - 2026-07-27
+
+### Refatorado
+- Separado o bootstrap (`server.js`) da composição Express (`app.js`).
+- Adotado o padrão Application Factory para permitir testes sem abrir porta HTTP.
+- Distribuídas as rotas entre sistema, cobrança, leads, administração e operações comerciais.
+- Extraídas políticas financeiras puras para `domain/billingPolicy.js`.
+- Removida exportação duplicada do motor de campanhas.
+
+### Documentado
+- Adicionados cabeçalhos `@fileoverview` em todos os módulos JavaScript.
+- Adicionados contratos JSDoc de domínio e comentários de seções no frontend legado.
+- Criados relatório acadêmico, requisitos, catálogo da API, plano de testes, matriz de rastreabilidade e ADRs.
+- Adicionado guia de contribuição e padrão de comentários.
+
+### Qualidade
+- Adicionado `npm run check:docs`.
+- Atualizados testes estruturais para a nova arquitetura.
+- Validação final: 95 arquivos JavaScript, 97 testes e paridade de 57 endpoints.
+
 ## 23.6.1 — Correção de engenharia, segurança e estabilidade
 
 ### Corrigido

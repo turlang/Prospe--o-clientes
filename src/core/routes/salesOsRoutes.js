@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Componente do núcleo Sales OS `salesOsRoutes`, independente da camada de apresentação.
+ *
+ * Responsabilidade delimitada conforme a arquitetura descrita em
+ * `docs/ARQUITETURA.md`. Alterações neste arquivo devem preservar os contratos
+ * documentados e ser acompanhadas por testes quando afetarem regras de negócio.
+ *
+ * @module src/core/routes/salesOsRoutes
+ */
+
 const { sendApiError } = require('../../utils/httpError');
 const { version: appVersion } = require('../../../package.json');
 const express = require('express');

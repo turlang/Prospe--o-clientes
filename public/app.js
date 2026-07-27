@@ -1,4 +1,14 @@
 /**
+ * @fileoverview Controlador principal da interface do usuário: autenticação, CRM, campanhas e relatórios.
+ *
+ * Responsabilidade delimitada conforme a arquitetura descrita em
+ * `docs/ARQUITETURA.md`. Alterações neste arquivo devem preservar os contratos
+ * documentados e ser acompanhadas por testes quando afetarem regras de negócio.
+ *
+ * @module public/app
+ */
+
+/**
  * SaaS comercial
  * -----------------------------------------------------------------------------
  * Evolução da ferramenta para um produto com cara de SaaS:
@@ -29,6 +39,9 @@ const statusBox = document.querySelector('#status');
 const loadSaved = document.querySelector('#loadSaved');
 const authCard = document.querySelector('#authCard');
 const dashboard = document.querySelector('#dashboard');
+// -----------------------------------------------------------------------------
+// Referências da interface e estado da sessão
+// -----------------------------------------------------------------------------
 const loginForm = document.querySelector('#loginForm');
 const registerForm = document.querySelector('#registerForm');
 const logoutButton = document.querySelector('#logout');
@@ -103,11 +116,15 @@ const PIPELINE = [
   { key: 'NOVO', label: 'Novo lead', hint: 'Encontrado, ainda sem contato' },
   { key: 'CONTATADO', label: 'Contato realizado', hint: 'WhatsApp, ligação ou e-mail enviado' },
   { key: 'INTERESSADO', label: 'Interesse', hint: 'Respondeu ou pediu mais detalhes' },
+  { key: 'REUNIAO', label: 'Reunião', hint: 'Diagnóstico ou conversa agendada' },
   { key: 'PROPOSTA', label: 'Proposta enviada', hint: 'Orçamento ou reunião encaminhada' },
   { key: 'FECHADO', label: 'Fechado', hint: 'Virou cliente' },
   { key: 'SEM_INTERESSE', label: 'Perdido', hint: 'Sem interesse ou descartado' }
 ];
 
+// -----------------------------------------------------------------------------
+// Inicialização e autenticação
+// -----------------------------------------------------------------------------
 bootAuth();
 showPaymentReturnMessage();
 
@@ -369,6 +386,9 @@ function switchView(view) {
   if (view === 'campanhas') { loadAutomationActions(); loadFollowups(); }
 }
 
+// -----------------------------------------------------------------------------
+// Cliente HTTP autenticado e tratamento uniforme de respostas
+// -----------------------------------------------------------------------------
 async function apiFetch(url, options = {}) {
   const headers = { ...(options.headers || {}) };
   if (options.body && !headers['Content-Type']) {
@@ -403,7 +423,7 @@ async function readJson(response) {
 }
 
 function overviewStatusLabel(status) {
-  return ({ NOVO: 'Novos', CONTATADO: 'Contatados', INTERESSADO: 'Interessados', PROPOSTA: 'Propostas', FECHADO: 'Fechados', SEM_INTERESSE: 'Recusados' })[String(status || '').toUpperCase()] || status;
+  return ({ NOVO: 'Novos', CONTATADO: 'Contatados', INTERESSADO: 'Interessados', REUNIAO: 'Reuniões', PROPOSTA: 'Propostas', FECHADO: 'Fechados', SEM_INTERESSE: 'Recusados' })[String(status || '').toUpperCase()] || status;
 }
 
 function renderHorizontalBars(container, rows, { valueFormatter = (value) => String(value), empty = 'Sem dados suficientes.' } = {}) {
@@ -459,6 +479,9 @@ function renderDonut(container, segments, centerLabel, centerValue) {
   container.innerHTML = `<div class="donut-chart" style="background:conic-gradient(${stops.join(',') || '#e2e8f0 0deg 360deg'})"><div><strong>${escapeHtml(centerValue)}</strong><span>${escapeHtml(centerLabel)}</span></div></div><div class="donut-legend">${safe.map((item,index)=>`<span><i style="background:${palette[index%palette.length]}"></i><b>${escapeHtml(item.label)}</b><em>${item.value}</em></span>`).join('')}</div>`;
 }
 
+// -----------------------------------------------------------------------------
+// Dashboard executivo e indicadores comerciais
+// -----------------------------------------------------------------------------
 async function loadExecutiveOverview() {
   if (!authToken || !overviewRevenueChart) return;
   overviewRevenueChart.innerHTML = '<p class="loading">Atualizando indicadores...</p>';
@@ -480,7 +503,7 @@ async function loadExecutiveOverview() {
 function renderExecutiveOverview(report = {}, leads = []) {
   const summary = report.summary || {};
   const funnel = Array.isArray(report.funnel) ? report.funnel : [];
-  const weights = { NOVO: .08, CONTATADO: .16, INTERESSADO: .34, PROPOSTA: .58, FECHADO: 1, SEM_INTERESSE: 0 };
+  const weights = { NOVO: .08, CONTATADO: .16, INTERESSADO: .34, REUNIAO: .46, PROPOSTA: .58, FECHADO: 1, SEM_INTERESSE: 0 };
   const revenueByStage = funnel.map((item) => {
     const matching = leads.filter((lead) => normalizeStatus(lead.status) === item.status);
     const value = matching.reduce((sum, lead) => sum + estimateTicket(lead.ticketEstimado) * (weights[item.status] || 0), 0);
@@ -565,7 +588,7 @@ async function loadHistory() {
     const leads = await readJson(response);
     if (!response.ok) throw new Error(leads.error || 'Erro ao carregar histórico.');
 
-    const contactedStatuses = new Set(['CONTATADO', 'INTERESSADO', 'PROPOSTA', 'FECHADO', 'SEM_INTERESSE']);
+    const contactedStatuses = new Set(['CONTATADO', 'INTERESSADO', 'REUNIAO', 'PROPOSTA', 'FECHADO', 'SEM_INTERESSE']);
     const contactedLeads = (Array.isArray(leads) ? leads : [])
       .filter((lead) => {
         const status = normalizeStatus(lead.status);
@@ -750,6 +773,9 @@ function renderExecutiveStats(leads) {
   `;
 }
 
+// -----------------------------------------------------------------------------
+// CRM visual, pipeline Kanban e detalhamento de leads
+// -----------------------------------------------------------------------------
 function renderKanban(leads) {
   if (!kanbanBoard) return;
   leads = Array.isArray(leads) ? leads : [];
@@ -773,7 +799,7 @@ function renderKanban(leads) {
 function renderKanbanCard(lead) {
   const leadId = getLeadId(lead);
   return `
-    <article class="kanban-card" draggable="true" onclick="openLeadDetail(${jsArg(leadId)})" ondragstart="dragLead(event, ${jsArg(leadId)})" title="Clique para abrir a ficha do lead">
+    <article class="kanban-card" data-lead-id="${escapeAttr(leadId)}" draggable="true" onclick="openLeadDetail(${jsArg(leadId)})" ondragstart="dragLead(event, ${jsArg(leadId)})" title="Clique para abrir a ficha do lead">
       <strong>${escapeHtml(lead.nome)}</strong>
       <p>${escapeHtml(lead.segmentoComercial || lead.tipo || 'Segmento não informado')}</p>
       <div class="score-line"><span>${scoreStars(lead.score)}</span><b>${lead.score || 0}/100</b></div>
@@ -849,11 +875,12 @@ function openLeadDetail(leadId) {
     <div class="links">
       ${lead.site ? `<a href="${escapeAttr(lead.site)}" target="_blank" rel="noopener">Site</a>` : ''}
       ${lead.maps ? `<a href="${escapeAttr(lead.maps)}" target="_blank" rel="noopener">Maps</a>` : ''}
-      ${whatsapp ? `<a href="${escapeAttr(whatsapp)}" target="_blank" onclick="markStatus(${jsArg(leadId)},'CONTATADO')">WhatsApp</a>` : ''}
+      ${whatsapp ? `<a href="${escapeAttr(whatsapp)}" target="_blank" onclick="recordContact(${jsArg(leadId)})">WhatsApp</a>` : ''}
     </div>
     <div class="links">
       <button type="button" class="secondary" onclick="updateStatus(${jsArg(leadId)},'CONTATADO')">Contato feito</button>
       <button type="button" class="secondary" onclick="updateStatus(${jsArg(leadId)},'INTERESSADO')">Interessado</button>
+      <button type="button" class="secondary" onclick="updateStatus(${jsArg(leadId)},'REUNIAO')">Reunião</button>
       <button type="button" class="secondary" onclick="updateStatus(${jsArg(leadId)},'PROPOSTA')">Proposta</button>
       <button type="button" class="secondary" onclick="generateApproach(${jsArg(leadId)}, 'new', 'generic')">🧠 Consultor IA</button>
       <button type="button" class="secondary" onclick="generateProposal(${jsArg(leadId)})">📄 Gerar proposta</button>
@@ -861,6 +888,13 @@ function openLeadDetail(leadId) {
       <button type="button" class="secondary" onclick="markAsLost(${jsArg(leadId)})">Perdido</button>
       <button type="button" class="secondary" onclick="scheduleFollowup(${jsArg(leadId)})">Agendar retorno</button>
     </div>
+    <section class="reply-workflow card-panel soft">
+      <h4>Resposta recebida</h4>
+      <p class="meta">Cole a mensagem do lead. A análise registra a interação, atualiza a etapa do funil e apresenta o próximo passo.</p>
+      <label class="reply-label">Mensagem do lead<textarea id="reply-modal-${escapeAttr(leadId)}" placeholder="Ex.: Tenho interesse. Quanto custa?"></textarea></label>
+      <button type="button" class="secondary" onclick="analyzeReply(${jsArg(leadId)}, 'modal')">Analisar e atualizar funil</button>
+      <div id="analysis-modal-${escapeAttr(leadId)}" class="analysis" aria-live="polite"></div>
+    </section>
     <pre id="approach-modal-${escapeAttr(leadId)}" class="msg crm-approach-output"></pre>
     <section class="timeline detail-timeline">
       <h4>Timeline</h4>
@@ -945,7 +979,7 @@ function renderLead(lead) {
       <div class="lead-crm-box">
         <label>Status
           <select id="status-${escapeAttr(leadId)}">
-            ${['NOVO','CONTATADO','INTERESSADO','PROPOSTA','FECHADO','SEM_INTERESSE'].map((status) => `<option ${status === normalizeStatus(lead.status) ? 'selected' : ''}>${status}</option>`).join('')}
+            ${['NOVO','CONTATADO','INTERESSADO','REUNIAO','PROPOSTA','FECHADO','SEM_INTERESSE'].map((status) => `<option ${status === normalizeStatus(lead.status) ? 'selected' : ''}>${status}</option>`).join('')}
           </select>
         </label>
         <label>Tags<input id="tags-${escapeAttr(leadId)}" value="${escapeAttr(tags)}" placeholder="ex: urgente, site ruim" /></label>
@@ -974,11 +1008,11 @@ function renderLead(lead) {
         <div class="links">
           ${lead.site ? `<a href="${escapeAttr(lead.site)}" target="_blank">Site</a>` : ''}
           ${lead.maps ? `<a href="${escapeAttr(lead.maps)}" target="_blank">Google Maps</a>` : ''}
-          ${whatsapp ? `<a href="${escapeAttr(whatsapp)}" target="_blank" onclick="markStatus(${jsArg(leadId)},'CONTATADO')">WhatsApp pronto</a>` : ''}
+          ${whatsapp ? `<a href="${escapeAttr(whatsapp)}" target="_blank" onclick="recordContact(${jsArg(leadId)})">WhatsApp pronto</a>` : ''}
           <button type="button" class="copy" onclick='copyApproach(${jsArg(leadId)})'>Copiar mensagem</button>
         </div>
         <label class="reply-label">Resposta recebida do lead<textarea id="reply-${escapeAttr(leadId)}" placeholder="Cole aqui a resposta recebida."></textarea></label>
-        <button type="button" class="secondary" onclick="analyzeReply(${jsArg(leadId)})">Analisar resposta</button>
+        <button type="button" class="secondary" onclick="analyzeReply(${jsArg(leadId)}, 'card')">Analisar resposta</button>
         <div id="analysis-${escapeAttr(leadId)}" class="analysis"></div>
       </section>
 
@@ -1007,6 +1041,9 @@ async function saveLeadMeta(leadId) {
   } catch (error) { showError(error.message); }
 }
 
+// -----------------------------------------------------------------------------
+// Estratégia, abordagem e análise de respostas comerciais
+// -----------------------------------------------------------------------------
 async function generateApproach(leadId, mode = 'new', channel = 'generic') {
   const outputs = [
     document.getElementById(`approach-${leadId}`),
@@ -1163,20 +1200,88 @@ function renderAuditSummary(audit) {
   return `<div class="audit-grid"><p class="audit"><strong>SEO:</strong> ${audit.seoBasico ?? '-'} | <strong>Responsivo:</strong> ${audit.responsivo ? 'sim' : 'não'} | <strong>WhatsApp:</strong> ${audit.whatsapp ? 'sim' : 'não'} | <strong>Formulário:</strong> ${audit.formulario ? 'sim' : 'não'}</p><section class="social-box"><h4>Redes sociais</h4><p><strong>Nível:</strong> ${escapeHtml(social.nivel || 'Não analisado')} · ${Number(social.score || 0)}/100</p><p class="social-links">${redes}</p></section></div>`;
 }
 
-async function analyzeReply(leadId) {
-  const textarea = document.getElementById(`reply-${leadId}`);
-  const output = document.getElementById(`analysis-${leadId}`);
-  const resposta = textarea?.value || '';
-  output.innerHTML = '<p class="loading">Analisando resposta...</p>';
+function applyLeadUpdate(updatedLead) {
+  if (!updatedLead) return;
+  const updatedId = getLeadId(updatedLead);
+  const index = lastLeads.findIndex((lead) => String(getLeadId(lead)) === String(updatedId));
+
+  if (index >= 0) lastLeads[index] = updatedLead;
+  else lastLeads.push(updatedLead);
+
+  window.lastLeads = lastLeads;
+  renderKanban(lastLeads);
+  renderDashboardExtras(lastLeads);
+  renderExecutiveStats(lastLeads);
+  renderActivityTimeline(lastLeads);
+}
+
+function renderReplyAnalysis(data, leadId) {
+  const analysis = data.analysis || {};
+  const transition = data.transition || {};
+  const transitionText = transition.changed
+    ? `Lead movido de ${transition.from} para ${transition.to}.`
+    : `Lead mantido em ${transition.to || analysis.status}.`;
+
+  return `
+    <div class="reply-analysis-result">
+      <p><strong>Intenção:</strong> ${escapeHtml(analysis.intent || '-')}</p>
+      <p><strong>Movimentação:</strong> ${escapeHtml(transitionText)}</p>
+      <p><strong>Próximo passo:</strong> ${escapeHtml(analysis.proximoPasso || '-')}</p>
+      ${analysis.respostaSugerida ? `<p class="msg">${escapeHtml(analysis.respostaSugerida)}</p><button type="button" class="copy" onclick="copyNearestText(this, '.msg')">Copiar retorno</button>` : ''}
+      <button type="button" class="secondary" onclick="scheduleFollowup(${jsArg(leadId)})">Agendar próximo passo</button>
+    </div>`;
+}
+
+async function analyzeReply(leadId, scope = 'card') {
+  const prefix = scope === 'modal' ? 'modal-' : '';
+  const textarea = document.getElementById(`reply-${prefix}${leadId}`);
+  const output = document.getElementById(`analysis-${prefix}${leadId}`);
+  const resposta = textarea?.value?.trim() || '';
+
+  if (!output) {
+    showError('A área de análise da resposta não foi encontrada. Reabra a ficha do lead.');
+    return;
+  }
+
+  if (!resposta) {
+    output.innerHTML = '<p class="error">Cole a resposta recebida antes de analisar.</p>';
+    textarea?.focus();
+    return;
+  }
+
+  output.innerHTML = '<p class="loading">Analisando resposta e atualizando o funil...</p>';
+
   try {
     const response = await apiFetch('/api/analisar-resposta', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ leadId, resposta })
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ leadId, resposta })
     });
     const data = await readJson(response);
-    if (!response.ok) throw new Error(data.error);
-    output.innerHTML = `<p><strong>Intenção:</strong> ${escapeHtml(data.analysis.intent)}</p><p><strong>Status:</strong> ${escapeHtml(data.analysis.status)}</p><p><strong>Próximo passo:</strong> ${escapeHtml(data.analysis.proximoPasso)}</p><p class="msg">${escapeHtml(data.analysis.respostaSugerida)}</p><button type="button" class="copy" onclick="copyNearestText(this, '.msg')">Copiar retorno</button>`;
-    await loadSavedLeads(false);
-  } catch (error) { output.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`; }
+    if (!response.ok) throw new Error(data.error || 'Erro ao analisar resposta.');
+
+    applyLeadUpdate(data.lead);
+    const resultHtml = renderReplyAnalysis(data, leadId);
+
+    if (scope === 'modal') {
+      openLeadDetail(leadId);
+      const refreshedOutput = document.getElementById(`analysis-modal-${leadId}`);
+      if (refreshedOutput) refreshedOutput.innerHTML = resultHtml;
+    } else {
+      output.innerHTML = resultHtml;
+    }
+
+    if (statusBox) {
+      const transition = data.transition || {};
+      statusBox.innerHTML = `<p>${escapeHtml(transition.changed
+        ? `Resposta registrada. Lead movido para ${transition.to}.`
+        : `Resposta registrada. Lead mantido em ${transition.to || data.analysis?.status}.`)}</p>`;
+    }
+
+    await Promise.allSettled([refreshStats(), loadHistory(), loadFollowups(), loadAgenda()]);
+  } catch (error) {
+    output.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
+  }
 }
 
 async function markStatus(leadId, status) {
@@ -1185,6 +1290,23 @@ async function markStatus(leadId, status) {
   if (!response.ok) throw new Error(data.error || 'Erro ao atualizar status.');
   return data;
 }
+
+async function recordContact(leadId) {
+  try {
+    const currentLead = lastLeads.find((lead) => String(getLeadId(lead)) === String(leadId));
+    const currentStatus = normalizeStatus(currentLead?.status);
+    const targetStatus = currentStatus === 'NOVO' ? 'CONTATADO' : currentStatus;
+    const updatedLead = await markStatus(leadId, targetStatus);
+    applyLeadUpdate(updatedLead);
+    if (statusBox) statusBox.innerHTML = '<p>Primeiro contato registrado no funil.</p>';
+    await Promise.allSettled([refreshStats(), loadHistory()]);
+  } catch (error) {
+    showError(`O canal foi aberto, mas o contato não pôde ser registrado: ${error.message}`);
+  }
+}
+
+window.recordContact = recordContact;
+window.analyzeReply = analyzeReply;
 
 async function copyText(text) {
   try {
@@ -1206,27 +1328,82 @@ function copyApproach(leadId) {
   const message = output.querySelector('.strategy-message');
   return copyText((message || output).innerText || (message || output).textContent);
 }
-function getLeadId(lead) { return String(lead.placeId || lead.nome || '').replace(/'/g, ''); }
-function makeWhatsAppLink(lead) { const phone = String(lead.telefone || '').replace(/\D/g, ''); if (!phone) return ''; const normalized = phone.startsWith('55') ? phone : `55${phone}`; return `https://wa.me/${normalized}?text=${encodeURIComponent(lead.abordagem || '')}`; }
-function scoreClass(score) { if (score >= 80) return 'hot'; if (score >= 65) return 'warm'; return ''; }
+// -----------------------------------------------------------------------------
+// Funções puras de formatação, segurança de saída e apoio à interface
+// -----------------------------------------------------------------------------
+/** Retorna a chave estável usada para localizar o lead no CRM. */
+function getLeadId(lead) {
+  return String(lead.placeId || lead.nome || '').replace(/'/g, '');
+}
+/** Cria uma URL do WhatsApp sem interpolar dados não codificados. */
+function makeWhatsAppLink(lead) {
+  const phone = String(lead.telefone || '').replace(/\D/g, '');
+  if (!phone) return '';
+
+  const normalized = phone.startsWith('55') ? phone : `55${phone}`;
+  const message = encodeURIComponent(lead.abordagem || '');
+  return `https://wa.me/${normalized}?text=${message}`;
+}
+/** Mapeia a pontuação para a classe visual do cartão. */
+function scoreClass(score) {
+  if (score >= 80) return 'hot';
+  if (score >= 65) return 'warm';
+  return '';
+}
 function scoreStars(score = 0) { const filled = Math.max(1, Math.min(5, Math.round(Number(score || 0) / 20))); return '★★★★★'.slice(0, filled) + '☆☆☆☆☆'.slice(0, 5 - filled); }
 function scoreLabel(score = 0) { if (score >= 85) return 'Excelente oportunidade'; if (score >= 70) return 'Boa oportunidade'; if (score >= 50) return 'Médio potencial'; return 'Baixa prioridade'; }
-function normalizeStatus(status) { if (status === 'REUNIAO') return 'PROPOSTA'; if (status === 'INTERESSADO') return 'INTERESSADO'; return PIPELINE.some((item) => item.key === status) ? status : 'NOVO'; }
+function normalizeStatus(status) {
+  const value = String(status || '').trim().toUpperCase();
+  const aliases = {
+    CONTACTADO: 'CONTATADO',
+    RESPONDEU: 'INTERESSADO',
+    QUALIFICANDO: 'INTERESSADO',
+    QUALIFICADO: 'INTERESSADO',
+    REUNIAO_AGENDADA: 'REUNIAO',
+    NEGOCIACAO: 'PROPOSTA',
+    GANHO: 'FECHADO',
+    CLIENTE: 'FECHADO',
+    PERDIDO: 'SEM_INTERESSE',
+    RECUSADO: 'SEM_INTERESSE'
+  };
+  const canonical = aliases[value] || value;
+  return PIPELINE.some((item) => item.key === canonical) ? canonical : 'NOVO';
+}
 function estimateTicket(value) { const text = String(value || '0').replace(/\./g, '').replace(',', '.'); const match = text.match(/\d+(?:\.\d+)?/); return match ? Number(match[0]) : 0; }
-function formatMoney(value) { return Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }); }
-function showError(message) { statusBox.innerHTML = `<p class="error">${escapeHtml(message)}</p>`; }
+/** Formata valores monetários conforme a localidade brasileira. */
+function formatMoney(value) {
+  return Number(value || 0).toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    maximumFractionDigits: 0
+  });
+}
+/** Exibe uma mensagem escapada na região de estado da interface. */
+function showError(message) {
+  statusBox.innerHTML = `<p class="error">${escapeHtml(message)}</p>`;
+}
 function escapeHtml(value) { return String(value || '').replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;' }[char])); }
 function escapeAttr(value) { return escapeHtml(value).replace(/`/g, '&#096;'); }
 function jsArg(value) { return escapeHtml(JSON.stringify(String(value ?? ''))).replace(/`/g, '&#096;'); }
 function formatDate(value) { if (!value) return '-'; return new Date(value).toLocaleString('pt-BR'); }
-function debounce(fn, wait) { let timeout; return (...args) => { clearTimeout(timeout); timeout = setTimeout(() => fn(...args), wait); }; }
+/** Limita a frequência de execução de uma função acionada pela interface. */
+function debounce(fn, wait) {
+  let timeout;
+  return (...args) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => fn(...args), wait);
+  };
+}
 
 
+// -----------------------------------------------------------------------------
+// Onboarding, planos, consumo e métricas operacionais
+// -----------------------------------------------------------------------------
 function renderOnboarding() {
   if (!onboardingBox) return;
 
   const total = Array.isArray(lastLeads) ? lastLeads.length : 0;
-  const contacted = total ? lastLeads.filter((lead) => ['CONTATADO', 'INTERESSADO', 'PROPOSTA', 'FECHADO'].includes(lead.status)).length : 0;
+  const contacted = total ? lastLeads.filter((lead) => ['CONTATADO', 'INTERESSADO', 'REUNIAO', 'PROPOSTA', 'FECHADO'].includes(normalizeStatus(lead.status))).length : 0;
   const closed = total ? lastLeads.filter((lead) => lead.status === 'FECHADO').length : 0;
 
   onboardingBox.innerHTML = `
@@ -1404,6 +1581,9 @@ async function loadSystemMetrics() {
   }
 }
 
+// -----------------------------------------------------------------------------
+// Campanhas, automações, tarefas e agenda comercial
+// -----------------------------------------------------------------------------
 async function generateCampaign(leadId) {
   try {
     const response = await apiFetch('/api/campaigns/sequence', {
@@ -1801,6 +1981,9 @@ window.carregarLeadsCRM = carregarLeadsCRM;
 
 
 
+// -----------------------------------------------------------------------------
+// Inteligência comercial, relatórios, propostas e sucesso do cliente
+// -----------------------------------------------------------------------------
 async function loadCommercialIntelligence() {
   if (!authToken || (!commercialIntelligenceSummary && !commercialIntelligenceAdvice && !dashboardInsights)) return;
 
@@ -2399,6 +2582,9 @@ function showPaymentReturnMessage() {
 }
 
 
+// -----------------------------------------------------------------------------
+// Cockpit Sales OS V23 e copiloto comercial
+// -----------------------------------------------------------------------------
 async function loadV23Cockpit() {
   if (!authToken || !v23Metrics) return;
   if (v23RefreshButton) v23RefreshButton.disabled = true;

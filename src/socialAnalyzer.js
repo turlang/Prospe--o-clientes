@@ -1,4 +1,14 @@
 /**
+ * @fileoverview Extração de redes sociais e estimativa heurística de presença digital.
+ *
+ * Responsabilidade delimitada conforme a arquitetura descrita em
+ * `docs/ARQUITETURA.md`. Alterações neste arquivo devem preservar os contratos
+ * documentados e ser acompanhadas por testes quando afetarem regras de negócio.
+ *
+ * @module src/socialAnalyzer
+ */
+
+/**
  * socialAnalyzer.js
  * -----------------------------------------------------------------------------
  * Módulo acadêmico de análise de presença social.

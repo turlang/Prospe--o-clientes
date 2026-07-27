@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Auditoria defensiva de sites públicos para enriquecimento comercial de leads.
+ *
+ * Responsabilidade delimitada conforme a arquitetura descrita em
+ * `docs/ARQUITETURA.md`. Alterações neste arquivo devem preservar os contratos
+ * documentados e ser acompanhadas por testes quando afetarem regras de negócio.
+ *
+ * @module src/siteAuditor
+ */
+
 const { extractSocialLinks, estimateEngagement } = require('./socialAnalyzer');
 const { fetchPublicHttpUrl, normalizeHttpUrl, readResponseTextLimited } = require('./security/publicUrl');
 

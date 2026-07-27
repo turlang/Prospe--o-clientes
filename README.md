@@ -1,108 +1,79 @@
-# LeadHunter Pro — V23.6.1 CRM Autônomo
+# LeadHunter Pro 23.7.1
 
-SaaS de prospecção comercial, geração de leads, CRM, pipeline de vendas e gestão de assinaturas para pequenos negócios, vendedores, autônomos e agências.
+Sistema web para prospecção de estabelecimentos, qualificação de leads, CRM, automação comercial, relatórios e administração de assinaturas.
 
-## Visão geral
+## Estado da versão
 
-O LeadHunter Pro ajuda negócios a organizar a prospecção comercial, controlar leads, acompanhar oportunidades e transformar contatos em vendas.
+A versão 23.7.1 reorganiza o projeto para facilitar manutenção e avaliação técnica:
 
-O projeto demonstra uma aplicação SaaS com autenticação, CRM, planos editáveis, integração de pagamento, painel administrativo, auditoria e regras de segurança anti-abuso.
+- bootstrap separado da composição Express;
+- aplicação criada pelo padrão Application Factory;
+- 58 rotas agrupadas por domínio;
+- módulos identificados com `@fileoverview`;
+- contratos centrais documentados com JSDoc;
+- requisitos, arquitetura, API, testes e rastreabilidade formalizados;
+- verificação automática do padrão documental;
+- pacote sem dados reais, `.env` ou `node_modules`.
 
-## Principais funcionalidades
+## Funcionalidades
 
-- Propostas comerciais geradas por IA usando o mesmo provedor configurado para abordagens (Groq, Gemini ou OpenAI), com fallback local automático.
-- Campanhas comerciais inteligentes com IA/fallback local, tarefas na agenda e revisão humana antes de qualquer envio.
+- cadastro, autenticação e recuperação de senha;
+- prospecção por segmento e região;
+- pontuação e priorização de oportunidades;
+- CRM Kanban e histórico de interações;
+- abordagens comerciais com IA e fallback local;
+- campanhas, tarefas e agenda de follow-ups;
+- propostas, customer success e crescimento de clientes;
+- relatórios executivos e exportação CSV;
+- planos Trial, Pro e Agência;
+- integração com Mercado Pago;
+- painel administrativo e auditoria;
+- controles antiabuso e segurança de URLs.
 
-### Central de Propostas
-
-A V21.2 adiciona uma central para gerar propostas comerciais simples a partir dos leads do CRM. A proposta registra a oportunidade na timeline, move o lead para a etapa `PROPOSTA` e pode ser copiada para envio manual por WhatsApp ou e-mail.
-
-
-- Assistente Comercial Inteligente V21 com priorização dinâmica, próxima melhor ação e oportunidades em risco.
-
-- Cadastro e login de usuários.
-- CRM de leads com pipeline Kanban compacto.
-- Motor de Estratégias Comerciais para gerar a melhor abordagem por tipo de lead.
-- Histórico de prospecções.
-- Exportação CSV.
-- Planos Trial, Pro e Agência.
-- Trial padronizado com **10 leads totais**.
-- Integração com Mercado Pago.
-- Painel administrativo Master.
-- Edição de planos pelo Admin.
-- Auditoria de ações administrativas.
-- Controle de assinaturas e limites por plano.
-- Segurança anti-abuso, bloqueio de e-mails temporários e limite de cadastros por IP.
-- Recuperação de senha preparada para envio real por e-mail via Resend.
-
-## Stack
-
-### Back-end
-
-- Node.js
-- Express
-- MongoDB Atlas
-- Mongoose
-- JWT
-- Helmet com CSP
-- CORS
-- Mercado Pago
-
-### Front-end
-
-- HTML5
-- CSS3
-- JavaScript
-
-### Infraestrutura
-
-- Render
-- MongoDB Atlas
-- Mercado Pago
-- Resend para e-mail transacional opcional
-
-## Arquitetura resumida
+## Arquitetura
 
 ```text
 src/
-  server.js                  # bootstrap e rotas principais
-  authRoutes.js              # autenticação e recuperação de senha
-  db.js                      # conexão MongoDB/JSON local
-  planConfig.js              # fonte única dos planos
-  middleware/
-    auth.js                  # JWT
-    admin.js                 # proteção do painel Master
-    rateLimit.js             # limite simples de requisições
-    requestLogger.js         # logs HTTP
-  services/
-    billingService.js        # Mercado Pago, assinatura e expiração de plano
-    adminAuditService.js     # auditoria administrativa
-    emailService.js          # recuperação de senha via Resend/fallback local
-    salesStrategyEngine.js    # diagnóstico do lead, estratégia e abordagem comercial
-  models/
-  data/
-
-public/
-  index.html
-  admin.html
-  app.js
-  admin.js
-  style.css
-
-README.md
-CHANGELOG.md
-docs/RELEASE_NOTES.md
-docs/ROADMAP.md
-docs/ARQUITETURA.md
+  server.js                 # bootstrap: banco e porta HTTP
+  app.js                    # factory: middlewares e composição
+  routes/                   # adaptadores HTTP por domínio
+    systemRoutes.js
+    billingRoutes.js
+    leadRoutes.js
+    adminRoutes.js
+    commercialRoutes.js
+  services/                 # regras comerciais e integrações
+  core/                     # Sales OS, IA, memória e automação
+  middleware/               # autenticação, autorização, logs e limites
+  security/                 # validação de recursos externos
+  models/                   # esquemas Mongoose
+  types/domain.js           # contratos JSDoc
+  *Store.js                 # persistência local permitida
+public/                     # interface web
+scripts/                    # validações automatizadas
+tests/                      # suíte node:test
+docs/                       # documentação técnica e acadêmica
 ```
 
-## Como executar
+Detalhes: [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md).
+
+## Requisitos de ambiente
+
+- Node.js 20, 21 ou 22;
+- npm 10 ou superior;
+- MongoDB para produção;
+- credenciais externas conforme as funcionalidades utilizadas.
+
+## Instalação
 
 ```bash
 npm ci
+cp .env.example .env
 npm run check
 npm run dev
 ```
+
+No Windows PowerShell, crie manualmente `.env` a partir de `.env.example` quando `cp` não estiver disponível.
 
 Aplicação local:
 
@@ -110,56 +81,35 @@ Aplicação local:
 http://localhost:3000
 ```
 
-## Scripts
+Painel administrativo:
+
+```text
+http://localhost:3000/admin
+```
+
+## Validação
 
 ```bash
 npm run check
-npm test
 ```
 
-- `check:syntax`: valida recursivamente todos os arquivos JavaScript do projeto.
-- `check`: executa a validação completa de sintaxe e a suíte de testes.
-- `test`: executa testes automatizados de regras críticas, segurança e modularização.
+O comando executa:
 
-## Variáveis de ambiente
+1. `check:syntax`: sintaxe de todos os arquivos JavaScript;
+2. `check:docs`: cabeçalhos, documentos obrigatórios e limites estruturais;
+3. `test`: regras de negócio, segurança, regressões e arquitetura.
 
-```env
-PORT=3000
-NODE_ENV=development
-REQUIRE_MONGODB=true
-DNS_SERVERS=8.8.8.8,1.1.1.1
-JWT_SECRET=troque-este-segredo-por-uma-chave-grande-e-aleatoria
-JWT_EXPIRES_IN=7d
-JWT_ISSUER=leadhunter-pro
-JWT_AUDIENCE=leadhunter-web
-MONGODB_URI=
-GOOGLE_PLACES_API_KEY=cole_sua_chave_google_places_aqui
-PLACES_PROVIDER=new
-ALLOW_INCOMPLETE_CONTACTS=false
-AUDIT_WEBSITES=true
-PUBLIC_APP_URL=http://localhost:3000
-CORS_ORIGINS=
-ALLOW_SIMULATED_BILLING=true
-MERCADO_PAGO_PUBLIC_KEY=
-MERCADO_PAGO_ACCESS_TOKEN=
-MERCADO_PAGO_WEBHOOK_URL=http://localhost:3000/api/billing/webhook
-PLAN_DURATION_DAYS=30
-REGISTER_IP_DAILY_LIMIT=3
-RESEND_API_KEY=
-MAIL_FROM=LeadHunter Pro <noreply@seudominio.com>
-```
+## Configuração
 
-> Em produção, `JWT_SECRET` é obrigatório. O servidor não aceita mais segredo padrão quando `NODE_ENV=production`.
+Use `.env.example` como referência. Em produção:
 
-
-## Segurança operacional
-
-- Em produção, MongoDB é obrigatório e o fallback em JSON local é bloqueado.
-- `PUBLIC_APP_URL`, `JWT_SECRET`, `MONGODB_URI` e as credenciais do Mercado Pago devem ser configuradas no ambiente de produção.
-- Checkout simulado funciona somente fora de produção e pode ser desligado com `ALLOW_SIMULATED_BILLING=false`.
-- A auditoria de sites bloqueia localhost, redes privadas, endereços reservados e redirecionamentos inseguros.
-- Os arquivos `data/*.json` são ignorados pelo Git porque podem conter leads, usuários e hashes de senha.
-- Após redefinir a senha, tokens JWT anteriores deixam de ser aceitos.
+- defina um `JWT_SECRET` longo e aleatório;
+- configure `MONGODB_URI` e mantenha `REQUIRE_MONGODB=true`;
+- defina `PUBLIC_APP_URL` e origens CORS explícitas;
+- desative cobrança simulada;
+- configure credenciais do Mercado Pago;
+- habilite Resend para recuperação real de senha;
+- não registre dados pessoais ou segredos em logs.
 
 ## Regra oficial do Trial
 
@@ -173,186 +123,24 @@ Follow-ups manuais
 Uso único por usuário/dispositivo
 ```
 
-## Painel administrativo
-
-Acesso:
-
-```text
-/admin
-```
-
-Recursos do Admin:
-
-- Listar usuários.
-- Alterar plano de usuários.
-- Suspender ou reativar contas.
-- Promover ou remover administradores.
-- Editar planos comerciais.
-- Ver pagamentos.
-- Ver segurança anti-abuso.
-- Consultar auditoria administrativa.
-
-Usuário administrador esperado:
-
-```json
-{
-  "role": "admin"
-}
-```
-
-## Regras de segurança
-
-- Limite de cadastros por IP.
-- Trial único por usuário/dispositivo.
-- Bloqueio de e-mails temporários.
-- Auditoria de tentativas.
-- Auditoria de ações administrativas.
-- Uso controlado por plano.
-- Rotas de diagnóstico protegidas por autenticação admin.
-- CSP ativa pelo Helmet.
-
-## Diferenciais técnicos
-
-- Produto com proposta comercial clara.
-- CRM funcional.
-- Controle de planos e assinaturas.
-- Integração com pagamento real.
-- Backend com MongoDB e autenticação JWT.
-- Painel administrativo completo.
-- Regras anti-abuso.
-- Onboarding de uso no dashboard.
-- Abordagens baseadas em estratégia consultiva, PAS, prova social, curiosidade ou diagnóstico.
-- Testes automatizados de regras críticas.
-
-## Validação da versão
-
-```bash
-npm run check
-```
-
-A versão V20 foi validada com `npm run check` e testes automatizados.
-
-## Status
-
-Projeto em estágio avançado para demonstração comercial, validação de mercado e portfólio profissional.
-
 ## Documentação
 
-- `docs/RELEASE_NOTES.md`: histórico consolidado das releases antigas.
-- `docs/ROADMAP.md`: próximas sprints do CRM Comercial Inteligente.
-- `docs/ARQUITETURA.md`: organização técnica e direção de evolução.
-- `CHANGELOG.md`: mudanças técnicas por versão.
+| Documento | Finalidade |
+|---|---|
+| [`RELATORIO_ACADEMICO.md`](docs/RELATORIO_ACADEMICO.md) | texto-base para apresentação acadêmica |
+| [`ESPECIFICACAO_REQUISITOS.md`](docs/ESPECIFICACAO_REQUISITOS.md) | requisitos funcionais e não funcionais |
+| [`ARQUITETURA.md`](docs/ARQUITETURA.md) | camadas, fluxos e responsabilidades |
+| [`API.md`](docs/API.md) | catálogo de endpoints |
+| [`PLANO_DE_TESTES.md`](docs/PLANO_DE_TESTES.md) | estratégia e critérios de aceite |
+| [`MATRIZ_RASTREABILIDADE.md`](docs/MATRIZ_RASTREABILIDADE.md) | relação entre requisito, código e teste |
+| [`GUIA_DE_CODIGO.md`](docs/GUIA_DE_CODIGO.md) | padrão de comentários e implementação |
+| [`decisoes/`](docs/decisoes/) | registros de decisões arquiteturais |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | fluxo de contribuição |
 
-## Posicionamento no portfólio
+## Limitações conhecidas
 
-Este projeto deve ser apresentado como um case Full Stack SaaS com foco em prospecção, CRM, assinatura, pagamentos, segurança, auditoria e inteligência comercial aplicada à venda consultiva.
+`public/app.js` continua amplo por ser um controlador legado. Ele foi organizado por seções e documentado, mas sua divisão em módulos deve ocorrer de forma incremental, acompanhada por testes de interface. A CSP ainda permite handlers inline por compatibilidade; a meta futura é remover essa exceção.
 
-### IA opcional para abordagens comerciais
+## Uso responsável
 
-O sistema funciona sem IA externa usando o motor local de estratégias. Para gerar abordagens mais naturais e personalizadas por lead, configure um provedor de IA.
-
-#### Opção recomendada: GroqCloud
-
-No Render, adicione estas variáveis em **Environment Variables**:
-
-```env
-AI_PROVIDER=groq
-GROQ_API_KEY=sua_chave_groq
-GROQ_MODEL=llama-3.3-70b-versatile
-AI_APPROACHES_ENABLED=true
-AI_APPROACH_TIMEOUT_MS=20000
-AI_APPROACH_TEMPERATURE=0.85
-AI_MAX_TOKENS=1200
-```
-
-#### Gemini opcional
-
-```env
-AI_PROVIDER=gemini
-GEMINI_API_KEY=sua_chave_do_google_ai_studio
-GEMINI_MODEL=gemini-2.0-flash
-GEMINI_AUTO_MODEL=true
-AI_APPROACHES_ENABLED=true
-```
-
-#### OpenAI opcional
-
-```env
-AI_PROVIDER=openai
-OPENAI_API_KEY=sua_chave_openai
-OPENAI_APPROACH_MODEL=gpt-4o-mini
-AI_APPROACHES_ENABLED=true
-```
-
-Também é possível usar `AI_PROVIDER=auto`; nesse modo, o sistema tenta Groq primeiro, depois Gemini, depois OpenAI e, se nada estiver configurado, usa o motor local.
-
-Na interface, a lateral mostra o status da **IA Comercial**. Cada abordagem também exibe o motor utilizado: Groq, Gemini, OpenAI, fallback local ou motor local.
-
-Quando a IA estiver indisponível, o sistema volta automaticamente para o motor local com variações e mostra uma mensagem amigável ao usuário.
-
-#### Prompt Engine Comercial V20.7
-
-A geração de abordagem não envia apenas um texto simples para a IA. Antes da chamada ao provedor, o sistema monta um briefing comercial com:
-
-- perfil do lead;
-- maturidade digital;
-- dor principal;
-- oportunidades detectadas;
-- estratégia recomendada;
-- canal de contato;
-- histórico recente do lead;
-- abordagem anterior, quando houver.
-
-Com isso, os botões **Gerar abordagem**, **Gerar outra versão** e **Melhorar esta abordagem** produzem mensagens menos genéricas, mais próximas da realidade do lead e com tom de vendedor experiente. A IA foi orientada a evitar jargões técnicos e traduzir tecnologia em benefícios simples, como mais chamadas no WhatsApp, mais agendamentos, mais pedidos, mais orçamentos e mais confiança. Cada abordagem gerada também é registrada na timeline comercial do lead para reduzir repetição nas próximas gerações.
-
-## Consultor IA Multicanal
-
-A partir da versão 20.8, o botão **Consultor IA** pode gerar peças comerciais específicas para cada canal:
-
-- WhatsApp;
-- E-mail;
-- Roteiro de ligação;
-- Follow-up;
-- Tratamento de objeção;
-- Convite para diagnóstico.
-
-Cada canal usa regras próprias no Prompt Engine. Quando Groq, Gemini ou OpenAI estiverem configurados, a IA externa gera a peça. Se a IA falhar ou não estiver configurada, o motor local adapta a mensagem automaticamente para o canal escolhido.
-
-- Agenda comercial inteligente com tarefas agrupadas por urgência.
-
-
-- Relatórios comerciais gerenciais.
-
-
-## V21.4 — Carteira de clientes e pós-venda
-
-A versão 21.4 adiciona uma camada de fechamento comercial ao CRM. Depois que uma proposta é aceita, o usuário pode marcar o lead como **FECHADO**, acompanhar a carteira na aba **Clientes**, visualizar receita estimada, ticket médio e plano inicial de onboarding.
-
-Novos endpoints:
-
-- `GET /api/customers/summary`
-- `POST /api/customers/close`
-- `POST /api/customers/lost`
-
-## V23.3 — Copiloto Comercial IA
-
-O Cockpit agora possui um chat persistente conectado aos dados reais da operação. O copiloto considera pipeline, agenda, histórico, propostas, campanhas, clientes e alertas antes de responder.
-
-Principais rotas:
-
-```text
-GET    /api/v23/copilot/history
-DELETE /api/v23/copilot/history
-GET    /api/v23/copilot/briefing
-POST   /api/v23/copilot/chat
-```
-
-O provedor continua sendo definido pelas mesmas variáveis `AI_PROVIDER`, `GROQ_API_KEY`, `GEMINI_API_KEY` ou `OPENAI_API_KEY`. Sem provedor disponível, o copiloto usa respostas locais fundamentadas nos dados do CRM.
-
-
-## V23.4 — Administração Executiva
-
-- Menu lateral com rolagem própria em telas menores.
-- Painel Admin redesenhado com visão executiva moderna.
-- Métricas de uso, conversão, ativação, MRR, receita e engajamento.
-- Gráficos de receita, consumo de leads, crescimento e distribuição de planos.
+A ferramenta deve ser utilizada de acordo com a legislação aplicável, termos dos provedores e boas práticas de privacidade. A existência de um dado público não autoriza mensagens abusivas, coleta excessiva ou disparos não solicitados.

@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Testes automatizados de regressão para o componente `autonomousCommercialService.test`.
+ *
+ * Responsabilidade delimitada conforme a arquitetura descrita em
+ * `docs/ARQUITETURA.md`. Alterações neste arquivo devem preservar os contratos
+ * documentados e ser acompanhadas por testes quando afetarem regras de negócio.
+ *
+ * @module tests/autonomousCommercialService.test
+ */
+
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { buildAutonomousCommandCenter, buildPipelineHealth, buildLocalCopilotAnswer } = require('../src/services/autonomousCommercialService');
@@ -14,7 +24,7 @@ test('V22 cria central autônoma com prioridades, previsão e saúde do pipeline
   assert.equal(center.summary.overdueTasks, 1);
   assert.equal(center.forecast.proposals, 1);
   assert.ok(center.dailyPlan.length >= 1);
-  assert.equal(center.pipelineHealth.stages.length, 4);
+  assert.equal(center.pipelineHealth.stages.length, 5);
 });
 
 test('copiloto local responde perguntas sobre receita sem inventar fonte externa', () => {

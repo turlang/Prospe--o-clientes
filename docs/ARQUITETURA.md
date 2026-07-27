@@ -1,44 +1,108 @@
-# Arquitetura — LeadHunter Pro
+# Arquitetura do LeadHunter Pro
 
-## Visão
-O projeto é um SaaS de prospecção comercial com CRM, planos, pagamentos, painel administrativo e motor de estratégias comerciais.
+## 1. Visão geral
 
-## Camadas atuais
-- `public/`: interface HTML/CSS/JS.
-- `src/server.js`: servidor Express e rotas principais.
-- `src/services/`: regras de negócio reutilizáveis.
-- `src/models/`: modelos MongoDB/Mongoose.
-- `src/middleware/`: autenticação, admin, logs e rate limit.
-- `tests/`: testes automatizados.
+A aplicação adota uma arquitetura em camadas com composição explícita. O objetivo é impedir que detalhes de HTTP, persistência e integrações externas contaminem regras comerciais reutilizáveis.
 
-## Nova direção
-A evolução deve continuar migrando responsabilidades de `server.js` para services e rotas dedicadas, mantendo entregas pequenas e validadas.
-
-## Motor de Estratégias Comerciais
-O arquivo `src/services/salesStrategyEngine.js` centraliza a lógica de diagnóstico do lead, seleção de estratégia, mensagem personalizada e sequência sugerida de follow-up.
-
-## V20.7 — Prompt Engine Comercial Humanizado
-
-A geração de abordagem agora passa por uma camada de briefing antes da IA:
-
-```text
-Lead salvo
-  -> Motor local de estratégia
-  -> Perfil comercial do lead
-  -> Memória comercial/timeline
-  -> Prompt Engine Comercial
-  -> Provedor de IA (Groq/Gemini/OpenAI)
-  -> Fallback local quando necessário
+```mermaid
+flowchart TD
+  START[src/server.js] --> FACTORY[src/app.js createApp]
+  FACTORY --> MIDDLEWARE[Middlewares]
+  FACTORY --> ROUTES[Rotas por domínio]
+  ROUTES --> SERVICES[Serviços de domínio]
+  SERVICES --> CORE[Núcleo Sales OS]
+  SERVICES --> STORE[Repositórios e modelos]
+  STORE --> MONGO[(MongoDB)]
+  STORE -. apenas desenvolvimento .-> JSON[(JSON local)]
+  SERVICES --> PROVIDERS[Provedores externos]
 ```
 
-O objetivo é impedir mensagens genéricas e evitar que a IA fale como técnico. O prompt enviado à IA contém:
+## 2. Responsabilidades
 
-- empresa, segmento, score e maturidade digital;
-- dor principal e oportunidades detectadas;
-- estratégia recomendada;
-- histórico recente de abordagens e respostas;
-- modo de geração: nova, variação, melhoria ou follow-up;
-- regras de qualidade para evitar clichês, informações inventadas e jargões técnicos.
-- orientação para falar como vendedor consultivo de serviços tecnológicos para clientes que não dominam tecnologia.
+### `src/server.js`
 
-Cada abordagem gerada é registrada na timeline do lead para que futuras versões não repitam o mesmo argumento.
+Ponto de entrada. Carrega ambiente, conecta persistência, cria a aplicação e abre a porta. Não define rotas nem regras de negócio.
+
+### `src/app.js`
+
+Implementa o padrão Application Factory. Configura Helmet, CORS, parser JSON, logging, rate limit e composição das rotas. Não inicia o servidor.
+
+### `src/routes/`
+
+Adapta o protocolo HTTP aos serviços:
+
+- `systemRoutes.js`: páginas, saúde e diagnóstico;
+- `billingRoutes.js`: consumo, checkout e reconciliação;
+- `leadRoutes.js`: prospecção, CRM e exportação;
+- `adminRoutes.js`: usuários, planos, segurança e auditoria;
+- `commercialRoutes.js`: campanhas, agenda, propostas, clientes e relatórios.
+
+### `src/services/`
+
+Contém regras comerciais, construção de relatórios, geração de campanhas, propostas, billing e integrações. Serviços devem ser independentes do DOM.
+
+### `src/core/`
+
+Núcleo do Sales OS: copiloto, memória, prompts, automação e inteligência. Deve permanecer desacoplado das rotas legadas.
+
+### Persistência
+
+- MongoDB/Mongoose: modo obrigatório em produção;
+- JSON local: fallback permitido somente em desenvolvimento autorizado;
+- `jsonFileStore.js`: escrita atômica e serialização para reduzir corrupção.
+
+### Interface
+
+`public/` contém páginas estáticas e controladores JavaScript. `public/app.js` ainda é um controlador legado amplo; está organizado por seções e registrado como dívida técnica de redução incremental.
+
+## 3. Fluxo de uma prospecção
+
+```mermaid
+sequenceDiagram
+  actor User as Usuário
+  participant UI as Interface
+  participant API as leadRoutes
+  participant Places as Provedor de lugares
+  participant Score as Scorer
+  participant Store as Repositório
+  participant Usage as Controle de uso
+
+  User->>UI: informa segmento e região
+  UI->>API: POST /api/prospectar
+  API->>API: valida entrada e limite
+  API->>Places: consulta estabelecimentos
+  Places-->>API: resultados normalizados
+  API->>Score: qualifica e filtra
+  Score-->>API: leads priorizados
+  API->>Store: persiste por proprietário
+  Store-->>API: confirmação
+  API->>Usage: contabiliza leads persistidos
+  API-->>UI: resultados e consumo
+```
+
+## 4. Fluxo de autorização
+
+1. O cliente envia JWT no cabeçalho `Authorization`.
+2. `requireAuth` verifica assinatura, emissor e audiência.
+3. O usuário é recarregado da persistência.
+4. Conta suspensa ou inexistente é rejeitada.
+5. Rotas administrativas aplicam `requireAdmin`.
+6. Consultas de domínio sempre recebem o identificador do proprietário.
+
+## 5. Dependências externas
+
+| Dependência | Uso | Falha esperada |
+|---|---|---|
+| MongoDB | persistência de produção | bootstrap falha quando obrigatório |
+| Google Places | busca de estabelecimentos | erro controlado e diagnóstico admin |
+| Mercado Pago | checkout e assinatura | nenhum plano pago é ativado sem validação |
+| Resend | recuperação de senha | fallback de desenvolvimento sem expor token em produção |
+| Provedor de IA | textos comerciais | fallback local determinístico |
+
+## 6. Decisões arquiteturais
+
+As decisões relevantes ficam em `docs/decisoes/` e não devem ser alteradas silenciosamente. Uma nova decisão estrutural deve gerar um novo ADR.
+
+## Vocabulário centralizado do funil
+
+A partir da versão 23.7.1, `src/domain/leadStatus.js` é a fonte única de verdade das etapas comerciais. Serviços não devem criar nomes próprios de status. Intenções como “qualificando” e eventos como “respondeu” pertencem à timeline de interações; a posição do lead deve usar exclusivamente as etapas descritas em `docs/FUNIL_COMERCIAL.md`.

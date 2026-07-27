@@ -1,3 +1,16 @@
+/**
+ * @fileoverview Controlador do painel administrativo para usuários, planos, auditoria e pagamentos.
+ *
+ * Responsabilidade delimitada conforme a arquitetura descrita em
+ * `docs/ARQUITETURA.md`. Alterações neste arquivo devem preservar os contratos
+ * documentados e ser acompanhadas por testes quando afetarem regras de negócio.
+ *
+ * @module public/admin
+ */
+
+// -----------------------------------------------------------------------------
+// Estado administrativo e inicialização
+// -----------------------------------------------------------------------------
 const adminToken = localStorage.getItem('authToken') || '';
 const adminStats = document.querySelector('#adminStats');
 const adminUsers = document.querySelector('#adminUsers');

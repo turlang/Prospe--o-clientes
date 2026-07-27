@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Esquema Mongoose e modelo de persistência `Lead`.
+ *
+ * Responsabilidade delimitada conforme a arquitetura descrita em
+ * `docs/ARQUITETURA.md`. Alterações neste arquivo devem preservar os contratos
+ * documentados e ser acompanhadas por testes quando afetarem regras de negócio.
+ *
+ * @module src/models/Lead
+ */
+
 const mongoose = require('mongoose');
 
 const leadSchema = new mongoose.Schema(

@@ -1,8 +1,18 @@
+/**
+ * @fileoverview Componente do núcleo Sales OS `cockpitService`, independente da camada de apresentação.
+ *
+ * Responsabilidade delimitada conforme a arquitetura descrita em
+ * `docs/ARQUITETURA.md`. Alterações neste arquivo devem preservar os contratos
+ * documentados e ser acompanhadas por testes quando afetarem regras de negócio.
+ *
+ * @module src/core/commercial/cockpitService
+ */
+
 const { buildAutonomousCommandCenter } = require('../../services/autonomousCommercialService');
+const { normalizeLeadStatus } = require('../../domain/leadStatus');
 
 function normalizeStatus(status) {
-  const value = String(status || 'NOVO').toUpperCase();
-  return value === 'REUNIAO' ? 'PROPOSTA' : value;
+  return normalizeLeadStatus(status);
 }
 
 function parseMoney(value) {
@@ -68,7 +78,7 @@ function buildGlobalTimeline(leads = [], tasks = [], limit = 30) {
 }
 
 function buildStageMetrics(leads = []) {
-  const stages = ['NOVO', 'CONTATADO', 'INTERESSADO', 'PROPOSTA', 'FECHADO'];
+  const stages = ['NOVO', 'CONTATADO', 'INTERESSADO', 'REUNIAO', 'PROPOSTA', 'FECHADO'];
   const rows = Array.isArray(leads) ? leads : [];
   return stages.map((status, index) => {
     const stageLeads = rows.filter((lead) => normalizeStatus(lead.status) === status);
@@ -86,7 +96,7 @@ function buildStageMetrics(leads = []) {
 function buildCockpit({ leads = [], tasks = [], now = new Date(), userName = '' } = {}) {
   const commandCenter = buildAutonomousCommandCenter(leads, tasks, now);
   const rows = Array.isArray(leads) ? leads : [];
-  const active = rows.filter((lead) => !['FECHADO', 'SEM_INTERESSE', 'PERDIDO'].includes(normalizeStatus(lead.status)));
+  const active = rows.filter((lead) => !['FECHADO', 'SEM_INTERESSE'].includes(normalizeStatus(lead.status)));
   const closed = rows.filter((lead) => normalizeStatus(lead.status) === 'FECHADO');
   const proposals = rows.filter((lead) => normalizeStatus(lead.status) === 'PROPOSTA');
   const completedTasks = (Array.isArray(tasks) ? tasks : []).filter((task) => task.done);

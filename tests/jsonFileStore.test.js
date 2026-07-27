@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Testes automatizados de regressão para o componente `jsonFileStore.test`.
+ *
+ * Responsabilidade delimitada conforme a arquitetura descrita em
+ * `docs/ARQUITETURA.md`. Alterações neste arquivo devem preservar os contratos
+ * documentados e ser acompanhadas por testes quando afetarem regras de negócio.
+ *
+ * @module tests/jsonFileStore.test
+ */
+
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs/promises');

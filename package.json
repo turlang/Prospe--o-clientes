@@ -1,15 +1,16 @@
 {
   "name": "agente-prospeccao-real",
-  "version": "23.6.1",
-  "description": "Sales OS V23.6 com visão geral gráfica, pipeline executivo e relatórios interativos",
+  "version": "23.7.1",
+  "description": "Sales OS para prospecção, CRM e automação comercial com arquitetura modular e documentação acadêmica",
   "main": "src/server.js",
   "type": "commonjs",
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "check": "npm run check:syntax && npm test",
-    "test": "node --test tests/*.test.js",
-    "check:syntax": "node scripts/check-all.js"
+    "check": "npm run check:syntax && npm run check:docs && npm test",
+    "check:syntax": "node scripts/check-all.js",
+    "check:docs": "node scripts/check-documentation.js",
+    "test": "node --test tests/*.test.js"
   },
   "dependencies": {
     "@fast-csv/format": "^5.0.5",

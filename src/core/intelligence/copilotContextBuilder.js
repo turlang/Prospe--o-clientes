@@ -1,8 +1,18 @@
+/**
+ * @fileoverview Componente do núcleo Sales OS `copilotContextBuilder`, independente da camada de apresentação.
+ *
+ * Responsabilidade delimitada conforme a arquitetura descrita em
+ * `docs/ARQUITETURA.md`. Alterações neste arquivo devem preservar os contratos
+ * documentados e ser acompanhadas por testes quando afetarem regras de negócio.
+ *
+ * @module src/core/intelligence/copilotContextBuilder
+ */
+
 const { buildCockpit } = require('../commercial/cockpitService');
+const { normalizeLeadStatus } = require('../../domain/leadStatus');
 
 function normalizeStatus(status) {
-  const value = String(status || 'NOVO').toUpperCase();
-  return value === 'REUNIAO' ? 'PROPOSTA' : value;
+  return normalizeLeadStatus(status);
 }
 
 function compactLead(lead = {}) {

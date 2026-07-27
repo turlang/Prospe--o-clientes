@@ -1,4 +1,14 @@
 /**
+ * @fileoverview Serviço de domínio `customerSuccessService` responsável por regras comerciais reutilizáveis.
+ *
+ * Responsabilidade delimitada conforme a arquitetura descrita em
+ * `docs/ARQUITETURA.md`. Alterações neste arquivo devem preservar os contratos
+ * documentados e ser acompanhadas por testes quando afetarem regras de negócio.
+ *
+ * @module src/services/customerSuccessService
+ */
+
+/**
  * customerSuccessService.js
  * -----------------------------------------------------------------------------
  * V21.4 — Carteira de clientes e pós-venda.
@@ -13,8 +23,10 @@ function getLeadId(lead = {}) {
   return String(lead.placeId || lead.nome || '').trim();
 }
 
-function normalizeStatus(status = '') {
-  return String(status || 'NOVO').trim().toUpperCase();
+const { normalizeLeadStatus } = require('../domain/leadStatus');
+
+function normalizeStatus(status = ''){
+  return normalizeLeadStatus(status);
 }
 
 function estimateTicketValue(value) {

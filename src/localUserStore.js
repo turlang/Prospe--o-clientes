@@ -1,4 +1,14 @@
 /**
+ * @fileoverview Persistência local de usuários utilizada apenas nos ambientes permitidos.
+ *
+ * Responsabilidade delimitada conforme a arquitetura descrita em
+ * `docs/ARQUITETURA.md`. Alterações neste arquivo devem preservar os contratos
+ * documentados e ser acompanhadas por testes quando afetarem regras de negócio.
+ *
+ * @module src/localUserStore
+ */
+
+/**
  * Persistência local de usuários para desenvolvimento sem MongoDB.
  * Escritas são serializadas e atômicas para evitar perda de dados concorrente.
  */

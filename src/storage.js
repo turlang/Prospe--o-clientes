@@ -1,4 +1,14 @@
 /**
+ * @fileoverview Repositório de leads com adaptação entre MongoDB e armazenamento JSON local.
+ *
+ * Responsabilidade delimitada conforme a arquitetura descrita em
+ * `docs/ARQUITETURA.md`. Alterações neste arquivo devem preservar os contratos
+ * documentados e ser acompanhadas por testes quando afetarem regras de negócio.
+ *
+ * @module src/storage
+ */
+
+/**
  * storage.js
  * -----------------------------------------------------------------------------
  * Camada única de persistência dos leads.
@@ -11,6 +21,7 @@ const path = require('path');
 const Lead = require('./models/Lead');
 const { hasMongoUri } = require('./db');
 const { readJsonFile, writeJsonFileAtomic, withJsonFileLock } = require('./utils/jsonFileStore');
+const { normalizeLeadStatus, isContactedStatus } = require('./domain/leadStatus');
 
 const DB_PATH = path.join(__dirname, '..', 'data', 'leads.json');
 
@@ -25,6 +36,11 @@ async function persistAllLocalLeads(leads) {
   return sorted;
 }
 
+function normalizeStoredLead(lead) {
+  if (!lead || typeof lead !== 'object') return lead;
+  return { ...lead, status: normalizeLeadStatus(lead.status) };
+}
+
 function belongsToUser(lead, userId) {
   if (!userId) return true;
   return String(lead.__userId || '') === String(userId);
@@ -33,11 +49,12 @@ function belongsToUser(lead, userId) {
 async function readLeads(userId = null) {
   if (hasMongoUri() && userId) {
     const docs = await Lead.find({ userId }).sort({ 'data.score': -1, updatedAt: -1 }).lean();
-    return docs.map((doc) => doc.data);
+    return docs.map((doc) => normalizeStoredLead(doc.data));
   }
 
   const leads = await readAllLocalLeads();
-  return userId ? leads.filter((lead) => belongsToUser(lead, userId)) : leads;
+  const normalized = leads.map(normalizeStoredLead);
+  return userId ? normalized.filter((lead) => belongsToUser(lead, userId)) : normalized;
 }
 
 async function saveLeads(newLeads, userId = null) {
@@ -50,7 +67,7 @@ async function saveLeads(newLeads, userId = null) {
       const data = {
         ...previousData,
         ...lead,
-        status: previousData.status || lead.status || 'NOVO',
+        status: normalizeLeadStatus(previousData.status || lead.status || 'NOVO'),
         interacoes: previousData.interacoes || lead.interacoes || [],
         atualizadoEm: new Date().toISOString()
       };
@@ -78,7 +95,7 @@ async function saveLeads(newLeads, userId = null) {
         ...previous,
         ...lead,
         __userId: userId || previous.__userId || 'global',
-        status: previous.status || lead.status || 'NOVO',
+        status: normalizeLeadStatus(previous.status || lead.status || 'NOVO'),
         interacoes: previous.interacoes || lead.interacoes || [],
         atualizadoEm: new Date().toISOString()
       });
@@ -97,7 +114,7 @@ async function updateLeadStatus(leadId, status, interaction = null, userId = nul
     const interacoes = Array.isArray(doc.data.interacoes) ? doc.data.interacoes : [];
     doc.data = {
       ...doc.data,
-      status,
+      status: normalizeLeadStatus(status),
       atualizadoEm: new Date().toISOString(),
       interacoes: interaction ? [...interacoes, interaction] : interacoes
     };
@@ -115,7 +132,7 @@ async function updateLeadStatus(leadId, status, interaction = null, userId = nul
     const interacoes = Array.isArray(current.interacoes) ? current.interacoes : [];
     allLeads[index] = {
       ...current,
-      status,
+      status: normalizeLeadStatus(status),
       atualizadoEm: new Date().toISOString(),
       interacoes: interaction ? [...interacoes, interaction] : interacoes
     };
@@ -167,7 +184,7 @@ async function updateLeadMeta(leadId, updates = {}, interaction = null, userId =
 async function getLeadStats(userId = null) {
   const leads = await readLeads(userId);
   const byStatus = leads.reduce((acc, lead) => {
-    const status = lead.status || 'NOVO';
+    const status = normalizeLeadStatus(lead.status);
     acc[status] = (acc[status] || 0) + 1;
     return acc;
   }, {});
@@ -176,9 +193,9 @@ async function getLeadStats(userId = null) {
     total: leads.length,
     favoritos: leads.filter((lead) => lead.favorito).length,
     quentes: leads.filter((lead) => Number(lead.score || 0) >= 80).length,
-    contatados: leads.filter((lead) => ['CONTATADO', 'INTERESSADO', 'REUNIAO', 'PROPOSTA', 'FECHADO'].includes(lead.status)).length,
-    fechados: leads.filter((lead) => lead.status === 'FECHADO').length,
-    taxaContato: leads.length ? Math.round((leads.filter((lead) => ['CONTATADO', 'INTERESSADO', 'REUNIAO', 'PROPOSTA', 'FECHADO'].includes(lead.status)).length / leads.length) * 100) : 0,
+    contatados: leads.filter((lead) => isContactedStatus(lead.status)).length,
+    fechados: leads.filter((lead) => normalizeLeadStatus(lead.status) === 'FECHADO').length,
+    taxaContato: leads.length ? Math.round((leads.filter((lead) => isContactedStatus(lead.status)).length / leads.length) * 100) : 0,
     byStatus
   };
 }

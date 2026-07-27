@@ -1,4 +1,14 @@
 /**
+ * @fileoverview Contabilização local de consumo diário e total por usuário.
+ *
+ * Responsabilidade delimitada conforme a arquitetura descrita em
+ * `docs/ARQUITETURA.md`. Alterações neste arquivo devem preservar os contratos
+ * documentados e ser acompanhadas por testes quando afetarem regras de negócio.
+ *
+ * @module src/localUsageStore
+ */
+
+/**
  * Controle de uso do trial/planos.
  * MongoDB em produção; JSON local com escrita atômica em desenvolvimento.
  */

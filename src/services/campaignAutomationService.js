@@ -1,4 +1,14 @@
 /**
+ * @fileoverview Serviço de domínio `campaignAutomationService` responsável por regras comerciais reutilizáveis.
+ *
+ * Responsabilidade delimitada conforme a arquitetura descrita em
+ * `docs/ARQUITETURA.md`. Alterações neste arquivo devem preservar os contratos
+ * documentados e ser acompanhadas por testes quando afetarem regras de negócio.
+ *
+ * @module src/services/campaignAutomationService
+ */
+
+/**
  * campaignAutomationService.js
  * -----------------------------------------------------------------------------
  * V21.6 — Campanhas comerciais inteligentes.
@@ -12,11 +22,12 @@
 const { buildCampaignSequence } = require('../campaignEngine');
 const { generateAiJsonContent } = require('./aiApproachService');
 const { estimateTicketValue } = require('./customerSuccessService');
+const { normalizeLeadStatus } = require('../domain/leadStatus');
 
-const CAMPAIGNABLE_STATUSES = new Set(['NOVO', 'CONTATADO', 'INTERESSADO', 'PROPOSTA']);
+const CAMPAIGNABLE_STATUSES = new Set(['NOVO', 'CONTATADO', 'INTERESSADO', 'REUNIAO', 'PROPOSTA']);
 
 function normalizeStatus(status = '') {
-  return String(status || 'NOVO').trim().toUpperCase();
+  return normalizeLeadStatus(status);
 }
 
 function getLeadId(lead = {}) {
@@ -49,6 +60,7 @@ function inferCampaignObjective(lead = {}) {
   const segment = getLeadSegment(lead).toLowerCase();
 
   if (status === 'PROPOSTA') return 'reativar proposta e levar para decisão sem pressionar';
+  if (status === 'REUNIAO') return 'confirmar reunião, alinhar diagnóstico e definir o próximo passo';
   if (status === 'INTERESSADO') return 'transformar interesse em conversa objetiva ou proposta';
   if (status === 'CONTATADO') return 'gerar resposta com valor e retomar a conversa';
 
@@ -79,7 +91,7 @@ function classifyCampaignLead(lead = {}) {
   let priority = 'BAIXA';
   let reason = 'Lead pode ser nutrido com uma abordagem leve.';
 
-  if (status === 'INTERESSADO' || status === 'PROPOSTA' || score >= 80) {
+  if (['INTERESSADO', 'REUNIAO', 'PROPOSTA'].includes(status) || score >= 80) {
     priority = 'ALTA';
     reason = 'Lead tem sinais comerciais fortes ou já avançou no pipeline.';
   } else if (score >= 60 || hasPhone || !hasSite) {

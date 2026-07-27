@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Componente do núcleo Sales OS `learningEngine`, independente da camada de apresentação.
+ *
+ * Responsabilidade delimitada conforme a arquitetura descrita em
+ * `docs/ARQUITETURA.md`. Alterações neste arquivo devem preservar os contratos
+ * documentados e ser acompanhadas por testes quando afetarem regras de negócio.
+ *
+ * @module src/core/learning/learningEngine
+ */
+
 function normalizeOutcome(value) {
   const outcome = String(value || '').trim().toLowerCase();
   if (['won', 'fechado', 'ganho', 'success'].includes(outcome)) return 'won';

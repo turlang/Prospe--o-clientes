@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Middleware HTTP `requestLogger` aplicado à cadeia de requisições da API.
+ *
+ * Responsabilidade delimitada conforme a arquitetura descrita em
+ * `docs/ARQUITETURA.md`. Alterações neste arquivo devem preservar os contratos
+ * documentados e ser acompanhadas por testes quando afetarem regras de negócio.
+ *
+ * @module src/middleware/requestLogger
+ */
+
 const requestCounters = {
   total: 0,
   prospectar: 0,

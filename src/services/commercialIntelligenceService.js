@@ -1,4 +1,14 @@
 /**
+ * @fileoverview Serviço de domínio `commercialIntelligenceService` responsável por regras comerciais reutilizáveis.
+ *
+ * Responsabilidade delimitada conforme a arquitetura descrita em
+ * `docs/ARQUITETURA.md`. Alterações neste arquivo devem preservar os contratos
+ * documentados e ser acompanhadas por testes quando afetarem regras de negócio.
+ *
+ * @module src/services/commercialIntelligenceService
+ */
+
+/**
  * commercialIntelligenceService.js
  * -----------------------------------------------------------------------------
  * V21 - Assistente Comercial Inteligente.
@@ -13,15 +23,14 @@
  * concentrar atenção e qual ação executar primeiro.
  */
 
-const ACTIVE_STATUSES = new Set(['NOVO', 'CONTATADO', 'INTERESSADO', 'PROPOSTA']);
+const { normalizeLeadStatus } = require('../domain/leadStatus');
+
+const ACTIVE_STATUSES = new Set(['NOVO', 'CONTATADO', 'INTERESSADO', 'REUNIAO', 'PROPOSTA']);
 const WON_STATUSES = new Set(['FECHADO']);
-const LOST_STATUSES = new Set(['SEM_INTERESSE', 'PERDIDO']);
+const LOST_STATUSES = new Set(['SEM_INTERESSE']);
 
 function normalizeStatus(status) {
-  const value = String(status || 'NOVO').trim().toUpperCase();
-  if (value === 'REUNIAO' || value === 'REUNIÃO' || value === 'NEGOCIACAO' || value === 'NEGOCIAÇÃO') return 'PROPOSTA';
-  if (value === 'SEM INTERESSE') return 'SEM_INTERESSE';
-  return value || 'NOVO';
+  return normalizeLeadStatus(status);
 }
 
 function parseDate(value) {
@@ -75,6 +84,7 @@ function inferMainRisk(lead = {}, tasks = [], now = new Date()) {
   if (LOST_STATUSES.has(status) || WON_STATUSES.has(status)) return null;
   if (pendingTask?.dueDate && pendingTask.dueDate < now) return 'Tarefa atrasada';
   if (status === 'PROPOSTA' && age !== null && age >= 3) return 'Proposta sem retorno';
+  if (status === 'REUNIAO' && !hasPendingTask(lead, tasks)) return 'Reunião sem próximo passo';
   if (status === 'INTERESSADO' && !hasPendingTask(lead, tasks)) return 'Interessado sem próximo passo';
   if (status === 'CONTATADO' && age !== null && age >= 5) return 'Contato esfriando';
   if (status === 'NOVO' && age !== null && age >= 2) return 'Lead novo parado';
@@ -92,6 +102,7 @@ function scoreDynamicPriority(lead = {}, tasks = [], now = new Date()) {
   if (status === 'NOVO') score += 8;
   if (status === 'CONTATADO') score += 14;
   if (status === 'INTERESSADO') score += 25;
+  if (status === 'REUNIAO') score += 28;
   if (status === 'PROPOSTA') score += 30;
   if (WON_STATUSES.has(status) || LOST_STATUSES.has(status)) score -= 60;
 
@@ -170,6 +181,14 @@ function buildNextBestAction(lead = {}, tasks = [], now = new Date()) {
     };
   }
 
+  if (status === 'REUNIAO') {
+    return {
+      action: 'Confirmar reunião e preparar diagnóstico',
+      channel: 'WhatsApp ou ligação',
+      reason: 'A reunião precisa de confirmação e de um objetivo claro para avançar a oportunidade.'
+    };
+  }
+
   if (status === 'PROPOSTA') {
     return {
       action: 'Retomar proposta',
@@ -223,8 +242,8 @@ function buildCommercialIntelligence(leads = [], tasks = [], now = new Date()) {
   const mediumPriority = ranked.filter((item) => item.priority === 'MÉDIA');
   const atRisk = ranked.filter((item) => item.risk);
   const proposals = ranked.filter((item) => item.status === 'PROPOSTA');
-  const interested = ranked.filter((item) => item.status === 'INTERESSADO');
-  const noNextStep = ranked.filter((item) => !item.nextBestAction.taskId && ['CONTATADO', 'INTERESSADO', 'PROPOSTA'].includes(item.status));
+  const interested = ranked.filter((item) => ['INTERESSADO', 'REUNIAO'].includes(item.status));
+  const noNextStep = ranked.filter((item) => !item.nextBestAction.taskId && ['CONTATADO', 'INTERESSADO', 'REUNIAO', 'PROPOSTA'].includes(item.status));
 
   const nextActions = ranked.slice(0, 8).map((item) => ({
     leadId: item.leadId,

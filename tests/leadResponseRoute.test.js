@@ -1,0 +1,68 @@
+/**
+ * @fileoverview Teste de integração leve da rota que processa respostas de leads.
+ * @module tests/leadResponseRoute.test
+ */
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const { registerLeadRoutes } = require('../src/routes/leadRoutes');
+const { analyzeLeadResponse } = require('../src/conversationEngine');
+
+function createRouteHarness(overrides = {}) {
+  const handlers = new Map();
+  const app = {
+    get(path, ...stack) { handlers.set(`GET ${path}`, stack.at(-1)); },
+    post(path, ...stack) { handlers.set(`POST ${path}`, stack.at(-1)); },
+    patch(path, ...stack) { handlers.set(`PATCH ${path}`, stack.at(-1)); }
+  };
+
+  const lead = { placeId: 'lead-1', nome: 'Empresa Teste', status: 'CONTATADO', interacoes: [] };
+  const context = {
+    requireAuth: (_req, _res, next) => next?.(),
+    readLeads: async () => [lead],
+    analyzeLeadResponse,
+    updateLeadStatus: async (_leadId, status, interaction) => ({ ...lead, status, interacoes: [interaction] }),
+    sanitizeSearchText: (value, max = 120) => String(value || '').trim().slice(0, max),
+    ALLOWED_LEAD_STATUSES: new Set(),
+    sendApiError: (_res, error) => { throw error; },
+    ...overrides
+  };
+
+  registerLeadRoutes(app, context);
+  return { handler: handlers.get('POST /api/analisar-resposta') };
+}
+
+function createResponse() {
+  return {
+    statusCode: 200,
+    payload: null,
+    status(code) { this.statusCode = code; return this; },
+    json(payload) { this.payload = payload; return this; }
+  };
+}
+
+test('rota rejeita análise sem mensagem recebida', async () => {
+  const { handler } = createRouteHarness();
+  const res = createResponse();
+  await handler({ user: { sub: 'user-1' }, body: { leadId: 'lead-1', resposta: '   ' } }, res);
+  assert.equal(res.statusCode, 400);
+  assert.match(res.payload.error, /Cole a resposta/);
+});
+
+test('rota registra interação e devolve transição visível do funil', async () => {
+  let persistedStatus = null;
+  const { handler } = createRouteHarness({
+    updateLeadStatus: async (_leadId, status, interaction) => {
+      persistedStatus = status;
+      return { placeId: 'lead-1', nome: 'Empresa Teste', status, interacoes: [interaction] };
+    }
+  });
+  const res = createResponse();
+
+  await handler({ user: { sub: 'user-1' }, body: { leadId: 'lead-1', resposta: 'Sim, pode enviar.' } }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(persistedStatus, 'INTERESSADO');
+  assert.deepEqual(res.payload.transition, { from: 'CONTATADO', to: 'INTERESSADO', changed: true });
+  assert.equal(res.payload.lead.interacoes[0].tipo, 'RESPOSTA_RECEBIDA');
+});

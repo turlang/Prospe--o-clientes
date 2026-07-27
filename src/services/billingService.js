@@ -1,8 +1,27 @@
+/**
+ * @fileoverview Serviço de domínio `billingService` responsável por regras comerciais reutilizáveis.
+ *
+ * Responsabilidade delimitada conforme a arquitetura descrita em
+ * `docs/ARQUITETURA.md`. Alterações neste arquivo devem preservar os contratos
+ * documentados e ser acompanhadas por testes quando afetarem regras de negócio.
+ *
+ * @module src/services/billingService
+ */
+
 const User = require('../models/User');
 const Payment = require('../models/Payment');
 const { hasMongoUri } = require('../db');
 const { findUserById, updateLocalUserPlan } = require('../localUserStore');
 const { getPlan } = require('../planConfig');
+const {
+  getPlanDurationDays,
+  getPlanExpirationDate,
+  getPlanPrice,
+  isProduction,
+  isSimulatedBillingAllowed,
+  parsePlanPrice,
+  validatePaymentValue
+} = require('../domain/billingPolicy');
 
 function publicBaseUrl(req) {
   const configured = String(process.env.PUBLIC_APP_URL || '').trim();
@@ -22,49 +41,6 @@ function publicBaseUrl(req) {
   }
 
   return `${req.protocol}://${req.get('host')}`;
-}
-
-function parsePlanPrice(value) {
-  const normalized = String(value || '').replace(/[^\d,.-]/g, '');
-  if (!normalized) return NaN;
-  const decimal = normalized.includes(',')
-    ? normalized.replace(/\./g, '').replace(',', '.')
-    : normalized;
-  return Number(decimal);
-}
-
-function getPlanPrice(planId) {
-  const plan = getPlan(planId);
-  const price = parsePlanPrice(plan.priceLabel);
-  if (Number.isFinite(price) && price > 0) return price;
-  return planId === 'agency' ? 199 : 59;
-}
-
-function getPlanDurationDays(planId = 'pro') {
-  const plan = getPlan(planId);
-  const duration = Number(process.env.PLAN_DURATION_DAYS || plan.durationDays || 30);
-  return Number.isInteger(duration) && duration >= 1 && duration <= 365 ? duration : 30;
-}
-
-function getPlanExpirationDate(planId = 'pro') {
-  const date = new Date();
-  date.setDate(date.getDate() + getPlanDurationDays(planId));
-  return date;
-}
-
-function isProduction() {
-  return String(process.env.NODE_ENV || '').toLowerCase() === 'production';
-}
-
-function isSimulatedBillingAllowed() {
-  return !isProduction() && String(process.env.ALLOW_SIMULATED_BILLING || 'true').toLowerCase() === 'true';
-}
-
-function validatePaymentValue(payment, planId) {
-  const expected = getPlanPrice(planId);
-  const paid = Number(payment?.transaction_amount || 0);
-  const currency = String(payment?.currency_id || 'BRL').toUpperCase();
-  return Number.isFinite(paid) && paid >= expected && currency === 'BRL';
 }
 
 async function downgradeExpiredUserIfNeeded(user) {
