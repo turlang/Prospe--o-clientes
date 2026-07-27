@@ -49,7 +49,9 @@ test('motor local evita abordagem excessivamente técnica', () => {
     telefone: '(11) 98888-7777'
   }, { variationSeed: 'tom-v207' });
 
-  assert.ok(result.abordagem.includes('tecnologia de um jeito simples') || result.abordagem.includes('ajustes pequenos') || result.abordagem.includes('chamar vocês'));
+  assert.ok(/pelo celular|no celular/i.test(result.abordagem));
+  assert.ok(/concorrente|outra empresa/i.test(result.abordagem));
+  assert.ok(/Posso te mandar o print|Posso te mostrar/i.test(result.abordagem));
   assert.equal(/SEO|landing page|CRM|automação|funil/i.test(result.abordagem), false);
 });
 

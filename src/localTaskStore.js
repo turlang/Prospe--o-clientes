@@ -123,4 +123,99 @@ async function completeTask(userId, taskId) {
   });
 }
 
-module.exports = { createTask, listTasks, completeTask, normalizeDueAt };
+/**
+ * Cria uma tarefa apenas quando não existe outra pendente com o mesmo tipo de
+ * automação para o mesmo lead. Essa idempotência impede que regenerar uma
+ * abordagem ou analisar a mesma resposta multiplique lembretes no painel.
+ */
+async function createTaskIfMissing(payload) {
+  const userId = payload.userId;
+  const leadId = String(payload.leadId);
+  const automationType = String(payload.automationType || 'MANUAL');
+
+  if (hasMongoUri()) {
+    const existing = await Task.findOne({ userId, leadId, automationType, done: false }).sort({ createdAt: -1 }).lean();
+    if (existing) return { task: publicTask(existing), created: false };
+    return { task: await createTask(payload), created: true };
+  }
+
+  return withJsonFileLock(TASKS_PATH, async () => {
+    const tasks = await readTasks();
+    const existing = tasks.find((task) =>
+      String(task.userId) === String(userId)
+      && String(task.leadId) === leadId
+      && String(task.automationType || 'MANUAL') === automationType
+      && !task.done
+    );
+    if (existing) return { task: existing, created: false };
+
+    const dueDate = normalizeDueAt(payload.dueAt);
+    const task = {
+      id: crypto.randomUUID(),
+      userId: String(userId),
+      leadId,
+      leadName: String(payload.leadName || '').slice(0, 180),
+      title: String(payload.title || 'Follow-up comercial').trim().slice(0, 180),
+      dueAt: dueDate.toISOString(),
+      message: String(payload.message || '').trim().slice(0, 4000),
+      priority: payload.priority || 'MÉDIA',
+      automationType,
+      done: false,
+      createdAt: new Date().toISOString()
+    };
+    tasks.push(task);
+    await writeJsonFileAtomic(TASKS_PATH, tasks);
+    return { task, created: true };
+  });
+}
+
+/**
+ * Conclui tarefas automáticas pendentes do lead quando a etapa anterior termina.
+ * Tarefas manuais são preservadas para não apagar decisões do operador.
+ */
+async function completePendingAutomationTasksForLead(userId, leadId, automationTypes = null) {
+  const accepted = Array.isArray(automationTypes) && automationTypes.length
+    ? new Set(automationTypes.map(String))
+    : null;
+
+  if (hasMongoUri()) {
+    const query = {
+      userId,
+      leadId: String(leadId),
+      done: false,
+      automationType: accepted
+        ? { $in: [...accepted] }
+        : { $regex: '^FUNIL_' }
+    };
+    const result = await Task.updateMany(query, { $set: { done: true, completedAt: new Date() } });
+    return Number(result.modifiedCount || 0);
+  }
+
+  return withJsonFileLock(TASKS_PATH, async () => {
+    const tasks = await readTasks();
+    let completed = 0;
+    for (const task of tasks) {
+      const isTarget = String(task.userId) === String(userId)
+        && String(task.leadId) === String(leadId)
+        && !task.done
+        && (accepted
+          ? accepted.has(String(task.automationType || 'MANUAL'))
+          : String(task.automationType || '').startsWith('FUNIL_'));
+      if (!isTarget) continue;
+      task.done = true;
+      task.completedAt = new Date().toISOString();
+      completed += 1;
+    }
+    if (completed) await writeJsonFileAtomic(TASKS_PATH, tasks);
+    return completed;
+  });
+}
+
+module.exports = {
+  createTask,
+  createTaskIfMissing,
+  completePendingAutomationTasksForLead,
+  listTasks,
+  completeTask,
+  normalizeDueAt
+};

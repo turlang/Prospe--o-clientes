@@ -36,6 +36,10 @@ function registerLeadRoutes(app, context) {
     addDailyUsage,
     getCurrentUserPlan,
     buildSalesApproach,
+    buildCommercialEngineOutput,
+    buildNextTaskPlan,
+    createTaskIfMissing,
+    completePendingAutomationTasksForLead,
     generateAiEnhancedApproach,
     getAiProviderStatus,
     sendApiError,
@@ -43,6 +47,31 @@ function registerLeadRoutes(app, context) {
     parseProspectingLimit,
     sanitizeSearchText
   } = context;
+
+  /**
+   * Sincroniza a tarefa automática da etapa sem duplicar lembretes.
+   * Dependências opcionais mantêm os testes unitários de rota leves.
+   */
+  async function syncFunnelTask({ userId, lead, status, intent = '', completePrevious = false }) {
+    if (completePrevious && typeof completePendingAutomationTasksForLead === 'function') {
+      await completePendingAutomationTasksForLead(userId, lead.placeId || lead.nome);
+    }
+    if (typeof buildNextTaskPlan !== 'function' || typeof createTaskIfMissing !== 'function') return null;
+
+    const plan = buildNextTaskPlan({ lead: { ...lead, status }, status, intent });
+    if (!plan) return null;
+    const result = await createTaskIfMissing({
+      userId,
+      leadId: lead.placeId || lead.nome,
+      leadName: lead.nome,
+      title: plan.title,
+      dueAt: plan.dueAt,
+      message: plan.message,
+      priority: plan.priority,
+      automationType: plan.automationType
+    });
+    return { ...result.task, created: result.created, actionType: plan.actionType, targetStatus: plan.targetStatus };
+  }
 
   // Prospecção e enriquecimento de leads.
   app.post('/api/prospectar', requireAuth, async (req, res) => {
@@ -219,9 +248,24 @@ function registerLeadRoutes(app, context) {
 
       if (!updated) return res.status(404).json({ error: 'Lead não encontrado durante a atualização do funil.' });
 
+      const automaticTask = await syncFunnelTask({
+        userId: req.user.sub,
+        lead: updated,
+        status: analysis.status,
+        intent: analysis.intent,
+        completePrevious: true
+      });
+      const commercialEngine = typeof buildCommercialEngineOutput === 'function'
+        ? buildCommercialEngineOutput({ lead: updated, status: analysis.status, intent: analysis.intent, task: automaticTask })
+        : null;
+
       res.json({
         lead: updated,
         analysis,
+        automaticTask,
+        commercialEngine,
+        statusContatos: commercialEngine?.statusContatos || null,
+        proximaAcaoFunil: commercialEngine?.proximaAcaoFunil || null,
         transition: {
           from: analysis.previousStatus,
           to: analysis.status,
@@ -251,7 +295,16 @@ function registerLeadRoutes(app, context) {
       }, req.user.sub);
 
       if (!updated) return res.status(404).json({ error: 'Lead não encontrado.' });
-      res.json(updated);
+      const automaticTask = await syncFunnelTask({
+        userId: req.user.sub,
+        lead: updated,
+        status,
+        completePrevious: true
+      });
+      const commercialEngine = typeof buildCommercialEngineOutput === 'function'
+        ? buildCommercialEngineOutput({ lead: updated, status, task: automaticTask })
+        : null;
+      res.json({ ...updated, automaticTask, commercialEngine });
     } catch (error) {
       sendApiError(res, error);
     }
@@ -284,7 +337,7 @@ function registerLeadRoutes(app, context) {
         channel
       });
 
-      await updateLeadStatus(leadId, lead.status || 'NOVO', {
+      const updatedLead = await updateLeadStatus(leadId, lead.status || 'NOVO', {
         data: new Date().toISOString(),
         tipo: recommendation.source === 'ai' ? 'ABORDAGEM_IA_GERADA' : 'ABORDAGEM_GERADA',
         status: lead.status || 'NOVO',
@@ -296,6 +349,19 @@ function registerLeadRoutes(app, context) {
         abordagem: recommendation.abordagem,
         resumo: `Abordagem gerada em modo ${mode} para canal ${channel}.`
       }, req.user.sub);
+
+      const automaticTask = await syncFunnelTask({
+        userId: req.user.sub,
+        lead: updatedLead || lead,
+        status: lead.status || 'NOVO'
+      });
+      const commercialEngine = buildCommercialEngineOutput({
+        lead: updatedLead || lead,
+        approach: recommendation.abordagem,
+        status: lead.status || 'NOVO',
+        task: automaticTask,
+        channel
+      });
 
       res.json({
         source: recommendation.source || 'local',
@@ -311,6 +377,12 @@ function registerLeadRoutes(app, context) {
         followUps: recommendation.followUps,
         explanation: recommendation.explanation,
         qualityChecklist: recommendation.qualityChecklist || [],
+        mensagemAbordagemSugerida: commercialEngine.mensagemAbordagemSugerida,
+        statusContatos: commercialEngine.statusContatos,
+        proximaAcaoFunil: commercialEngine.proximaAcaoFunil,
+        diagnosticoPratico: commercialEngine.diagnosticoPratico,
+        commercialEngine,
+        automaticTask,
         mode,
         channel
       });

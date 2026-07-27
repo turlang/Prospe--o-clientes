@@ -96,3 +96,25 @@
 | 409 | Conflito de regra de negócio |
 | 429 | Limite de requisições excedido |
 | 500 | Falha interna não exposta em produção |
+
+## Motor de inteligência comercial
+
+### `POST /api/gerar-abordagem`
+
+Além do campo compatível `abordagem`, retorna `mensagemAbordagemSugerida`, `statusContatos`, `proximaAcaoFunil`, `diagnosticoPratico`, `automaticTask` e `commercialEngine`. Uma tarefa `FUNIL_ABORDAGEM` é criada somente quando ainda não existe tarefa equivalente pendente.
+
+### `POST /api/analisar-resposta`
+
+Analisa a mensagem colada pelo operador, atualiza o status, conclui tarefas automáticas da etapa anterior e cria a tarefa da etapa seguinte. Retorna `automaticTask`, `statusContatos` e `proximaAcaoFunil`.
+
+### `POST /api/leads/status`
+
+Avança manualmente a etapa e sincroniza a próxima tarefa do motor.
+
+### `POST /api/proposals/generate`
+
+Move o lead para `PROPOSTA`, conclui tarefas anteriores e agenda o acompanhamento da proposta.
+
+### `POST /api/customers/close`
+
+Move para `FECHADO`, conclui tarefas automáticas e devolve `movedToActiveCustomers: true`.

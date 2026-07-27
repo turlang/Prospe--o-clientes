@@ -1,7 +1,7 @@
 {
   "name": "agente-prospeccao-real",
-  "version": "23.7.1",
-  "description": "Sales OS para prospecção, CRM e automação comercial com arquitetura modular e documentação acadêmica",
+  "version": "23.8.0",
+  "description": "Motor de inteligência comercial, CRM e automação de funil para negócios locais",
   "main": "src/server.js",
   "type": "commonjs",
   "scripts": {

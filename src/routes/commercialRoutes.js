@@ -24,9 +24,13 @@ function registerCommercialRoutes(app, context) {
     buildAutomationPlan,
     getPriorityFromLead,
     createTask,
+    createTaskIfMissing,
+    completePendingAutomationTasksForLead,
     listTasks,
     completeTask,
     buildSalesApproach,
+    buildNextTaskPlan,
+    buildCommercialEngineOutput,
     generateAiEnhancedApproach,
     getAiProviderStatus,
     buildAgendaSummary,
@@ -52,6 +56,23 @@ function registerCommercialRoutes(app, context) {
     answerCommercialCopilot,
     sendApiError
   } = context;
+
+  async function createStageTask(userId, lead, status, intent = '') {
+    if (typeof buildNextTaskPlan !== 'function' || typeof createTaskIfMissing !== 'function') return null;
+    const plan = buildNextTaskPlan({ lead: { ...lead, status }, status, intent });
+    if (!plan) return null;
+    const result = await createTaskIfMissing({
+      userId,
+      leadId: lead.placeId || lead.nome,
+      leadName: lead.nome,
+      title: plan.title,
+      dueAt: plan.dueAt,
+      message: plan.message,
+      priority: plan.priority,
+      automationType: plan.automationType
+    });
+    return { ...result.task, created: result.created, targetStatus: plan.targetStatus, actionType: plan.actionType };
+  }
 
   // Automações e recomendação de próximas ações.
   app.post('/api/automations/followup-sequence', requireAuth, async (req, res) => {
@@ -358,10 +379,20 @@ function registerCommercialRoutes(app, context) {
         resumo: 'Proposta comercial inicial gerada e lead movido para PROPOSTA.'
       }, req.user.sub);
 
+      if (typeof completePendingAutomationTasksForLead === 'function') {
+        await completePendingAutomationTasksForLead(req.user.sub, leadId);
+      }
+      const automaticTask = await createStageTask(req.user.sub, updated || lead, 'PROPOSTA');
+      const commercialEngine = typeof buildCommercialEngineOutput === 'function'
+        ? buildCommercialEngineOutput({ lead: updated || lead, status: 'PROPOSTA', task: automaticTask })
+        : null;
+
       res.status(201).json({
         ok: true,
         leadId,
         lead: updated,
+        automaticTask,
+        commercialEngine,
         proposal,
         source: recommendation.source || 'local',
         provider: recommendation.provider || 'local',
@@ -392,8 +423,20 @@ function registerCommercialRoutes(app, context) {
 
       const updated = await updateLeadStatus(leadId, 'FECHADO', buildCloseInteraction({ revenue, note }), req.user.sub);
       if (!updated) return res.status(404).json({ error: 'Lead não encontrado.' });
+      if (typeof completePendingAutomationTasksForLead === 'function') {
+        await completePendingAutomationTasksForLead(req.user.sub, leadId);
+      }
+      const commercialEngine = typeof buildCommercialEngineOutput === 'function'
+        ? buildCommercialEngineOutput({ lead: updated, status: 'FECHADO' })
+        : null;
 
-      res.json({ ok: true, lead: updated, summary: buildCustomerSuccessSummary(await readLeads(req.user.sub)).summary });
+      res.json({
+        ok: true,
+        lead: updated,
+        movedToActiveCustomers: true,
+        commercialEngine,
+        summary: buildCustomerSuccessSummary(await readLeads(req.user.sub)).summary
+      });
     } catch (error) {
       sendApiError(res, error);
     }
@@ -406,8 +449,10 @@ function registerCommercialRoutes(app, context) {
 
       const updated = await updateLeadStatus(leadId, 'SEM_INTERESSE', buildLostInteraction({ reason }), req.user.sub);
       if (!updated) return res.status(404).json({ error: 'Lead não encontrado.' });
-
-      res.json({ ok: true, lead: updated });
+      if (typeof completePendingAutomationTasksForLead === 'function') {
+        await completePendingAutomationTasksForLead(req.user.sub, leadId);
+      }
+      res.json({ ok: true, lead: updated, commercialEngine: buildCommercialEngineOutput?.({ lead: updated, status: 'SEM_INTERESSE' }) || null });
     } catch (error) {
       sendApiError(res, error);
     }

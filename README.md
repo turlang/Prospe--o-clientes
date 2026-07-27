@@ -2,9 +2,15 @@
 
 Sistema web para prospecção de estabelecimentos, qualificação de leads, CRM, automação comercial, relatórios e administração de assinaturas.
 
+## Motor de inteligência comercial 23.8.0
+
+O CRM agora transforma cada lead em um fluxo orientado: gera uma mensagem curta para WhatsApp, mapeia os canais públicos disponíveis e registra a próxima tarefa do funil. Respostas positivas avançam para diagnóstico; reuniões conduzem à proposta; propostas criam acompanhamento; oportunidades ganhas permanecem em clientes ativos.
+
+A especificação completa está em [`docs/MOTOR_INTELIGENCIA_COMERCIAL_23.8.0.md`](docs/MOTOR_INTELIGENCIA_COMERCIAL_23.8.0.md).
+
 ## Estado da versão
 
-A versão 23.7.1 reorganiza o projeto para facilitar manutenção e avaliação técnica:
+A versão 23.8.0 mantém a arquitetura acadêmica da série 23.7 e acrescenta o motor de inteligência comercial e automação do funil:
 
 - bootstrap separado da composição Express;
 - aplicação criada pelo padrão Application Factory;

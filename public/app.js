@@ -1122,12 +1122,61 @@ function renderEngineDetails(data) {
   `;
 }
 
+function renderCommercialContactStatus(status = {}) {
+  const whatsapp = status.whatsapp || {};
+  const phone = status.telefone || {};
+  const email = status.email || {};
+  const networks = Array.isArray(status.redesSociais) ? status.redesSociais : [];
+  const restrictions = Array.isArray(status.restricoes) ? status.restricoes : [];
+
+  return `
+    <div class="commercial-contact-status">
+      <p><strong>Canal prioritário:</strong> ${escapeHtml(status.orientacao || 'Revisar os contatos disponíveis.')}</p>
+      <ul>
+        <li><strong>WhatsApp:</strong> ${whatsapp.disponivel ? 'caminho disponível para tentativa' : 'não localizado'}${whatsapp.verificadoAtivo ? ' e confirmado' : ' — atividade não confirmada automaticamente'}</li>
+        <li><strong>Telefone:</strong> ${phone.disponivel ? escapeHtml(phone.tipoProvavel || 'disponível') : 'não localizado'}</li>
+        <li><strong>E-mail:</strong> ${email.disponivel ? escapeHtml(email.endereco || 'disponível') : 'não localizado'}</li>
+        <li><strong>Outras vias:</strong> ${networks.length ? networks.map((item) => escapeHtml(item.plataforma || 'rede social')).join(', ') : 'não localizadas'}</li>
+      </ul>
+      ${restrictions.length ? `<p class="meta">${restrictions.map(escapeHtml).join(' ')}</p>` : ''}
+    </div>`;
+}
+
+function renderCommercialNextAction(action = {}, automaticTask = null) {
+  const task = automaticTask || action.task || null;
+  return `
+    <div class="commercial-next-action">
+      <p><strong>Etapa atual:</strong> ${escapeHtml(action.etapaAtual || '-')}</p>
+      <p><strong>Ação:</strong> ${escapeHtml(action.acao || 'Revisar o próximo passo.')}</p>
+      <p>${escapeHtml(action.descricao || '')}</p>
+      ${action.valorReferencia ? `<p><strong>Valor de referência:</strong> ${escapeHtml(action.valorReferencia)}</p>` : ''}
+      ${action.agendamentoMinutos ? `<p><strong>Conversa sugerida:</strong> ${Number(action.agendamentoMinutos)} minutos</p>` : ''}
+      ${task ? `<p class="task-created"><strong>${task.created === false ? 'Tarefa já existente' : 'Tarefa criada'}:</strong> ${escapeHtml(task.title || action.acao || '')}</p>` : ''}
+      ${action.agendaUrl ? `<a class="agenda-link" href="${escapeAttr(action.agendaUrl)}" target="_blank" rel="noopener">Abrir agenda comercial</a>` : ''}
+    </div>`;
+}
+
+function renderPracticalDiagnosis(diagnosis = {}) {
+  const points = Array.isArray(diagnosis.pontos) ? diagnosis.pontos : [];
+  if (!points.length) return '';
+  return `
+    <details class="practical-diagnosis">
+      <summary>Diagnóstico prático para enviar após o aceite</summary>
+      ${points.map((point) => `<article><strong>${escapeHtml(point.achado || '')}</strong><p>${escapeHtml(point.impacto || '')}</p><small>${escapeHtml(point.solucao || '')}</small></article>`).join('')}
+    </details>`;
+}
+
 function renderSalesApproach(data, leadId = '') {
   const diagnostics = data.diagnostics || {};
   const tags = Array.isArray(diagnostics.opportunityTags) ? diagnostics.opportunityTags : [];
   const followUps = Array.isArray(data.followUps) ? data.followUps : [];
   const explanation = Array.isArray(data.explanation) ? data.explanation : [];
   const qualityChecklist = Array.isArray(data.qualityChecklist) ? data.qualityChecklist : [];
+  const commercialEngine = data.commercialEngine || {};
+  const contactStatus = data.statusContatos || commercialEngine.statusContatos || {};
+  const nextAction = data.proximaAcaoFunil || commercialEngine.proximaAcaoFunil || {};
+  const diagnosis = data.diagnosticoPratico || commercialEngine.diagnosticoPratico || {};
+  const suggestedMessage = data.mensagemAbordagemSugerida || commercialEngine.mensagemAbordagemSugerida || data.abordagem || '';
 
   return `
     <section class="strategy-output">
@@ -1141,6 +1190,23 @@ function renderSalesApproach(data, leadId = '') {
           <span class="tag">${engineLabel(data)}</span>
         </div>
       </header>
+
+      <section class="commercial-engine-output">
+        <article>
+          <h4>1. Mensagem de Abordagem Sugerida</h4>
+          <pre class="msg strategy-message">${escapeHtml(suggestedMessage)}</pre>
+          <button type="button" class="copy" onclick="copyNearestText(this, '.strategy-message')">Copiar para WhatsApp</button>
+        </article>
+        <article>
+          <h4>2. Status de Contatos</h4>
+          ${renderCommercialContactStatus(contactStatus)}
+        </article>
+        <article>
+          <h4>3. Próxima Ação no Funil</h4>
+          ${renderCommercialNextAction(nextAction, data.automaticTask)}
+        </article>
+        ${renderPracticalDiagnosis(diagnosis)}
+      </section>
 
       ${renderEngineDetails(data)}
       ${data.aiError ? `<p class="warning">IA externa indisponível: ${escapeHtml(data.aiError)}. Usei uma variação local.</p>` : ''}
@@ -1156,10 +1222,7 @@ function renderSalesApproach(data, leadId = '') {
       ${explanation.length ? `<ul class="strategy-reasons">${explanation.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>` : ''}
       ${qualityChecklist.length ? `<p class="meta"><strong>Qualidade:</strong> ${qualityChecklist.map(escapeHtml).join(' · ')}</p>` : ''}
 
-      <h4>${escapeHtml(channelLabel(data.channel || 'generic'))} pronta para usar</h4>
-      <pre class="msg strategy-message">${escapeHtml(data.abordagem || '')}</pre>
       <div class="approach-actions">
-        <button type="button" class="copy" onclick="copyNearestText(this, '.strategy-message')">Copiar texto</button>
         ${leadId ? `<button type="button" class="secondary" onclick="generateApproach(${jsArg(leadId)},'variant',${jsArg(data.channel || 'generic')})">🔄 Outra versão</button>` : ''}
         ${leadId ? `<button type="button" class="secondary" onclick="generateApproach(${jsArg(leadId)},'improve',${jsArg(data.channel || 'generic')})">✨ Melhorar</button>` : ''}
       </div>
@@ -1221,14 +1284,17 @@ function renderReplyAnalysis(data, leadId) {
   const transitionText = transition.changed
     ? `Lead movido de ${transition.from} para ${transition.to}.`
     : `Lead mantido em ${transition.to || analysis.status}.`;
+  const nextAction = data.proximaAcaoFunil || data.commercialEngine?.proximaAcaoFunil || {};
+  const task = data.automaticTask || null;
 
   return `
     <div class="reply-analysis-result">
       <p><strong>Intenção:</strong> ${escapeHtml(analysis.intent || '-')}</p>
       <p><strong>Movimentação:</strong> ${escapeHtml(transitionText)}</p>
-      <p><strong>Próximo passo:</strong> ${escapeHtml(analysis.proximoPasso || '-')}</p>
+      <p><strong>Próximo passo:</strong> ${escapeHtml(nextAction.descricao || analysis.proximoPasso || '-')}</p>
+      ${task ? `<p class="task-created"><strong>${task.created === false ? 'Tarefa mantida' : 'Tarefa criada automaticamente'}:</strong> ${escapeHtml(task.title || '')}</p>` : ''}
       ${analysis.respostaSugerida ? `<p class="msg">${escapeHtml(analysis.respostaSugerida)}</p><button type="button" class="copy" onclick="copyNearestText(this, '.msg')">Copiar retorno</button>` : ''}
-      <button type="button" class="secondary" onclick="scheduleFollowup(${jsArg(leadId)})">Agendar próximo passo</button>
+      ${task ? '' : `<button type="button" class="secondary" onclick="scheduleFollowup(${jsArg(leadId)})">Agendar próximo passo</button>`}
     </div>`;
 }
 

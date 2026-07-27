@@ -37,7 +37,7 @@ const { getAllPlans, getPlan, normalizePlan, updatePlan } = require('./planConfi
 const { getDailyUsage, getTotalUsage, addDailyUsage } = require('./localUsageStore');
 const { findUserById, updateLocalUserPlan } = require('./localUserStore');
 const { buildCampaignSequence, nextFollowUpDate, buildAutomationPlan, getPriorityFromLead } = require('./campaignEngine');
-const { createTask, listTasks, completeTask } = require('./localTaskStore');
+const { createTask, createTaskIfMissing, completePendingAutomationTasksForLead, listTasks, completeTask } = require('./localTaskStore');
 const {
   createMercadoPagoPreference,
   downgradeExpiredUserIfNeeded,
@@ -48,6 +48,7 @@ const {
 } = require('./services/billingService');
 const { writeAdminAudit } = require('./services/adminAuditService');
 const { buildSalesApproach } = require('./services/salesStrategyEngine');
+const { buildCommercialEngineOutput, buildNextTaskPlan } = require('./services/commercialFunnelEngine');
 const { generateAiEnhancedApproach, getAiProviderStatus } = require('./services/aiApproachService');
 const { buildAgendaSummary } = require('./services/commercialAgendaService');
 const { buildCommercialIntelligence, buildObjectionResponse } = require('./services/commercialIntelligenceService');
@@ -208,6 +209,8 @@ function createApp() {
     buildAutomationPlan,
     getPriorityFromLead,
     createTask,
+    createTaskIfMissing,
+    completePendingAutomationTasksForLead,
     listTasks,
     completeTask,
     createMercadoPagoPreference,
@@ -218,6 +221,8 @@ function createApp() {
     reconcileMercadoPagoPayment,
     writeAdminAudit,
     buildSalesApproach,
+    buildCommercialEngineOutput,
+    buildNextTaskPlan,
     generateAiEnhancedApproach,
     getAiProviderStatus,
     buildAgendaSummary,

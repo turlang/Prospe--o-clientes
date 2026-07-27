@@ -66,3 +66,39 @@ test('rota registra interação e devolve transição visível do funil', async 
   assert.deepEqual(res.payload.transition, { from: 'CONTATADO', to: 'INTERESSADO', changed: true });
   assert.equal(res.payload.lead.interacoes[0].tipo, 'RESPOSTA_RECEBIDA');
 });
+
+
+test('resposta positiva conclui etapa anterior e cria tarefa de diagnóstico sem duplicação', async () => {
+  let completedLeadId = null;
+  let taskPayload = null;
+  const { handler } = createRouteHarness({
+    buildNextTaskPlan: ({ status }) => ({
+      title: 'Enviar diagnóstico prático',
+      dueAt: '2026-07-27T13:00:00.000Z',
+      message: 'Enviar pontos e sugerir conversa de 15 minutos.',
+      priority: 'ALTA',
+      automationType: 'FUNIL_DIAGNOSTICO',
+      actionType: 'ENVIAR_DIAGNOSTICO',
+      targetStatus: 'REUNIAO',
+      status
+    }),
+    completePendingAutomationTasksForLead: async (_userId, leadId) => { completedLeadId = leadId; return 1; },
+    createTaskIfMissing: async (payload) => {
+      taskPayload = payload;
+      return { task: { id: 'task-1', ...payload }, created: true };
+    },
+    buildCommercialEngineOutput: ({ task }) => ({
+      mensagemAbordagemSugerida: 'Mensagem',
+      statusContatos: { canalPrioritario: 'WHATSAPP' },
+      proximaAcaoFunil: { acao: task.title }
+    })
+  });
+  const res = createResponse();
+
+  await handler({ user: { sub: 'user-1' }, body: { leadId: 'lead-1', resposta: 'Sim, pode mandar o print.' } }, res);
+
+  assert.equal(completedLeadId, 'lead-1');
+  assert.equal(taskPayload.automationType, 'FUNIL_DIAGNOSTICO');
+  assert.equal(res.payload.automaticTask.created, true);
+  assert.equal(res.payload.proximaAcaoFunil.acao, 'Enviar diagnóstico prático');
+});

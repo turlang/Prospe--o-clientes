@@ -55,3 +55,11 @@ test('pipeline apresenta reunião e converte status legados', () => {
   assert.match(app, /QUALIFICANDO: 'INTERESSADO'/);
   assert.match(app, /PERDIDO: 'SEM_INTERESSE'/);
 });
+
+
+test('motor comercial exibe os três blocos obrigatórios na interface', () => {
+  assert.match(app, /1\. Mensagem de Abordagem Sugerida/);
+  assert.match(app, /2\. Status de Contatos/);
+  assert.match(app, /3\. Próxima Ação no Funil/);
+  assert.match(app, /Tarefa criada automaticamente/);
+});

@@ -1,5 +1,20 @@
 # Changelog
 
+## 23.8.0 — Motor de inteligência comercial e automação de funil
+
+- Implementado `commercialFunnelEngine` com abordagem hiper-humana para WhatsApp.
+- Adicionada sanitização obrigatória de jargões e palavras estrangeiras.
+- Adicionada auditoria de WhatsApp, telefone, e-mail e redes sociais.
+- A saída da abordagem passa a incluir mensagem, contatos e próxima ação.
+- Respostas positivas criam tarefa automática de diagnóstico.
+- Pedidos de preço sugerem valor a partir de R$ 300 e conversa de 10 a 15 minutos.
+- Propostas criam acompanhamento automático e fechamentos concluem tarefas pendentes.
+- Tarefas automáticas são idempotentes e não substituem tarefas manuais.
+- Interface atualizada com três blocos operacionais.
+- Próxima ação exibe acesso direto à agenda comercial do dashboard.
+- Criação local de tarefas idempotentes passou a ser atômica sob escrita concorrente.
+- Adicionados testes específicos de linguagem, canais, tarefas e integração de rota.
+
 ## [23.7.1] - 2026-07-27
 
 ### Corrigido

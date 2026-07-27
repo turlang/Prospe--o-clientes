@@ -1,4 +1,4 @@
-# Auditoria de engenharia — LeadHunter Pro 23.7.1
+# Auditoria de engenharia — LeadHunter Pro 23.8.0
 
 ## Parecer
 
@@ -24,6 +24,15 @@ O projeto foi reestruturado para um padrão mais adequado à manutenção profis
 - documentação acadêmica e técnica integrada;
 - verificador documental automático;
 - atualização de testes de regressão e modularização.
+
+## Evolução funcional da versão 23.8.0
+
+- motor de abordagem hiper-humana desacoplado das rotas;
+- auditoria prudente de WhatsApp, telefone, e-mail e redes sociais;
+- tarefas automáticas idempotentes por etapa comercial;
+- saída padronizada em mensagem, contatos e próxima ação;
+- integração da agenda comercial e do fluxo até clientes ativos;
+- fallback local quando a IA externa viola as regras de linguagem.
 
 ## Dívidas técnicas mantidas de forma consciente
 

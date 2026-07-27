@@ -25,6 +25,7 @@
  */
 
 const { buildCommercialPrompt, normalizeMode } = require('./commercialPromptEngine');
+const { sanitizeCommercialLanguage, validateHumanCommercialMessage } = require('./commercialFunnelEngine');
 
 const AI_PROVIDERS = {
   groq: {
@@ -223,13 +224,17 @@ function normalizeAiResult({ parsed, provider, model, localRecommendation, resol
     throw new Error('A IA retornou uma resposta inválida.');
   }
 
+  const aiApproach = sanitizeCommercialLanguage(parsed.abordagem);
+  const validation = validateHumanCommercialMessage(aiApproach);
+  const finalApproach = validation.valid ? aiApproach : localRecommendation.abordagem;
+
   return {
-    source: 'ai',
+    source: validation.valid ? 'ai' : 'local-fallback',
     provider,
     providerLabel: AI_PROVIDERS[provider]?.label || 'IA',
     model,
     resolvedModelInfo,
-    abordagem: String(parsed.abordagem || '').trim(),
+    abordagem: finalApproach,
     strategy: parsed.strategy || localRecommendation.strategy,
     diagnostics: {
       ...localRecommendation.diagnostics,
@@ -241,7 +246,11 @@ function normalizeAiResult({ parsed, provider, model, localRecommendation, resol
     explanation: Array.isArray(parsed.explanation) && parsed.explanation.length
       ? parsed.explanation
       : localRecommendation.explanation,
-    qualityChecklist: Array.isArray(parsed.qualityChecklist) ? parsed.qualityChecklist : []
+    qualityChecklist: [
+      ...(Array.isArray(parsed.qualityChecklist) ? parsed.qualityChecklist : []),
+      validation.valid ? 'Linguagem simples validada' : 'Resposta da IA rejeitada por linguagem inadequada; motor local aplicado'
+    ],
+    languageValidation: validation
   };
 }
 

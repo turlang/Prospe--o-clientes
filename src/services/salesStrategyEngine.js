@@ -18,6 +18,13 @@
  * ainda mais próxima do cliente quando OPENAI_API_KEY estiver configurada.
  */
 
+const {
+  auditLeadContacts,
+  buildHyperHumanApproach,
+  sanitizeCommercialLanguage,
+  validateHumanCommercialMessage
+} = require('./commercialFunnelEngine');
+
 const SEGMENT_KEYWORDS = {
   beleza: ['barbearia', 'cabeleireiro', 'salão', 'salao', 'estética', 'estetica', 'beauty', 'nails', 'unhas'],
   saude: ['clínica', 'clinica', 'dentista', 'odontologia', 'fisioterapia', 'médico', 'medico', 'psicologia'],
@@ -218,7 +225,8 @@ function buildLeadContext(lead = {}, diagnostics = null) {
     dores: Array.isArray(lead.dores) ? lead.dores.slice(0, 5) : [],
     servicos: Array.isArray(lead.servicos) ? lead.servicos.slice(0, 5) : [lead.servico].filter(Boolean),
     playbook,
-    diagnostico: diagnostics || null
+    diagnostico: diagnostics || null,
+    contatos: auditLeadContacts(lead)
   };
 }
 
@@ -373,19 +381,31 @@ function buildSalesApproach(lead = {}, options = {}) {
     variant: stableVariantIndex(variationSeed, 99)
   };
 
-  const baseMessage = buildMessage({ lead, strategy, segmentGroup, primaryPain, variationSeed });
+  const humanApproach = buildHyperHumanApproach(lead, { variationSeed });
+  const usesInitialWhatsappPattern = ['generic', 'whatsapp'].includes(channel) && mode !== 'followup';
+  const baseMessage = usesInitialWhatsappPattern
+    ? humanApproach.message
+    : sanitizeCommercialLanguage(buildMessage({ lead, strategy, segmentGroup, primaryPain, variationSeed }));
+  const adaptedMessage = sanitizeCommercialLanguage(adaptMessageToChannel(baseMessage, lead, channel, mode));
+  const messageQuality = validateHumanCommercialMessage(adaptedMessage);
 
   return {
     source: 'local',
     strategy,
-    diagnostics: { ...diagnostics, recommendedChannel: channel },
+    diagnostics: {
+      ...diagnostics,
+      recommendedChannel: humanApproach.contacts.canalPrioritario.toLowerCase(),
+      contactStatus: humanApproach.contacts,
+      languageValidation: messageQuality
+    },
     leadContext: buildLeadContext(lead, diagnostics),
-    abordagem: adaptMessageToChannel(baseMessage, lead, channel, mode),
+    abordagem: messageQuality.valid || !usesInitialWhatsappPattern ? adaptedMessage : humanApproach.message,
     followUps: buildFollowUps(lead, strategy, variationSeed),
     explanation: [
       `Estratégia escolhida: ${strategy.name}.`,
       `Motivo: ${strategy.reason}`,
-      `Dor principal usada na mensagem: ${primaryPain}.`,
+      `Observação usada: ${humanApproach.observation}.`,
+      `Canal prioritário: ${humanApproach.contacts.orientacao}.`,
       `Variação gerada: ${diagnostics.variant}.`
     ]
   };
