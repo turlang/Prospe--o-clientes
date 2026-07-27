@@ -5,26 +5,66 @@ const { findUserById, updateLocalUserPlan } = require('../localUserStore');
 const { getPlan } = require('../planConfig');
 
 function publicBaseUrl(req) {
-  return process.env.PUBLIC_APP_URL || `${req.protocol}://${req.get('host')}`;
+  const configured = String(process.env.PUBLIC_APP_URL || '').trim();
+  if (configured) {
+    try { return new URL(configured).origin; }
+    catch {
+      const error = new Error('PUBLIC_APP_URL está inválida.');
+      error.statusCode = 500;
+      throw error;
+    }
+  }
+
+  if (isProduction()) {
+    const error = new Error('PUBLIC_APP_URL é obrigatória para checkout em produção.');
+    error.statusCode = 500;
+    throw error;
+  }
+
+  return `${req.protocol}://${req.get('host')}`;
+}
+
+function parsePlanPrice(value) {
+  const normalized = String(value || '').replace(/[^\d,.-]/g, '');
+  if (!normalized) return NaN;
+  const decimal = normalized.includes(',')
+    ? normalized.replace(/\./g, '').replace(',', '.')
+    : normalized;
+  return Number(decimal);
 }
 
 function getPlanPrice(planId) {
   const plan = getPlan(planId);
-  const rawPrice = String(plan.priceLabel || '').replace(/[^\d,.-]/g, '').replace(',', '.');
-  const price = Number(rawPrice);
+  const price = parsePlanPrice(plan.priceLabel);
   if (Number.isFinite(price) && price > 0) return price;
   return planId === 'agency' ? 199 : 59;
 }
 
 function getPlanDurationDays(planId = 'pro') {
   const plan = getPlan(planId);
-  return Number(process.env.PLAN_DURATION_DAYS || plan.durationDays || 30);
+  const duration = Number(process.env.PLAN_DURATION_DAYS || plan.durationDays || 30);
+  return Number.isInteger(duration) && duration >= 1 && duration <= 365 ? duration : 30;
 }
 
 function getPlanExpirationDate(planId = 'pro') {
   const date = new Date();
   date.setDate(date.getDate() + getPlanDurationDays(planId));
   return date;
+}
+
+function isProduction() {
+  return String(process.env.NODE_ENV || '').toLowerCase() === 'production';
+}
+
+function isSimulatedBillingAllowed() {
+  return !isProduction() && String(process.env.ALLOW_SIMULATED_BILLING || 'true').toLowerCase() === 'true';
+}
+
+function validatePaymentValue(payment, planId) {
+  const expected = getPlanPrice(planId);
+  const paid = Number(payment?.transaction_amount || 0);
+  const currency = String(payment?.currency_id || 'BRL').toUpperCase();
+  return Number.isFinite(paid) && paid >= expected && currency === 'BRL';
 }
 
 async function downgradeExpiredUserIfNeeded(user) {
@@ -44,7 +84,11 @@ async function downgradeExpiredUserIfNeeded(user) {
     return User.findByIdAndUpdate(user._id || user.id, update, { new: true });
   }
 
-  return { ...user, ...update };
+  return updateLocalUserPlan(user.id, 'trial', 10, 10, {
+    subscriptionStatus: 'expired',
+    planActivatedAt: null,
+    planExpiresAt: null
+  });
 }
 
 async function getCurrentUserPlan(userId) {
@@ -55,7 +99,7 @@ async function getCurrentUserPlan(userId) {
   return {
     user,
     plan,
-    dailyLeadLimit: Number(user?.dailyLeadLimit || plan.dailyLeadLimit)
+    dailyLeadLimit: Number(user?.dailyLeadLimit ?? plan.dailyLeadLimit)
   };
 }
 
@@ -74,7 +118,12 @@ async function activatePaidPlan({ userId, planId, paymentId = '', externalRefere
   if (hasMongoUri()) {
     await User.findByIdAndUpdate(userId, update);
   } else {
-    await updateLocalUserPlan(userId, plan.id, plan.dailyLeadLimit, plan.totalLeadLimit ?? null);
+    await updateLocalUserPlan(userId, plan.id, plan.dailyLeadLimit, plan.totalLeadLimit ?? null, {
+      subscriptionStatus: 'active',
+      planActivatedAt: update.planActivatedAt.toISOString(),
+      planExpiresAt: update.planExpiresAt.toISOString(),
+      mercadoPagoLastPaymentId: update.mercadoPagoLastPaymentId
+    });
   }
 
   if (hasMongoUri()) {
@@ -130,6 +179,13 @@ async function expirePaidPlan({ userId, paymentId = '', externalReference = '', 
       },
       { upsert: true, new: true }
     );
+  } else {
+    await updateLocalUserPlan(userId, 'trial', 10, 10, {
+      subscriptionStatus: update.subscriptionStatus,
+      planActivatedAt: null,
+      planExpiresAt: null,
+      mercadoPagoLastPaymentId: paymentId
+    });
   }
 
   return getPlan('trial');
@@ -139,7 +195,14 @@ async function fetchMercadoPagoPayment(paymentId) {
   const token = process.env.MERCADO_PAGO_ACCESS_TOKEN;
   if (!token) throw new Error('MERCADO_PAGO_ACCESS_TOKEN não configurado.');
 
-  const response = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+  const normalizedPaymentId = String(paymentId || '').trim();
+  if (!/^[A-Za-z0-9_-]{1,80}$/.test(normalizedPaymentId)) {
+    const error = new Error('Identificador de pagamento inválido.');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const response = await fetch(`https://api.mercadopago.com/v1/payments/${encodeURIComponent(normalizedPaymentId)}`, {
     headers: { Authorization: `Bearer ${token}` }
   });
 
@@ -162,12 +225,22 @@ function extractPaymentContext(payment) {
   };
 }
 
-async function reconcileMercadoPagoPayment(paymentId) {
+async function reconcileMercadoPagoPayment(paymentId, { expectedUserId = null } = {}) {
   const payment = await fetchMercadoPagoPayment(paymentId);
   const { externalReference, userId, planId } = extractPaymentContext(payment);
 
   if (!userId || !['pro', 'agency'].includes(planId)) {
     return { ignored: true, reason: 'metadata inválido', payment };
+  }
+
+  if (expectedUserId && String(userId) !== String(expectedUserId)) {
+    const error = new Error('O pagamento informado não pertence ao usuário autenticado.');
+    error.statusCode = 403;
+    throw error;
+  }
+
+  if (payment.status === 'approved' && !validatePaymentValue(payment, planId)) {
+    return { ignored: true, reason: 'valor ou moeda do pagamento não confere com o plano', status: payment.status, payment };
   }
 
   if (hasMongoUri()) {
@@ -299,5 +372,8 @@ module.exports = {
   getPlanDurationDays,
   getPlanExpirationDate,
   getPlanPrice,
-  reconcileMercadoPagoPayment
+  isSimulatedBillingAllowed,
+  parsePlanPrice,
+  reconcileMercadoPagoPayment,
+  validatePaymentValue
 };

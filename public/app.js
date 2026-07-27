@@ -10,7 +10,17 @@
  * - Preparação visual para planos Free/Pro.
  */
 
-const deviceId = localStorage.getItem('deviceId') || crypto.randomUUID();
+function createDeviceId() {
+  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+  return `device-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function readStoredUser() {
+  try { return JSON.parse(localStorage.getItem('currentUser') || 'null'); }
+  catch { localStorage.removeItem('currentUser'); return null; }
+}
+
+const deviceId = localStorage.getItem('deviceId') || createDeviceId();
 localStorage.setItem('deviceId', deviceId);
 
 const form = document.querySelector('#form');
@@ -85,7 +95,7 @@ const v23CopilotMessages = document.querySelector('#v23CopilotMessages');
 const v23CopilotClear = document.querySelector('#v23CopilotClear');
 
 let authToken = localStorage.getItem('authToken') || '';
-let currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+let currentUser = readStoredUser();
 let lastLeads = [];
 const approachHistory = {};
 
@@ -359,19 +369,30 @@ function switchView(view) {
   if (view === 'campanhas') { loadAutomationActions(); loadFollowups(); }
 }
 
-function apiFetch(url, options = {}) {
+async function apiFetch(url, options = {}) {
   const headers = { ...(options.headers || {}) };
   if (options.body && !headers['Content-Type']) {
     headers['Content-Type'] = 'application/json';
   }
 
-  return fetch(url, {
+  const response = await fetch(url, {
     ...options,
     headers: {
       ...headers,
       Authorization: `Bearer ${authToken}`
     }
   });
+
+  if (response.status === 401) {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('currentUser');
+    authToken = '';
+    currentUser = null;
+    showAuth();
+    if (statusBox) statusBox.innerHTML = '<p class="error">Sua sessão expirou. Faça login novamente.</p>';
+  }
+
+  return response;
 }
 
 async function readJson(response) {
@@ -498,6 +519,8 @@ if (overviewRefreshButton) overviewRefreshButton.addEventListener('click', loadE
 window.loadExecutiveOverview = loadExecutiveOverview;
 
 async function refreshStats() {
+  if (!statsBox) return;
+
   try {
     const response = await apiFetch('/api/dashboard/stats');
     const stats = await readJson(response);
@@ -571,8 +594,8 @@ async function loadHistory() {
             <small>${formatDate(last?.data || lead.coletadoEm)}</small>
           </div>
           <div class="actions-row compact">
-            <button type="button" class="secondary" onclick="focusLead('${escapeAttr(leadId)}')">Abrir no CRM</button>
-            <button type="button" class="secondary" onclick="scheduleFollowup('${escapeAttr(leadId)}')">Agendar retorno</button>
+            <button type="button" class="secondary" onclick="focusLead(${jsArg(leadId)})">Abrir no CRM</button>
+            <button type="button" class="secondary" onclick="scheduleFollowup(${jsArg(leadId)})">Agendar retorno</button>
           </div>
         </article>
       `;
@@ -698,7 +721,7 @@ function renderDashboardExtras(leads) {
       return `
         <article class="history-item">
           <div><strong>${escapeHtml(item.type)}: ${escapeHtml(item.lead.nome || 'Lead')}</strong><p>${escapeHtml(item.message)}</p><small>Status: ${escapeHtml(normalizeStatus(item.lead.status))}</small></div>
-          <button type="button" class="secondary" onclick="openLeadDetail('${escapeAttr(leadId)}')">Abrir ficha</button>
+          <button type="button" class="secondary" onclick="openLeadDetail(${jsArg(leadId)})">Abrir ficha</button>
         </article>
       `;
     }).join('') : '<p class="meta">Nenhuma prioridade crítica. Continue prospectando ou movendo leads no CRM.</p>';
@@ -750,7 +773,7 @@ function renderKanban(leads) {
 function renderKanbanCard(lead) {
   const leadId = getLeadId(lead);
   return `
-    <article class="kanban-card" draggable="true" onclick="openLeadDetail('${escapeAttr(leadId)}')" ondragstart="dragLead(event, '${escapeAttr(leadId)}')" title="Clique para abrir a ficha do lead">
+    <article class="kanban-card" draggable="true" onclick="openLeadDetail(${jsArg(leadId)})" ondragstart="dragLead(event, ${jsArg(leadId)})" title="Clique para abrir a ficha do lead">
       <strong>${escapeHtml(lead.nome)}</strong>
       <p>${escapeHtml(lead.segmentoComercial || lead.tipo || 'Segmento não informado')}</p>
       <div class="score-line"><span>${scoreStars(lead.score)}</span><b>${lead.score || 0}/100</b></div>
@@ -826,17 +849,17 @@ function openLeadDetail(leadId) {
     <div class="links">
       ${lead.site ? `<a href="${escapeAttr(lead.site)}" target="_blank" rel="noopener">Site</a>` : ''}
       ${lead.maps ? `<a href="${escapeAttr(lead.maps)}" target="_blank" rel="noopener">Maps</a>` : ''}
-      ${whatsapp ? `<a href="${escapeAttr(whatsapp)}" target="_blank" onclick="markStatus('${escapeAttr(leadId)}','CONTATADO')">WhatsApp</a>` : ''}
+      ${whatsapp ? `<a href="${escapeAttr(whatsapp)}" target="_blank" onclick="markStatus(${jsArg(leadId)},'CONTATADO')">WhatsApp</a>` : ''}
     </div>
     <div class="links">
-      <button type="button" class="secondary" onclick="updateStatus('${escapeAttr(leadId)}','CONTATADO')">Contato feito</button>
-      <button type="button" class="secondary" onclick="updateStatus('${escapeAttr(leadId)}','INTERESSADO')">Interessado</button>
-      <button type="button" class="secondary" onclick="updateStatus('${escapeAttr(leadId)}','PROPOSTA')">Proposta</button>
-      <button type="button" class="secondary" onclick="generateApproach('${escapeAttr(leadId)}', 'new', 'generic')">🧠 Consultor IA</button>
-      <button type="button" class="secondary" onclick="generateProposal('${escapeAttr(leadId)}')">📄 Gerar proposta</button>
-      <button type="button" class="secondary" onclick="closeAsCustomer('${escapeAttr(leadId)}')">✅ Fechar cliente</button>
-      <button type="button" class="secondary" onclick="markAsLost('${escapeAttr(leadId)}')">Perdido</button>
-      <button type="button" class="secondary" onclick="scheduleFollowup('${escapeAttr(leadId)}')">Agendar retorno</button>
+      <button type="button" class="secondary" onclick="updateStatus(${jsArg(leadId)},'CONTATADO')">Contato feito</button>
+      <button type="button" class="secondary" onclick="updateStatus(${jsArg(leadId)},'INTERESSADO')">Interessado</button>
+      <button type="button" class="secondary" onclick="updateStatus(${jsArg(leadId)},'PROPOSTA')">Proposta</button>
+      <button type="button" class="secondary" onclick="generateApproach(${jsArg(leadId)}, 'new', 'generic')">🧠 Consultor IA</button>
+      <button type="button" class="secondary" onclick="generateProposal(${jsArg(leadId)})">📄 Gerar proposta</button>
+      <button type="button" class="secondary" onclick="closeAsCustomer(${jsArg(leadId)})">✅ Fechar cliente</button>
+      <button type="button" class="secondary" onclick="markAsLost(${jsArg(leadId)})">Perdido</button>
+      <button type="button" class="secondary" onclick="scheduleFollowup(${jsArg(leadId)})">Agendar retorno</button>
     </div>
     <pre id="approach-modal-${escapeAttr(leadId)}" class="msg crm-approach-output"></pre>
     <section class="timeline detail-timeline">
@@ -930,12 +953,12 @@ function renderLead(lead) {
       </div>
       <label>Notas comerciais<textarea id="notes-${escapeAttr(leadId)}" placeholder="Ex: respondeu rápido, pedir orçamento, retornar sexta...">${escapeHtml(lead.notas || '')}</textarea></label>
       <div class="links">
-        <button type="button" class="secondary" onclick="saveLeadMeta('${escapeAttr(leadId)}')">Salvar CRM</button>
-        <button type="button" class="approach-btn" onclick="generateApproach('${escapeAttr(leadId)}', 'new', 'generic')">🧠 Consultor IA</button>
-        <button type="button" class="secondary" onclick="generateCampaign('${escapeAttr(leadId)}')">Sequência</button>
-        <button type="button" class="secondary" onclick="generateProposal('${escapeAttr(leadId)}')">Gerar proposta</button>
-        <button type="button" class="secondary" onclick="closeAsCustomer('${escapeAttr(leadId)}')">Fechar cliente</button>
-        <button type="button" class="secondary" onclick="scheduleFollowup('${escapeAttr(leadId)}')">Agendar follow-up</button>
+        <button type="button" class="secondary" onclick="saveLeadMeta(${jsArg(leadId)})">Salvar CRM</button>
+        <button type="button" class="approach-btn" onclick="generateApproach(${jsArg(leadId)}, 'new', 'generic')">🧠 Consultor IA</button>
+        <button type="button" class="secondary" onclick="generateCampaign(${jsArg(leadId)})">Sequência</button>
+        <button type="button" class="secondary" onclick="generateProposal(${jsArg(leadId)})">Gerar proposta</button>
+        <button type="button" class="secondary" onclick="closeAsCustomer(${jsArg(leadId)})">Fechar cliente</button>
+        <button type="button" class="secondary" onclick="scheduleFollowup(${jsArg(leadId)})">Agendar follow-up</button>
       </div>
 
       <p><strong>Telefone:</strong> ${escapeHtml(lead.telefone || 'Não informado')}</p>
@@ -951,11 +974,11 @@ function renderLead(lead) {
         <div class="links">
           ${lead.site ? `<a href="${escapeAttr(lead.site)}" target="_blank">Site</a>` : ''}
           ${lead.maps ? `<a href="${escapeAttr(lead.maps)}" target="_blank">Google Maps</a>` : ''}
-          ${whatsapp ? `<a href="${escapeAttr(whatsapp)}" target="_blank" onclick="markStatus('${escapeAttr(leadId)}','CONTATADO')">WhatsApp pronto</a>` : ''}
-          <button type="button" class="copy" onclick='copyText(document.getElementById("approach-${escapeAttr(leadId)}").innerText)'>Copiar mensagem</button>
+          ${whatsapp ? `<a href="${escapeAttr(whatsapp)}" target="_blank" onclick="markStatus(${jsArg(leadId)},'CONTATADO')">WhatsApp pronto</a>` : ''}
+          <button type="button" class="copy" onclick='copyApproach(${jsArg(leadId)})'>Copiar mensagem</button>
         </div>
         <label class="reply-label">Resposta recebida do lead<textarea id="reply-${escapeAttr(leadId)}" placeholder="Cole aqui a resposta recebida."></textarea></label>
-        <button type="button" class="secondary" onclick="analyzeReply('${escapeAttr(leadId)}')">Analisar resposta</button>
+        <button type="button" class="secondary" onclick="analyzeReply(${jsArg(leadId)})">Analisar resposta</button>
         <div id="analysis-${escapeAttr(leadId)}" class="analysis"></div>
       </section>
 
@@ -1099,20 +1122,20 @@ function renderSalesApproach(data, leadId = '') {
       <h4>${escapeHtml(channelLabel(data.channel || 'generic'))} pronta para usar</h4>
       <pre class="msg strategy-message">${escapeHtml(data.abordagem || '')}</pre>
       <div class="approach-actions">
-        <button type="button" class="copy" onclick='copyText(${JSON.stringify(data.abordagem || '')})'>Copiar texto</button>
-        ${leadId ? `<button type="button" class="secondary" onclick="generateApproach('${escapeAttr(leadId)}','variant','${escapeAttr(data.channel || 'generic')}')">🔄 Outra versão</button>` : ''}
-        ${leadId ? `<button type="button" class="secondary" onclick="generateApproach('${escapeAttr(leadId)}','improve','${escapeAttr(data.channel || 'generic')}')">✨ Melhorar</button>` : ''}
+        <button type="button" class="copy" onclick="copyNearestText(this, '.strategy-message')">Copiar texto</button>
+        ${leadId ? `<button type="button" class="secondary" onclick="generateApproach(${jsArg(leadId)},'variant',${jsArg(data.channel || 'generic')})">🔄 Outra versão</button>` : ''}
+        ${leadId ? `<button type="button" class="secondary" onclick="generateApproach(${jsArg(leadId)},'improve',${jsArg(data.channel || 'generic')})">✨ Melhorar</button>` : ''}
       </div>
 
       ${leadId ? `
         <h4>Gerar para outro canal</h4>
         <div class="channel-actions">
-          <button type="button" class="secondary" onclick="generateApproach('${escapeAttr(leadId)}','new','whatsapp')">📱 WhatsApp</button>
-          <button type="button" class="secondary" onclick="generateApproach('${escapeAttr(leadId)}','new','email')">📧 E-mail</button>
-          <button type="button" class="secondary" onclick="generateApproach('${escapeAttr(leadId)}','new','call')">📞 Ligação</button>
-          <button type="button" class="secondary" onclick="generateApproach('${escapeAttr(leadId)}','followup','followup')">🔁 Follow-up</button>
-          <button type="button" class="secondary" onclick="generateApproach('${escapeAttr(leadId)}','new','objection')">🛡️ Objeção</button>
-          <button type="button" class="secondary" onclick="generateApproach('${escapeAttr(leadId)}','new','proposal')">🎯 Diagnóstico</button>
+          <button type="button" class="secondary" onclick="generateApproach(${jsArg(leadId)},'new','whatsapp')">📱 WhatsApp</button>
+          <button type="button" class="secondary" onclick="generateApproach(${jsArg(leadId)},'new','email')">📧 E-mail</button>
+          <button type="button" class="secondary" onclick="generateApproach(${jsArg(leadId)},'new','call')">📞 Ligação</button>
+          <button type="button" class="secondary" onclick="generateApproach(${jsArg(leadId)},'followup','followup')">🔁 Follow-up</button>
+          <button type="button" class="secondary" onclick="generateApproach(${jsArg(leadId)},'new','objection')">🛡️ Objeção</button>
+          <button type="button" class="secondary" onclick="generateApproach(${jsArg(leadId)},'new','proposal')">🎯 Diagnóstico</button>
         </div>
       ` : ''}
 
@@ -1151,7 +1174,7 @@ async function analyzeReply(leadId) {
     });
     const data = await readJson(response);
     if (!response.ok) throw new Error(data.error);
-    output.innerHTML = `<p><strong>Intenção:</strong> ${escapeHtml(data.analysis.intent)}</p><p><strong>Status:</strong> ${escapeHtml(data.analysis.status)}</p><p><strong>Próximo passo:</strong> ${escapeHtml(data.analysis.proximoPasso)}</p><p class="msg">${escapeHtml(data.analysis.respostaSugerida)}</p><button type="button" class="copy" onclick='copyText(${JSON.stringify(data.analysis.respostaSugerida || '')})'>Copiar retorno</button>`;
+    output.innerHTML = `<p><strong>Intenção:</strong> ${escapeHtml(data.analysis.intent)}</p><p><strong>Status:</strong> ${escapeHtml(data.analysis.status)}</p><p><strong>Próximo passo:</strong> ${escapeHtml(data.analysis.proximoPasso)}</p><p class="msg">${escapeHtml(data.analysis.respostaSugerida)}</p><button type="button" class="copy" onclick="copyNearestText(this, '.msg')">Copiar retorno</button>`;
     await loadSavedLeads(false);
   } catch (error) { output.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`; }
 }
@@ -1163,7 +1186,26 @@ async function markStatus(leadId, status) {
   return data;
 }
 
-async function copyText(text) { await navigator.clipboard.writeText(text || ''); statusBox.innerHTML = '<p>Mensagem copiada.</p>'; }
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(String(text || ''));
+    if (statusBox) statusBox.innerHTML = '<p>Mensagem copiada.</p>';
+  } catch {
+    showError('Não foi possível copiar automaticamente. Selecione o texto e copie manualmente.');
+  }
+}
+function copyNearestText(button, selector) {
+  const container = button?.closest('.strategy-output, .proposal-output, .proposal-card, [id^="analysis-"]') || button?.parentElement?.parentElement;
+  const output = container?.querySelector(selector);
+  if (!output) return showError('Mensagem não encontrada para copiar.');
+  return copyText(output.innerText || output.textContent);
+}
+function copyApproach(leadId) {
+  const output = document.getElementById(`approach-${leadId}`) || document.getElementById(`approach-modal-${leadId}`);
+  if (!output) return showError('Mensagem não encontrada para copiar.');
+  const message = output.querySelector('.strategy-message');
+  return copyText((message || output).innerText || (message || output).textContent);
+}
 function getLeadId(lead) { return String(lead.placeId || lead.nome || '').replace(/'/g, ''); }
 function makeWhatsAppLink(lead) { const phone = String(lead.telefone || '').replace(/\D/g, ''); if (!phone) return ''; const normalized = phone.startsWith('55') ? phone : `55${phone}`; return `https://wa.me/${normalized}?text=${encodeURIComponent(lead.abordagem || '')}`; }
 function scoreClass(score) { if (score >= 80) return 'hot'; if (score >= 65) return 'warm'; return ''; }
@@ -1175,6 +1217,7 @@ function formatMoney(value) { return Number(value || 0).toLocaleString('pt-BR', 
 function showError(message) { statusBox.innerHTML = `<p class="error">${escapeHtml(message)}</p>`; }
 function escapeHtml(value) { return String(value || '').replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;' }[char])); }
 function escapeAttr(value) { return escapeHtml(value).replace(/`/g, '&#096;'); }
+function jsArg(value) { return escapeHtml(JSON.stringify(String(value ?? ''))).replace(/`/g, '&#096;'); }
 function formatDate(value) { if (!value) return '-'; return new Date(value).toLocaleString('pt-BR'); }
 function debounce(fn, wait) { let timeout; return (...args) => { clearTimeout(timeout); timeout = setTimeout(() => fn(...args), wait); }; }
 
@@ -1271,7 +1314,7 @@ async function renderPlans() {
       button.addEventListener('click', () => activatePlan(button.dataset.plan));
     });
   } catch (error) {
-    plansGrid.innerHTML = `<p class="error">${error.message}</p>`;
+    plansGrid.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
   }
 }
 
@@ -1357,7 +1400,7 @@ async function loadSystemMetrics() {
       </article>
     `;
   } catch (error) {
-    systemMetrics.innerHTML = `<p class="error">${error.message}</p>`;
+    systemMetrics.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
   }
 }
 
@@ -1459,8 +1502,8 @@ async function loadAutomationActions() {
             <p>${escapeHtml(lead.reason)}</p>
           </div>
           <div class="actions-row">
-            <button type="button" onclick="createSmartCampaign('${escapeAttr(lead.id)}')">Criar campanha IA</button>
-            <button type="button" class="secondary" onclick="openLeadDetail('${escapeAttr(lead.id)}')">Ver lead</button>
+            <button type="button" onclick="createSmartCampaign(${jsArg(lead.id)})">Criar campanha IA</button>
+            <button type="button" class="secondary" onclick="openLeadDetail(${jsArg(lead.id)})">Ver lead</button>
           </div>
         </article>
       `).join('')}
@@ -1567,12 +1610,12 @@ async function loadFollowups() {
         <p>${escapeHtml(task.message || '')}</p>
         ${task.done
           ? '<span class="tag">Concluído</span>'
-          : `<button type="button" class="secondary" onclick="completeFollowup('${escapeAttr(task.id)}')">Marcar como concluído</button>`
+          : `<button type="button" class="secondary" onclick="completeFollowup(${jsArg(task.id)})">Marcar como concluído</button>`
         }
       </article>
     `).join('');
   } catch (error) {
-    followupList.innerHTML = `<p class="error">${error.message}</p>`;
+    followupList.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
   }
 }
 
@@ -1669,8 +1712,8 @@ function renderAgendaTask(task) {
         <p>${escapeHtml(task.message || '')}</p>
       </div>
       <div class="agenda-actions">
-        ${task.leadId ? `<button type="button" class="secondary" onclick="openLeadDetail('${escapeAttr(task.leadId)}')">Ver lead</button>` : ''}
-        ${done ? '<span class="tag dark">Concluído</span>' : `<button type="button" onclick="completeFollowup('${escapeAttr(task.id)}')">Concluir</button>`}
+        ${task.leadId ? `<button type="button" class="secondary" onclick="openLeadDetail(${jsArg(task.leadId)})">Ver lead</button>` : ''}
+        ${done ? '<span class="tag dark">Concluído</span>' : `<button type="button" onclick="completeFollowup(${jsArg(task.id)})">Concluir</button>`}
       </div>
     </article>
   `;
@@ -1804,7 +1847,7 @@ function renderCommercialIntelligence(data) {
           <p>${escapeHtml(item.action || 'Revisar oportunidade')}</p>
           <small>${escapeHtml(item.reason || '')}${item.risk ? ` · Risco: ${escapeHtml(item.risk)}` : ''}</small>
         </div>
-        <button type="button" class="secondary" onclick="openLeadDetail('${escapeAttr(item.leadId)}')">Abrir ficha</button>
+        <button type="button" class="secondary" onclick="openLeadDetail(${jsArg(item.leadId)})">Abrir ficha</button>
       </article>
     `).join('') : '<p class="meta">Nenhuma ação urgente. Continue prospectando ou agendando follow-ups.</p>';
   }
@@ -1910,7 +1953,7 @@ function renderCommercialReport(data = {}) {
           <p>${escapeHtml(item.reason)} · ${Number(item.daysWithoutInteraction || 0)} dia(s) sem interação</p>
           <small>Status: ${escapeHtml(item.status)}</small>
         </div>
-        <button type="button" class="secondary" onclick="openLeadDetail('${escapeAttr(item.leadId)}')">Abrir ficha</button>
+        <button type="button" class="secondary" onclick="openLeadDetail(${jsArg(item.leadId)})">Abrir ficha</button>
       </article>
     `).join('') : '<p class="meta">Nenhum lead parado encontrado.</p>';
   }
@@ -2016,7 +2059,7 @@ function renderProposal(proposal = {}, meta = {}) {
       <h4>Texto completo da proposta</h4>
       <pre class="msg strategy-message">${escapeHtml(proposal.text || '')}</pre>
       <div class="approach-actions">
-        <button type="button" class="copy" onclick='copyText(${JSON.stringify(proposal.text || '')})'>Copiar proposta</button>
+        <button type="button" class="copy" onclick="copyNearestText(this, '.strategy-message')">Copiar proposta</button>
       </div>
     </section>
   `;
@@ -2065,9 +2108,9 @@ function renderProposalList(proposals = []) {
       </div>
       <pre class="msg compact-proposal">${escapeHtml(proposal.text || '')}</pre>
       <div class="agenda-actions">
-        <button type="button" class="secondary" onclick="openLeadDetail('${escapeAttr(proposal.leadId)}')">Abrir lead</button>
-        <button type="button" class="secondary" onclick="closeAsCustomer('${escapeAttr(proposal.leadId)}')">Marcar fechado</button>
-        <button type="button" class="copy" onclick='copyText(${JSON.stringify(proposal.text || '')})'>Copiar</button>
+        <button type="button" class="secondary" onclick="openLeadDetail(${jsArg(proposal.leadId)})">Abrir lead</button>
+        <button type="button" class="secondary" onclick="closeAsCustomer(${jsArg(proposal.leadId)})">Marcar fechado</button>
+        <button type="button" class="copy" onclick="copyNearestText(this, '.compact-proposal')">Copiar</button>
       </div>
     </article>
   `).join('');
@@ -2171,7 +2214,7 @@ function renderCustomerList(customers = []) {
         <div class="proposal-block"><strong>Próxima melhor ação</strong><p>${escapeHtml(customer.nextBestAction || '')}</p></div>
         ${plan.length ? `<div class="proposal-block"><strong>Plano de onboarding</strong><ul>${plan.map((item) => `<li><strong>${escapeHtml(item.title)}</strong>: ${escapeHtml(item.detail)}</li>`).join('')}</ul></div>` : ''}
         <div class="agenda-actions">
-          <button type="button" class="secondary" onclick="openLeadDetail('${escapeAttr(customer.id)}')">Abrir ficha</button>
+          <button type="button" class="secondary" onclick="openLeadDetail(${jsArg(customer.id)})">Abrir ficha</button>
           ${customer.phone ? `<a class="secondary" href="https://wa.me/${String(customer.phone).replace(/\D/g, '').startsWith('55') ? String(customer.phone).replace(/\D/g, '') : `55${String(customer.phone).replace(/\D/g, '')}`}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
         </div>
       </article>
@@ -2240,9 +2283,9 @@ function renderCustomerGrowthList(customers = [], recommendations = []) {
         <div class="proposal-block"><strong>Próxima ação</strong><p>${escapeHtml(customer.nextAction || '')}</p></div>
         ${opportunities.length ? `<div class="proposal-block"><strong>Oportunidades</strong><ul>${opportunities.map((item) => `<li><strong>${escapeHtml(item.title)}</strong>: ${escapeHtml(item.detail)}</li>`).join('')}</ul></div>` : ''}
         <div class="agenda-actions">
-          <button type="button" class="secondary" onclick="requestReferralMessage('${escapeAttr(customer.id)}')">Gerar pedido de indicação</button>
-          <button type="button" class="secondary" onclick="requestExpansionMessage('${escapeAttr(customer.id)}')">Gerar expansão</button>
-          <button type="button" class="secondary" onclick="openLeadDetail('${escapeAttr(customer.id)}')">Abrir ficha</button>
+          <button type="button" class="secondary" onclick="requestReferralMessage(${jsArg(customer.id)})">Gerar pedido de indicação</button>
+          <button type="button" class="secondary" onclick="requestExpansionMessage(${jsArg(customer.id)})">Gerar expansão</button>
+          <button type="button" class="secondary" onclick="openLeadDetail(${jsArg(customer.id)})">Abrir ficha</button>
         </div>
       </article>
     `;

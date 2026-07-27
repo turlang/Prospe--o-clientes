@@ -1,14 +1,15 @@
 {
   "name": "agente-prospeccao-real",
-  "version": "23.6.0",
+  "version": "23.6.1",
   "description": "Sales OS V23.6 com visão geral gráfica, pipeline executivo e relatórios interativos",
   "main": "src/server.js",
   "type": "commonjs",
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "check": "node --check src/server.js && node --check src/authRoutes.js && node --check src/services/billingService.js && node --check src/services/adminAuditService.js && node --check src/services/emailService.js && node --check src/services/salesStrategyEngine.js && node --check src/services/aiApproachService.js && node --check src/services/commercialPromptEngine.js && node --check src/services/commercialAgendaService.js && node --check src/services/commercialIntelligenceService.js && node --check src/services/commercialReportService.js && node --check src/services/commercialProposalService.js && node --check src/services/customerSuccessService.js && node --check src/services/customerGrowthService.js && node --check src/services/campaignAutomationService.js && node --check src/middleware/admin.js && node --check src/adminPlansRoutes.js && node --check public/app.js && node --check public/admin.js && node --check src/db.js && node --check src/core/prompts/promptManager.js && node --check src/core/ai/providerManager.js && node --check src/core/intelligence/commercialIntelligenceEngine.js && node --check src/core/commercial/salesOsCore.js && node --check src/core/commercial/cockpitService.js && node --check src/core/learning/learningEngine.js && node --check src/core/memory/salesMemory.js && node --check src/core/automation/automationEngine.js && node --check src/core/routes/salesOsRoutes.js && node --check src/core/intelligence/copilotContextBuilder.js && node --check src/core/ai/commercialCopilot.js && node --check src/core/memory/copilotMemoryStore.js && node --check src/models/CopilotConversation.js && npm test",
-    "test": "node --test tests/*.test.js"
+    "check": "npm run check:syntax && npm test",
+    "test": "node --test tests/*.test.js",
+    "check:syntax": "node scripts/check-all.js"
   },
   "dependencies": {
     "@fast-csv/format": "^5.0.5",

@@ -7,25 +7,21 @@
  * - Sem MongoDB: salva em data/leads.json, também separado por usuário.
  */
 
-const fs = require('fs/promises');
 const path = require('path');
 const Lead = require('./models/Lead');
 const { hasMongoUri } = require('./db');
+const { readJsonFile, writeJsonFileAtomic, withJsonFileLock } = require('./utils/jsonFileStore');
 
 const DB_PATH = path.join(__dirname, '..', 'data', 'leads.json');
 
 async function readAllLocalLeads() {
-  try {
-    return JSON.parse(await fs.readFile(DB_PATH, 'utf8'));
-  } catch {
-    return [];
-  }
+  const leads = await readJsonFile(DB_PATH, []);
+  return Array.isArray(leads) ? leads : [];
 }
 
 async function persistAllLocalLeads(leads) {
-  await fs.mkdir(path.dirname(DB_PATH), { recursive: true });
-  const sorted = leads.sort((a, b) => Number(b.score || 0) - Number(a.score || 0));
-  await fs.writeFile(DB_PATH, JSON.stringify(sorted, null, 2));
+  const sorted = [...leads].sort((a, b) => Number(b.score || 0) - Number(a.score || 0));
+  await writeJsonFileAtomic(DB_PATH, sorted);
   return sorted;
 }
 
@@ -69,24 +65,28 @@ async function saveLeads(newLeads, userId = null) {
     return readLeads(userId);
   }
 
-  const allLeads = await readAllLocalLeads();
-  const map = new Map(allLeads.map((lead) => [`${lead.__userId || 'global'}:${getLeadKey(lead)}`, lead]));
+  return withJsonFileLock(DB_PATH, async () => {
+    const allLeads = await readAllLocalLeads();
+    const map = new Map(allLeads.map((lead) => [`${lead.__userId || 'global'}:${getLeadKey(lead)}`, lead]));
 
-  for (const lead of newLeads) {
-    const key = `${userId || 'global'}:${getLeadKey(lead)}`;
-    const previous = map.get(key) || {};
-    map.set(key, {
-      ...previous,
-      ...lead,
-      __userId: userId || previous.__userId || 'global',
-      status: previous.status || lead.status || 'NOVO',
-      interacoes: previous.interacoes || lead.interacoes || [],
-      atualizadoEm: new Date().toISOString()
-    });
-  }
+    for (const lead of newLeads) {
+      const leadKey = getLeadKey(lead);
+      if (!leadKey) continue;
+      const key = `${userId || 'global'}:${leadKey}`;
+      const previous = map.get(key) || {};
+      map.set(key, {
+        ...previous,
+        ...lead,
+        __userId: userId || previous.__userId || 'global',
+        status: previous.status || lead.status || 'NOVO',
+        interacoes: previous.interacoes || lead.interacoes || [],
+        atualizadoEm: new Date().toISOString()
+      });
+    }
 
-  await persistAllLocalLeads([...map.values()]);
-  return readLeads(userId);
+    const saved = await persistAllLocalLeads([...map.values()]);
+    return userId ? saved.filter((lead) => belongsToUser(lead, userId)) : saved;
+  });
 }
 
 async function updateLeadStatus(leadId, status, interaction = null, userId = null) {
@@ -106,22 +106,23 @@ async function updateLeadStatus(leadId, status, interaction = null, userId = nul
     return doc.data;
   }
 
-  const allLeads = await readAllLocalLeads();
-  const index = allLeads.findIndex((lead) => getLeadKey(lead) === String(leadId) && belongsToUser(lead, userId));
-  if (index === -1) return null;
+  return withJsonFileLock(DB_PATH, async () => {
+    const allLeads = await readAllLocalLeads();
+    const index = allLeads.findIndex((lead) => getLeadKey(lead) === String(leadId) && belongsToUser(lead, userId));
+    if (index === -1) return null;
 
-  const current = allLeads[index];
-  const interacoes = Array.isArray(current.interacoes) ? current.interacoes : [];
+    const current = allLeads[index];
+    const interacoes = Array.isArray(current.interacoes) ? current.interacoes : [];
+    allLeads[index] = {
+      ...current,
+      status,
+      atualizadoEm: new Date().toISOString(),
+      interacoes: interaction ? [...interacoes, interaction] : interacoes
+    };
 
-  allLeads[index] = {
-    ...current,
-    status,
-    atualizadoEm: new Date().toISOString(),
-    interacoes: interaction ? [...interacoes, interaction] : interacoes
-  };
-
-  await persistAllLocalLeads(allLeads);
-  return allLeads[index];
+    await persistAllLocalLeads(allLeads);
+    return allLeads[index];
+  });
 }
 
 async function updateLeadMeta(leadId, updates = {}, interaction = null, userId = null) {
@@ -145,20 +146,22 @@ async function updateLeadMeta(leadId, updates = {}, interaction = null, userId =
     return doc.data;
   }
 
-  const allLeads = await readAllLocalLeads();
-  const index = allLeads.findIndex((lead) => getLeadKey(lead) === String(leadId) && belongsToUser(lead, userId));
-  if (index === -1) return null;
+  return withJsonFileLock(DB_PATH, async () => {
+    const allLeads = await readAllLocalLeads();
+    const index = allLeads.findIndex((lead) => getLeadKey(lead) === String(leadId) && belongsToUser(lead, userId));
+    if (index === -1) return null;
 
-  const current = allLeads[index];
-  const interacoes = Array.isArray(current.interacoes) ? current.interacoes : [];
-  allLeads[index] = {
-    ...current,
-    ...safeUpdates,
-    interacoes: interaction ? [...interacoes, interaction] : interacoes
-  };
+    const current = allLeads[index];
+    const interacoes = Array.isArray(current.interacoes) ? current.interacoes : [];
+    allLeads[index] = {
+      ...current,
+      ...safeUpdates,
+      interacoes: interaction ? [...interacoes, interaction] : interacoes
+    };
 
-  await persistAllLocalLeads(allLeads);
-  return allLeads[index];
+    await persistAllLocalLeads(allLeads);
+    return allLeads[index];
+  });
 }
 
 async function getLeadStats(userId = null) {

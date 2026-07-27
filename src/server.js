@@ -33,6 +33,7 @@ const {
   downgradeExpiredUserIfNeeded,
   getCurrentUserPlan,
   getPlanExpirationDate,
+  isSimulatedBillingAllowed,
   reconcileMercadoPagoPayment
 } = require('./services/billingService');
 const { writeAdminAudit } = require('./services/adminAuditService');
@@ -58,6 +59,7 @@ const {
 } = require('./services/campaignAutomationService');
 const { buildAutonomousCommandCenter, answerCommercialCopilot } = require('./services/autonomousCommercialService');
 const { createSalesOsRoutes } = require('./core/routes/salesOsRoutes');
+const { sendApiError } = require('./utils/httpError');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -71,6 +73,45 @@ function publicBaseUrl(req) {
 
 function planRank(planId) {
   return ({ trial: 0, pro: 1, agency: 2 })[planId] ?? 0;
+}
+
+const ALLOWED_LEAD_STATUSES = new Set(['NOVO', 'CONTATADO', 'INTERESSADO', 'REUNIAO', 'PROPOSTA', 'FECHADO', 'SEM_INTERESSE']);
+
+function parseProspectingLimit(value) {
+  const parsed = Number(value ?? 10);
+  if (!Number.isInteger(parsed) || parsed < 1) return null;
+  return Math.min(parsed, 20);
+}
+
+function sanitizeSearchText(value, maxLength = 120) {
+  return String(value || '').trim().replace(/\s+/g, ' ').slice(0, maxLength);
+}
+
+function escapeRegExp(value) {
+  return String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function corsOriginAllowed(origin) {
+  if (!origin) return true;
+
+  let normalizedOrigin;
+  try { normalizedOrigin = new URL(origin).origin; }
+  catch { return false; }
+
+  const configured = [process.env.PUBLIC_APP_URL, ...(process.env.CORS_ORIGINS || '').split(',')]
+    .map((item) => String(item || '').trim())
+    .filter(Boolean)
+    .map((item) => {
+      try { return new URL(item).origin; } catch { return ''; }
+    })
+    .filter(Boolean);
+
+  if (configured.includes(normalizedOrigin)) return true;
+  if (String(process.env.NODE_ENV || '').toLowerCase() !== 'production') {
+    return /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(normalizedOrigin);
+  }
+
+  return false;
 }
 
 
@@ -92,11 +133,17 @@ app.use(helmet({
     }
   }
 }));
-app.use(cors());
-app.use(express.json());
+app.use(cors({
+  origin(origin, callback) { callback(null, corsOriginAllowed(origin)); },
+  methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Device-Id'],
+  maxAge: 600
+}));
+app.use(express.json({ limit: '256kb', strict: true }));
+app.use((req, _res, next) => { req.body = req.body && typeof req.body === 'object' ? req.body : {}; next(); });
 app.use(requestLogger);
-app.use(simpleRateLimit({ windowMs: 60_000, max: 120 }));
-app.use(express.static('public', { index: false }));
+app.use('/api', simpleRateLimit({ windowMs: 60_000, max: 120 }));
+app.use(express.static('public', { index: false, maxAge: process.env.NODE_ENV === 'production' ? '1h' : 0 }));
 
 app.get('/app', (_req, res) => {
   res.sendFile(path.join(process.cwd(), 'public', 'index.html'));
@@ -122,7 +169,7 @@ app.get('/api/health', (_req, res) => {
   });
 });
 
-app.get('/api/metrics', requireAuth, async (req, res) => {
+app.get('/api/metrics', requireAuth, requireAdmin, async (req, res) => {
   const { plan, dailyLeadLimit } = await getCurrentUserPlan(req.user.sub);
   const usedToday = await getDailyUsage(req.user.sub);
   const usedTotal = await getTotalUsage(req.user.sub);
@@ -169,7 +216,7 @@ app.get('/api/billing/usage', requireAuth, async (req, res) => {
       remainingTotal: totalLeadLimit === null ? null : Math.max(totalLeadLimit - usedTotal, 0)
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendApiError(res, error);
   }
 });
 
@@ -212,33 +259,48 @@ app.post('/api/billing/checkout', requireAuth, async (req, res) => {
       });
     }
 
+    if (!isSimulatedBillingAllowed()) {
+      return res.status(503).json({
+        error: 'Checkout indisponível. Configure MERCADO_PAGO_ACCESS_TOKEN para ativar planos pagos.'
+      });
+    }
+
     if (hasMongoUri()) {
       await User.findByIdAndUpdate(req.user.sub, {
         plan: plan.id,
         dailyLeadLimit: plan.dailyLeadLimit,
-        subscriptionStatus: 'simulated'
+        totalLeadLimit: plan.totalLeadLimit ?? null,
+        subscriptionStatus: 'simulated',
+        planActivatedAt: new Date(),
+        planExpiresAt: getPlanExpirationDate(plan.id)
       });
     } else {
-      await updateLocalUserPlan(req.user.sub, plan.id, plan.dailyLeadLimit, plan.totalLeadLimit ?? null);
+      await updateLocalUserPlan(req.user.sub, plan.id, plan.dailyLeadLimit, plan.totalLeadLimit ?? null, {
+        subscriptionStatus: 'simulated',
+        planActivatedAt: new Date().toISOString(),
+        planExpiresAt: getPlanExpirationDate(plan.id).toISOString()
+      });
     }
 
     res.json({
       ok: true,
       mode: 'simulated',
-      message: `Plano ${plan.name} ativado em modo de teste. Para checkout real, configure MERCADO_PAGO_ACCESS_TOKEN.`,
+      message: `Plano ${plan.name} ativado somente no ambiente de desenvolvimento.`,
       plan
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendApiError(res, error);
   }
 });
 
 app.post('/api/prospectar', requireAuth, async (req, res) => {
   try {
-    const { segmento, regiao, limite } = req.body;
-    if (!segmento || !regiao) return res.status(400).json({ error: 'Informe segmento e região/bairro.' });
+    const segmento = sanitizeSearchText(req.body.segmento);
+    const regiao = sanitizeSearchText(req.body.regiao);
+    const requestedLimit = parseProspectingLimit(req.body.limite);
 
-    const requestedLimit = Math.max(1, Number(limite || 10));
+    if (!segmento || !regiao) return res.status(400).json({ error: 'Informe segmento e região/bairro.' });
+    if (!requestedLimit) return res.status(400).json({ error: 'A quantidade deve ser um número inteiro entre 1 e 20.' });
     const { plan, dailyLeadLimit } = await getCurrentUserPlan(req.user.sub);
     const usedToday = await getDailyUsage(req.user.sub);
     const usedTotal = await getTotalUsage(req.user.sub);
@@ -288,7 +350,7 @@ app.post('/api/prospectar', requireAuth, async (req, res) => {
         userId: req.user.sub,
         segmento,
         regiao,
-        limite: Number(limite || 10),
+        limite: requestedLimit,
         total: leads.length,
         auditarSites: shouldAuditSites
       });
@@ -306,7 +368,7 @@ app.post('/api/prospectar', requireAuth, async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(error.statusCode || 500).json({ error: error.message });
+    sendApiError(res, error);
   }
 });
 
@@ -330,7 +392,7 @@ app.get('/api/dashboard/stats', requireAuth, async (req, res) => {
   try {
     res.json(await getLeadStats(req.user.sub));
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendApiError(res, error);
   }
 });
 
@@ -348,7 +410,7 @@ app.get('/api/historico-buscas', requireAuth, async (req, res) => {
       criadoEm: item.createdAtIso || item.createdAt
     })));
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendApiError(res, error);
   }
 });
 
@@ -367,7 +429,7 @@ app.patch('/api/leads/meta', requireAuth, async (req, res) => {
     if (!updated) return res.status(404).json({ error: 'Lead não encontrado.' });
     res.json(updated);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendApiError(res, error);
   }
 });
 
@@ -400,7 +462,7 @@ app.post('/api/analisar-resposta', requireAuth, async (req, res) => {
 
     res.json({ lead: updated, analysis });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendApiError(res, error);
   }
 });
 
@@ -409,8 +471,11 @@ app.post('/api/analisar-resposta', requireAuth, async (req, res) => {
  */
 app.post('/api/leads/status', requireAuth, async (req, res) => {
   try {
-    const { leadId, status } = req.body;
-    if (!leadId || !status) return res.status(400).json({ error: 'Informe leadId e status.' });
+    const leadId = sanitizeSearchText(req.body.leadId, 240);
+    const status = String(req.body.status || '').trim().toUpperCase();
+    if (!leadId || !ALLOWED_LEAD_STATUSES.has(status)) {
+      return res.status(400).json({ error: 'Informe um leadId e um status comercial válido.' });
+    }
 
     const updated = await updateLeadStatus(leadId, status, {
       data: new Date().toISOString(),
@@ -421,7 +486,7 @@ app.post('/api/leads/status', requireAuth, async (req, res) => {
     if (!updated) return res.status(404).json({ error: 'Lead não encontrado.' });
     res.json(updated);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendApiError(res, error);
   }
 });
 
@@ -483,13 +548,13 @@ app.post('/api/gerar-abordagem', requireAuth, async (req, res) => {
       channel
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendApiError(res, error);
   }
 });
 
 app.post('/api/billing/webhook', async (req, res) => {
   try {
-    console.log('[Mercado Pago Webhook]', JSON.stringify(req.body || {}));
+    console.info('[Mercado Pago Webhook] notificação recebida');
 
     const paymentId =
       req.body?.data?.id ||
@@ -506,8 +571,8 @@ app.post('/api/billing/webhook', async (req, res) => {
     const result = await reconcileMercadoPagoPayment(paymentId);
     return res.json({ received: true, ...result, payment: undefined });
   } catch (error) {
-    console.error('[Mercado Pago Webhook Error]', error);
-    return res.status(200).json({ received: true, error: error.message });
+    console.error('[Mercado Pago Webhook Error]', error.message);
+    return res.status(500).json({ received: false, error: 'Falha ao processar a notificação de pagamento.' });
   }
 });
 
@@ -523,7 +588,7 @@ app.post('/api/billing/sync', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'Informe o payment_id para sincronizar.' });
     }
 
-    const result = await reconcileMercadoPagoPayment(paymentId);
+    const result = await reconcileMercadoPagoPayment(paymentId, { expectedUserId: req.user.sub });
     const user = hasMongoUri() ? await User.findById(req.user.sub).lean() : await findUserById(req.user.sub);
     const plan = getPlan(user?.plan || 'trial');
 
@@ -534,7 +599,7 @@ app.post('/api/billing/sync', requireAuth, async (req, res) => {
       user: {
         plan: plan.id,
         planName: plan.name,
-        dailyLeadLimit: Number(user?.dailyLeadLimit || plan.dailyLeadLimit),
+        dailyLeadLimit: Number(user?.dailyLeadLimit ?? plan.dailyLeadLimit),
         totalLeadLimit: user?.totalLeadLimit ?? plan.totalLeadLimit ?? null,
         subscriptionStatus: user?.subscriptionStatus || 'trial',
         planActivatedAt: user?.planActivatedAt || null,
@@ -542,7 +607,7 @@ app.post('/api/billing/sync', requireAuth, async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendApiError(res, error);
   }
 });
 
@@ -561,7 +626,7 @@ app.get('/api/billing/status', requireAuth, async (req, res) => {
       mercadoPagoLastPaymentId: user.mercadoPagoLastPaymentId || ''
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendApiError(res, error);
   }
 });
 
@@ -704,18 +769,19 @@ app.get('/api/admin/overview', requireAuth, requireAdmin, async (_req, res) => {
       }))
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendApiError(res, error);
   }
 });
 
 app.get('/api/admin/users', requireAuth, requireAdmin, async (req, res) => {
   try {
-    const q = String(req.query.q || '').trim();
+    const q = sanitizeSearchText(req.query.q, 80);
+    const safeQuery = escapeRegExp(q);
     const filter = q
       ? { $or: [
-          { name: new RegExp(q, 'i') },
-          { email: new RegExp(q, 'i') },
-          { plan: new RegExp(q, 'i') }
+          { name: new RegExp(safeQuery, 'i') },
+          { email: new RegExp(safeQuery, 'i') },
+          { plan: new RegExp(safeQuery, 'i') }
         ] }
       : {};
 
@@ -738,7 +804,7 @@ app.get('/api/admin/users', requireAuth, requireAdmin, async (req, res) => {
       planExpiresAt: u.planExpiresAt
     })));
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendApiError(res, error);
   }
 });
 
@@ -800,7 +866,7 @@ app.patch('/api/admin/users/:id', requireAuth, requireAdmin, async (req, res) =>
       }
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendApiError(res, error);
   }
 });
 
@@ -837,7 +903,7 @@ app.get('/api/admin/security', requireAuth, requireAdmin, async (_req, res) => {
       }))
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendApiError(res, error);
   }
 });
 
@@ -853,7 +919,7 @@ app.delete('/api/admin/security/:id', requireAuth, requireAdmin, async (req, res
 
     res.json({ ok: true, message: 'Registro de segurança removido.' });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendApiError(res, error);
   }
 });
 
@@ -874,7 +940,7 @@ app.post('/api/admin/security/clear', requireAuth, requireAdmin, async (req, res
     await writeAdminAudit(req, 'ADMIN_SECURITY_RECORDS_CLEARED', { before: { filters }, after: { deletedCount: result.deletedCount || 0 } });
     res.json({ ok: true, deletedCount: result.deletedCount || 0 });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendApiError(res, error);
   }
 });
 
@@ -884,7 +950,7 @@ app.get('/api/admin/plans', requireAuth, requireAdmin, async (_req, res) => {
   try {
     res.json(getAllPlans());
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendApiError(res, error);
   }
 });
 
@@ -926,7 +992,7 @@ app.get('/api/admin/audit-logs', requireAuth, requireAdmin, async (_req, res) =>
       createdAt: log.createdAt
     })));
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendApiError(res, error);
   }
 });
 
@@ -950,7 +1016,7 @@ app.get('/api/admin/payments', requireAuth, requireAdmin, async (_req, res) => {
       updatedAt: p.updatedAt
     })));
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendApiError(res, error);
   }
 });
 
@@ -997,7 +1063,7 @@ app.post('/api/automations/followup-sequence', requireAuth, async (req, res) => 
       tasks: createdTasks
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendApiError(res, error);
   }
 });
 
@@ -1044,7 +1110,7 @@ app.get('/api/automations/next-actions', requireAuth, async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendApiError(res, error);
   }
 });
 
@@ -1060,7 +1126,7 @@ app.post('/api/campaigns/sequence', requireAuth, async (req, res) => {
     const sequence = buildCampaignSequence(lead, objective);
     res.json({ leadId, sequence });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendApiError(res, error);
   }
 });
 
@@ -1072,7 +1138,7 @@ app.get('/api/campaigns/summary', requireAuth, async (req, res) => {
     ]);
     res.json(buildCampaignSummary(leads, tasks));
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendApiError(res, error);
   }
 });
 
@@ -1113,7 +1179,7 @@ app.post('/api/campaigns/smart-sequence', requireAuth, async (req, res) => {
       tasks: createdTasks
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendApiError(res, error);
   }
 });
 
@@ -1149,7 +1215,7 @@ app.post('/api/followups', requireAuth, async (req, res) => {
 
     res.status(201).json(task);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendApiError(res, error);
   }
 });
 
@@ -1157,7 +1223,7 @@ app.get('/api/followups', requireAuth, async (req, res) => {
   try {
     res.json(await listTasks(req.user.sub));
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendApiError(res, error);
   }
 });
 
@@ -1166,7 +1232,7 @@ app.get('/api/agenda/summary', requireAuth, async (req, res) => {
     const tasks = await listTasks(req.user.sub);
     res.json(buildAgendaSummary(tasks));
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendApiError(res, error);
   }
 });
 
@@ -1176,7 +1242,7 @@ app.get('/api/v22/command-center', requireAuth, async (req, res) => {
     const [leads, tasks] = await Promise.all([readLeads(req.user.sub), listTasks(req.user.sub)]);
     res.json(buildAutonomousCommandCenter(leads, tasks));
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendApiError(res, error);
   }
 });
 
@@ -1187,7 +1253,7 @@ app.post('/api/v22/copilot', requireAuth, simpleRateLimit({ windowMs: 60_000, ma
     const [leads, tasks] = await Promise.all([readLeads(req.user.sub), listTasks(req.user.sub)]);
     res.json(await answerCommercialCopilot({ question, leads, tasks }));
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendApiError(res, error);
   }
 });
 
@@ -1199,7 +1265,7 @@ app.get('/api/commercial-intelligence/summary', requireAuth, async (req, res) =>
     ]);
     res.json(buildCommercialIntelligence(leads, tasks));
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendApiError(res, error);
   }
 });
 
@@ -1210,7 +1276,7 @@ app.get('/api/proposals/summary', requireAuth, async (req, res) => {
     const leads = await readLeads(req.user.sub);
     res.json(buildProposalSummary(leads));
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendApiError(res, error);
   }
 });
 
@@ -1268,7 +1334,7 @@ app.post('/api/proposals/generate', requireAuth, async (req, res) => {
       aiError: proposal.aiError || recommendation.aiError || null
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendApiError(res, error);
   }
 });
 
@@ -1278,7 +1344,7 @@ app.get('/api/customers/summary', requireAuth, async (req, res) => {
     const leads = await readLeads(req.user.sub);
     res.json(buildCustomerSuccessSummary(leads));
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendApiError(res, error);
   }
 });
 
@@ -1292,7 +1358,7 @@ app.post('/api/customers/close', requireAuth, async (req, res) => {
 
     res.json({ ok: true, lead: updated, summary: buildCustomerSuccessSummary(await readLeads(req.user.sub)).summary });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendApiError(res, error);
   }
 });
 
@@ -1306,7 +1372,7 @@ app.post('/api/customers/lost', requireAuth, async (req, res) => {
 
     res.json({ ok: true, lead: updated });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendApiError(res, error);
   }
 });
 
@@ -1316,7 +1382,7 @@ app.get('/api/customer-growth/summary', requireAuth, async (req, res) => {
     const leads = await readLeads(req.user.sub);
     res.json(buildCustomerGrowthSummary(leads));
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendApiError(res, error);
   }
 });
 
@@ -1336,7 +1402,7 @@ app.post('/api/customer-growth/referral', requireAuth, async (req, res) => {
     const updated = await updateLeadStatus(leadId, 'FECHADO', buildReferralInteraction({ message }), req.user.sub);
     res.json({ ok: true, lead: updated, message });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendApiError(res, error);
   }
 });
 
@@ -1356,7 +1422,7 @@ app.post('/api/customer-growth/expansion', requireAuth, async (req, res) => {
     const updated = await updateLeadStatus(leadId, 'FECHADO', buildExpansionInteraction({ message }), req.user.sub);
     res.json({ ok: true, lead: updated, message });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendApiError(res, error);
   }
 });
 
@@ -1368,7 +1434,7 @@ app.get('/api/reports/commercial', requireAuth, async (req, res) => {
     ]);
     res.json(buildCommercialReport(leads, tasks));
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendApiError(res, error);
   }
 });
 
@@ -1383,7 +1449,7 @@ app.get('/api/reports/commercial.csv', requireAuth, async (req, res) => {
     res.setHeader('Content-Disposition', 'attachment; filename="relatorio-comercial.csv"');
     res.send(buildCommercialReportCsv(report));
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendApiError(res, error);
   }
 });
 
@@ -1402,7 +1468,7 @@ app.post('/api/commercial-intelligence/objection', requireAuth, async (req, res)
       respostaSugerida: buildObjectionResponse(objection, lead)
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendApiError(res, error);
   }
 });
 
@@ -1412,18 +1478,18 @@ app.patch('/api/followups/:id/done', requireAuth, async (req, res) => {
     if (!task) return res.status(404).json({ error: 'Follow-up não encontrado.' });
     res.json(task);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendApiError(res, error);
   }
 });
 
 
 app.post('/api/auditar-site', requireAuth, async (req, res) => {
   try {
-    const { site } = req.body;
+    const site = String(req.body.site || '').trim().slice(0, 2048);
     if (!site) return res.status(400).json({ error: 'Informe o site para auditar.' });
     res.json(await auditWebsite(site));
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendApiError(res, error, 'Não foi possível auditar o site informado.');
   }
 });
 
@@ -1450,7 +1516,7 @@ app.get('/api/testar-google', requireAuth, requireAdmin, async (_req, res) => {
     const resultado = await testGoogleConnection();
     res.json(resultado);
   } catch (error) {
-    res.status(error.statusCode || 500).json({ error: error.message });
+    sendApiError(res, error);
   }
 });
 
@@ -1491,7 +1557,10 @@ app.use('/api', (_req, res) => {
 
 app.use((error, _req, res, _next) => {
   console.error('Erro interno:', error);
-  res.status(500).json({ error: error.message || 'Erro interno do servidor.' });
+  const expose = String(process.env.NODE_ENV || '').toLowerCase() !== 'production' || Number(error.statusCode) < 500;
+  res.status(error.statusCode || 500).json({
+    error: expose ? (error.message || 'Erro interno do servidor.') : 'Erro interno do servidor.'
+  });
 });
 
 connectDatabase()

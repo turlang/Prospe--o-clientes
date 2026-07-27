@@ -32,6 +32,7 @@ function getMongoUri() {
 }
 
 function mustRequireMongo() {
+  if (String(process.env.NODE_ENV || '').toLowerCase() === 'production') return true;
   return String(process.env.REQUIRE_MONGODB || '').toLowerCase() === 'true';
 }
 

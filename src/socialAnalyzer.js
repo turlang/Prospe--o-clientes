@@ -13,7 +13,7 @@
  * usar APIs oficiais das plataformas, com autorização e respeito aos termos de uso.
  */
 
-const SOCautomacaoL_PATTERNS = [
+const SOCIAL_PATTERNS = [
   { nome: 'Instagram', key: 'instagram', regex: /https?:\/\/(?:www\.)?instagram\.com\/[^\s"'<>]+/gi },
   { nome: 'Facebook', key: 'facebook', regex: /https?:\/\/(?:www\.)?facebook\.com\/[^\s"'<>]+/gi },
   { nome: 'LinkedIn', key: 'linkedin', regex: /https?:\/\/(?:www\.)?linkedin\.com\/[^\s"'<>]+/gi },
@@ -25,7 +25,7 @@ const SOCautomacaoL_PATTERNS = [
 function extractSocialLinks(html = '') {
   const found = [];
 
-  for (const platform of SOCautomacaoL_PATTERNS) {
+  for (const platform of SOCIAL_PATTERNS) {
     const matches = html.match(platform.regex) || [];
     const urls = unique(matches.map(cleanUrl));
 

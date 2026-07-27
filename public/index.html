@@ -30,6 +30,7 @@
         <label for="loginPassword">Senha</label>
         <input id="loginPassword" name="password" type="password" autocomplete="current-password" required />
         <button type="submit">Entrar no dashboard</button>
+        <button id="forgotPasswordLink" type="button" class="secondary auth-recovery">Esqueci minha senha</button>
       </form>
 
       <form id="registerForm" class="auth-form muted-form" aria-labelledby="registerTitle">
@@ -39,7 +40,7 @@
         <label for="registerEmail">E-mail</label>
         <input id="registerEmail" name="email" type="email" autocomplete="email" required />
         <label for="registerPassword">Senha</label>
-        <input id="registerPassword" name="password" type="password" autocomplete="new-password" minlength="6" required />
+        <input id="registerPassword" name="password" type="password" autocomplete="new-password" minlength="8" maxlength="128" required />
         <button type="submit" class="secondary">Criar conta gratuita</button>
       </form>
     </section>
@@ -114,7 +115,13 @@
               <div id="v23DailyPlan" class="cockpit-action-list"></div>
             </section>
 
-
+            <section class="card-panel">
+              <div class="section-title">
+                <h3>Saúde do pipeline</h3>
+                <p class="meta">Volume e avanço das oportunidades em cada etapa.</p>
+              </div>
+              <div id="v23Pipeline" class="cockpit-pipeline"></div>
+            </section>
           </div>
 
           <div class="cockpit-main-grid cockpit-secondary-grid">

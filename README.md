@@ -1,4 +1,4 @@
-# LeadHunter Pro — V22 CRM Autônomo
+# LeadHunter Pro — V23.6.1 CRM Autônomo
 
 SaaS de prospecção comercial, geração de leads, CRM, pipeline de vendas e gestão de assinaturas para pequenos negócios, vendedores, autônomos e agências.
 
@@ -99,7 +99,8 @@ docs/ARQUITETURA.md
 ## Como executar
 
 ```bash
-npm install
+npm ci
+npm run check
 npm run dev
 ```
 
@@ -116,7 +117,8 @@ npm run check
 npm test
 ```
 
-- `check`: valida sintaxe dos principais arquivos e executa a suíte de testes.
+- `check:syntax`: valida recursivamente todos os arquivos JavaScript do projeto.
+- `check`: executa a validação completa de sintaxe e a suíte de testes.
 - `test`: executa testes automatizados de regras críticas, segurança e modularização.
 
 ## Variáveis de ambiente
@@ -128,21 +130,36 @@ REQUIRE_MONGODB=true
 DNS_SERVERS=8.8.8.8,1.1.1.1
 JWT_SECRET=troque-este-segredo-por-uma-chave-grande-e-aleatoria
 JWT_EXPIRES_IN=7d
+JWT_ISSUER=leadhunter-pro
+JWT_AUDIENCE=leadhunter-web
 MONGODB_URI=
 GOOGLE_PLACES_API_KEY=cole_sua_chave_google_places_aqui
 PLACES_PROVIDER=new
 ALLOW_INCOMPLETE_CONTACTS=false
 AUDIT_WEBSITES=true
 PUBLIC_APP_URL=http://localhost:3000
+CORS_ORIGINS=
+ALLOW_SIMULATED_BILLING=true
 MERCADO_PAGO_PUBLIC_KEY=
 MERCADO_PAGO_ACCESS_TOKEN=
 MERCADO_PAGO_WEBHOOK_URL=http://localhost:3000/api/billing/webhook
+PLAN_DURATION_DAYS=30
 REGISTER_IP_DAILY_LIMIT=3
 RESEND_API_KEY=
 MAIL_FROM=LeadHunter Pro <noreply@seudominio.com>
 ```
 
 > Em produção, `JWT_SECRET` é obrigatório. O servidor não aceita mais segredo padrão quando `NODE_ENV=production`.
+
+
+## Segurança operacional
+
+- Em produção, MongoDB é obrigatório e o fallback em JSON local é bloqueado.
+- `PUBLIC_APP_URL`, `JWT_SECRET`, `MONGODB_URI` e as credenciais do Mercado Pago devem ser configuradas no ambiente de produção.
+- Checkout simulado funciona somente fora de produção e pode ser desligado com `ALLOW_SIMULATED_BILLING=false`.
+- A auditoria de sites bloqueia localhost, redes privadas, endereços reservados e redirecionamentos inseguros.
+- Os arquivos `data/*.json` são ignorados pelo Git porque podem conter leads, usuários e hashes de senha.
+- Após redefinir a senha, tokens JWT anteriores deixam de ser aceitos.
 
 ## Regra oficial do Trial
 

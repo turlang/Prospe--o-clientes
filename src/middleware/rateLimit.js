@@ -1,26 +1,44 @@
-function simpleRateLimit({ windowMs = 60_000, max = 90 } = {}) {
+function simpleRateLimit({ windowMs = 60_000, max = 90, keyGenerator = null } = {}) {
   const bucket = new Map();
+  let requestsSinceSweep = 0;
+
+  function sweep(now) {
+    for (const [key, value] of bucket.entries()) {
+      if (now >= value.resetAt) bucket.delete(key);
+    }
+  }
 
   return (req, res, next) => {
-    const key = req.ip || req.headers['x-forwarded-for'] || 'local';
     const now = Date.now();
-    const current = bucket.get(key) || { count: 0, resetAt: now + windowMs };
+    requestsSinceSweep += 1;
+    if (requestsSinceSweep >= 250) {
+      requestsSinceSweep = 0;
+      sweep(now);
+    }
 
-    if (now > current.resetAt) {
-      current.count = 0;
-      current.resetAt = now + windowMs;
+    const generatedKey = keyGenerator ? keyGenerator(req) : req.ip;
+    const key = String(generatedKey || 'local').slice(0, 240);
+    let current = bucket.get(key);
+
+    if (!current || now >= current.resetAt) {
+      current = { count: 0, resetAt: now + windowMs };
     }
 
     current.count += 1;
     bucket.set(key, current);
 
+    res.setHeader('RateLimit-Limit', String(max));
+    res.setHeader('RateLimit-Remaining', String(Math.max(max - current.count, 0)));
+    res.setHeader('RateLimit-Reset', String(Math.ceil(current.resetAt / 1000)));
+
     if (current.count > max) {
+      res.setHeader('Retry-After', String(Math.max(1, Math.ceil((current.resetAt - now) / 1000))));
       return res.status(429).json({
         error: 'Muitas requisições em pouco tempo. Aguarde alguns instantes e tente novamente.'
       });
     }
 
-    next();
+    return next();
   };
 }
 

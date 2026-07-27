@@ -1,12 +1,14 @@
 const { extractSocialLinks, estimateEngagement } = require('./socialAnalyzer');
+const { fetchPublicHttpUrl, normalizeHttpUrl, readResponseTextLimited } = require('./security/publicUrl');
 
 function normalizeUrl(url) {
-  if (!url) return '';
-  const clean = String(url).trim();
-  if (!clean) return '';
-  if (clean.startsWith('http://') || clean.startsWith('https://')) return clean;
-  return `https://${clean}`;
+  try {
+    return normalizeHttpUrl(url).toString();
+  } catch {
+    return '';
+  }
 }
+
 
 function hasOwnDomain(url) {
   try {
@@ -47,14 +49,13 @@ async function auditWebsite(site) {
 
   try {
     const started = Date.now();
-    const response = await fetch(url, {
+    const response = await fetchPublicHttpUrl(url, {
       signal: controller.signal,
-      redirect: 'follow',
       headers: {
-        'user-agent': 'Mozilla/5.0 LeadProspector/1.0 (+local academic project)'
+        'user-agent': 'Mozilla/5.0 LeadProspector/1.0 (+public website auditor)'
       }
     });
-    const html = await response.text();
+    const html = await readResponseTextLimited(response);
     const lower = html.toLowerCase();
     const loadMs = Date.now() - started;
 
@@ -113,8 +114,12 @@ async function auditWebsite(site) {
       ...empty,
       analisado: true,
       url,
-      erro: error.name === 'AbortError' ? 'tempo limite ao acessar o site' : 'não foi possível acessar o site',
-      problemas: ['site não respondeu bem à auditoria automática'],
+      erro: error.name === 'AbortError'
+        ? 'tempo limite ao acessar o site'
+        : error.code === 'UNSAFE_URL'
+          ? error.message
+          : 'não foi possível acessar o site',
+      problemas: [error.code === 'UNSAFE_URL' ? error.message : 'site não respondeu bem à auditoria automática'],
       oportunidades: ['oferecer diagnóstico técnico e melhoria de performance/estrutura']
     };
   } finally {
@@ -122,4 +127,4 @@ async function auditWebsite(site) {
   }
 }
 
-module.exports = { auditWebsite, hasOwnDomain };
+module.exports = { auditWebsite, hasOwnDomain, normalizeUrl };

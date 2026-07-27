@@ -74,7 +74,7 @@ function scoreLeadComercial(lead) {
   score = Math.max(0, Math.min(100, score));
 
   const nivel = score >= 80 ? 'Muito promissor' : score >= 65 ? 'Quente' : score >= 45 ? 'Morno' : 'Frio';
-  const probabilidade = score >= 80 ? 'ALTA' : score >= 65 ? 'BOA' : score >= 45 ? 'MÉDautomacao' : 'BAIXA';
+  const probabilidade = score >= 80 ? 'ALTA' : score >= 65 ? 'BOA' : score >= 45 ? 'MÉDIA' : 'BAIXA';
   const ticketEstimado = estimateTicket(lead, segmento, score);
   const servicos = suggestServices(lead, segmento, auditoria);
   const relatorio = buildDiagnosis({ lead, score, nivel, probabilidade, ticketEstimado, servicos, dores, auditoria });

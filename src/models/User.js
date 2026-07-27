@@ -5,6 +5,7 @@ const userSchema = new mongoose.Schema(
     name: { type: String, trim: true, required: true },
     email: { type: String, trim: true, lowercase: true, unique: true, required: true },
     passwordHash: { type: String, required: true },
+    passwordChangedAt: { type: Date, default: null },
     plan: { type: String, enum: ['trial', 'pro', 'agency'], default: 'trial' },
     dailyLeadLimit: { type: Number, default: 10 },
     totalLeadLimit: { type: Number, default: 10 },

@@ -1,3 +1,29 @@
+## 23.6.1 — Correção de engenharia, segurança e estabilidade
+
+### Corrigido
+- Dashboard não quebra quando o bloco legado `#stats` não existe.
+- Recuperação de senha voltou a ter acionamento visível na tela de login.
+- Saúde do pipeline V23 voltou a ser renderizada no cockpit.
+- Cópia de abordagens, respostas e propostas não injeta conteúdo dinâmico em handlers HTML.
+- Escritas em JSON local passam a ser atômicas e serializadas, evitando corrupção por concorrência.
+- Probabilidade comercial `MÉDIA` e identificador de redes sociais foram corrigidos.
+- HTML duplicado em sequências de follow-up foi removido.
+
+### Segurança
+- Checkout simulado é proibido em produção.
+- Sincronização de pagamento valida o proprietário e o valor/moeda do plano.
+- Identificadores de pagamento são validados antes da consulta ao Mercado Pago.
+- Auditoria de sites bloqueia SSRF contra localhost, redes privadas e redirecionamentos inseguros.
+- Autenticação verifica usuário ativo a cada requisição e invalida sessões após troca de senha.
+- Recuperação de senha usa consumo atômico do token e respostas sem enumeração de conta.
+- Produção exige MongoDB; dados locais não podem ser usados como fallback.
+- CORS, payload JSON, limites de requisição e mensagens de erro foram endurecidos.
+- Dados locais sensíveis foram removidos da distribuição e `data/*.json` passou a ser ignorado pelo Git.
+
+### Qualidade
+- Adicionado verificador recursivo de sintaxe para todo o JavaScript.
+- Adicionados testes de regressão para frontend, cobrança, SSRF e armazenamento concorrente.
+
 ## 23.5.0 — Visão Geral Analítica e UX Comercial
 
 - Visão Geral passa a abrir antes da Central de Inteligência e exibe somente gráficos executivos.

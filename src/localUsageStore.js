@@ -1,34 +1,22 @@
 /**
- * localUsageStore.js
- * -----------------------------------------------------------------------------
  * Controle de uso do trial/planos.
- *
- * - Com MongoDB conectado: grava na collection Usage.
- * - Sem MongoDB: usa data/usage.json para desenvolvimento local.
+ * MongoDB em produção; JSON local com escrita atômica em desenvolvimento.
  */
 
-const fs = require('fs/promises');
-const path = require('path');
+const path = require('node:path');
 const Usage = require('./models/Usage');
 const { hasMongoUri } = require('./db');
+const { readJsonFile, writeJsonFileAtomic, withJsonFileLock } = require('./utils/jsonFileStore');
 
 const USAGE_PATH = path.join(__dirname, '..', 'data', 'usage.json');
 
-function todayKey() {
-  return new Date().toISOString().slice(0, 10);
+function todayKey(now = new Date()) {
+  return now.toISOString().slice(0, 10);
 }
 
 async function readUsage() {
-  try {
-    return JSON.parse(await fs.readFile(USAGE_PATH, 'utf8'));
-  } catch {
-    return {};
-  }
-}
-
-async function writeUsage(usage) {
-  await fs.mkdir(path.dirname(USAGE_PATH), { recursive: true });
-  await fs.writeFile(USAGE_PATH, JSON.stringify(usage, null, 2));
+  const usage = await readJsonFile(USAGE_PATH, {});
+  return usage && typeof usage === 'object' && !Array.isArray(usage) ? usage : {};
 }
 
 async function getDailyUsage(userId) {
@@ -38,8 +26,7 @@ async function getDailyUsage(userId) {
   }
 
   const usage = await readUsage();
-  const day = todayKey();
-  return Number(usage?.[String(userId)]?.[day] || 0);
+  return Number(usage?.[String(userId)]?.[todayKey()] || 0);
 }
 
 async function getTotalUsage(userId) {
@@ -49,12 +36,12 @@ async function getTotalUsage(userId) {
   }
 
   const usage = await readUsage();
-  const days = Object.values(usage?.[String(userId)] || {});
-  return days.reduce((sum, value) => sum + Number(value || 0), 0);
+  return Object.values(usage?.[String(userId)] || {}).reduce((sum, value) => sum + Number(value || 0), 0);
 }
 
 async function addDailyUsage(userId, amount) {
   const increment = Number(amount || 0);
+  if (!Number.isFinite(increment) || increment < 0) throw new Error('Incremento de uso inválido.');
 
   if (hasMongoUri()) {
     const doc = await Usage.findOneAndUpdate(
@@ -62,19 +49,18 @@ async function addDailyUsage(userId, amount) {
       { $inc: { count: increment } },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     ).lean();
-
     return Number(doc?.count || 0);
   }
 
-  const usage = await readUsage();
-  const id = String(userId);
-  const day = todayKey();
-
-  usage[id] = usage[id] || {};
-  usage[id][day] = Number(usage[id][day] || 0) + increment;
-
-  await writeUsage(usage);
-  return usage[id][day];
+  return withJsonFileLock(USAGE_PATH, async () => {
+    const usage = await readUsage();
+    const id = String(userId);
+    const day = todayKey();
+    usage[id] = usage[id] || {};
+    usage[id][day] = Number(usage[id][day] || 0) + increment;
+    await writeJsonFileAtomic(USAGE_PATH, usage);
+    return usage[id][day];
+  });
 }
 
 module.exports = { getDailyUsage, getTotalUsage, addDailyUsage, todayKey };

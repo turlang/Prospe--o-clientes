@@ -1,3 +1,5 @@
+const { sendApiError } = require('../../utils/httpError');
+const { version: appVersion } = require('../../../package.json');
 const express = require('express');
 const { SalesOsCore } = require('../commercial/salesOsCore');
 const { readLeads } = require('../../storage');
@@ -13,7 +15,7 @@ function createSalesOsRoutes({ requireAuth }) {
   const core = new SalesOsCore();
 
   router.get('/status', requireAuth, (_req, res) => {
-    res.json({ version: '23.3.0', architecture: 'sales-os-core', ai: getProviderSnapshot(), prompts: listTemplates() });
+    res.json({ version: appVersion, architecture: 'sales-os-core', ai: getProviderSnapshot(), prompts: listTemplates() });
   });
 
 
@@ -22,7 +24,7 @@ function createSalesOsRoutes({ requireAuth }) {
       const [leads, tasks] = await Promise.all([readLeads(req.user.sub), listTasks(req.user.sub)]);
       res.json(core.buildCockpit({ leads, tasks, userName: req.user.name || req.user.email || '' }));
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      sendApiError(res, error);
     }
   });
 
@@ -31,7 +33,7 @@ function createSalesOsRoutes({ requireAuth }) {
     try {
       res.json({ messages: await listCopilotMessages(req.user.sub, req.query.limit || 50) });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      sendApiError(res, error);
     }
   });
 
@@ -40,7 +42,7 @@ function createSalesOsRoutes({ requireAuth }) {
       const deletedCount = await clearCopilotMessages(req.user.sub);
       res.json({ ok: true, deletedCount });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      sendApiError(res, error);
     }
   });
 
@@ -51,7 +53,7 @@ function createSalesOsRoutes({ requireAuth }) {
       const briefing = localCopilotAnswer('Faça meu planejamento diário e atue como coach comercial.', context);
       res.json({ ...briefing, context: { metrics: context.metrics, dailyPlan: context.dailyPlan.slice(0, 5), alerts: context.alerts.slice(0, 5) } });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      sendApiError(res, error);
     }
   });
 
@@ -80,7 +82,7 @@ function createSalesOsRoutes({ requireAuth }) {
       });
       res.json({ ...answer, message: saved, contextUpdatedAt: context.generatedAt });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      sendApiError(res, error);
     }
   });
 
@@ -89,7 +91,7 @@ function createSalesOsRoutes({ requireAuth }) {
       const [leads, tasks] = await Promise.all([readLeads(req.user.sub), listTasks(req.user.sub)]);
       res.json(core.buildSnapshot({ leads, tasks }));
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      sendApiError(res, error);
     }
   });
 

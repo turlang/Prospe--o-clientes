@@ -1,34 +1,23 @@
 /**
- * localUserStore.js
- * -----------------------------------------------------------------------------
- * Cadastro/login local em JSON para desenvolvimento sem MongoDB.
- *
- * Em produção, use MONGODB_URI com MongoDB Atlas. Este arquivo existe para o
- * projeto não travar durante testes locais da Fase 2.
+ * Persistência local de usuários para desenvolvimento sem MongoDB.
+ * Escritas são serializadas e atômicas para evitar perda de dados concorrente.
  */
 
-const fs = require('fs/promises');
-const path = require('path');
-const crypto = require('crypto');
+const path = require('node:path');
+const crypto = require('node:crypto');
+const { readJsonFile, writeJsonFileAtomic, withJsonFileLock } = require('./utils/jsonFileStore');
 
 const USERS_PATH = path.join(__dirname, '..', 'data', 'users.json');
 
 async function readUsers() {
-  try {
-    return JSON.parse(await fs.readFile(USERS_PATH, 'utf8'));
-  } catch {
-    return [];
-  }
-}
-
-async function writeUsers(users) {
-  await fs.mkdir(path.dirname(USERS_PATH), { recursive: true });
-  await fs.writeFile(USERS_PATH, JSON.stringify(users, null, 2));
+  const users = await readJsonFile(USERS_PATH, []);
+  return Array.isArray(users) ? users : [];
 }
 
 async function findUserByEmail(email) {
+  const normalized = String(email || '').trim().toLowerCase();
   const users = await readUsers();
-  return users.find((user) => user.email === email) || null;
+  return users.find((user) => String(user.email || '').toLowerCase() === normalized) || null;
 }
 
 async function findUserById(id) {
@@ -36,50 +25,105 @@ async function findUserById(id) {
   return users.find((user) => String(user.id) === String(id)) || null;
 }
 
-async function createLocalUser({ name, email, passwordHash }) {
+async function findUserByDeviceId(deviceId) {
+  const normalized = String(deviceId || '').trim();
+  if (!normalized) return null;
   const users = await readUsers();
-  const user = {
-    id: crypto.randomUUID(),
-    name,
-    email,
-    passwordHash,
-    plan: 'trial',
-    dailyLeadLimit: 10,
-    totalLeadLimit: 10,
-    trialStartedAt: new Date().toISOString(),
-    subscriptionStatus: 'trial',
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  };
-
-  users.push(user);
-  await writeUsers(users);
-  return user;
+  return users.find((user) => String(user.deviceId || '') === normalized) || null;
 }
 
-async function updateLocalUserPlan(id, plan, dailyLeadLimit, totalLeadLimit = null) {
+async function countRecentLocalRegistrationsByIp(ip, windowMs) {
+  const normalized = String(ip || '').trim();
+  if (!normalized || normalized === 'unknown') return 0;
+  const cutoff = Date.now() - Math.max(0, Number(windowMs || 0));
   const users = await readUsers();
-  const index = users.findIndex((user) => String(user.id) === String(id));
-  if (index === -1) return null;
+  return users.filter((user) => {
+    const createdAt = new Date(user.createdAt || 0).getTime();
+    return String(user.registrationIp || '') === normalized && Number.isFinite(createdAt) && createdAt >= cutoff;
+  }).length;
+}
 
-  users[index] = {
-    ...users[index],
-    plan,
-    dailyLeadLimit,
-    totalLeadLimit,
-    subscriptionStatus: plan === 'trial' ? 'trial' : 'simulated',
-    updatedAt: new Date().toISOString()
-  };
+async function createLocalUser({ name, email, passwordHash, deviceId = '', registrationIp = '' }) {
+  return withJsonFileLock(USERS_PATH, async () => {
+    const users = await readUsers();
+    const normalizedEmail = String(email || '').trim().toLowerCase();
 
-  await writeUsers(users);
-  return users[index];
+    if (users.some((user) => String(user.email || '').toLowerCase() === normalizedEmail)) {
+      const error = new Error('Este e-mail já está cadastrado.');
+      error.code = 'LOCAL_DUPLICATE_EMAIL';
+      throw error;
+    }
+
+    if (deviceId && users.some((user) => String(user.deviceId || '') === String(deviceId))) {
+      const error = new Error('Este dispositivo já utilizou o teste gratuito.');
+      error.code = 'LOCAL_DUPLICATE_DEVICE';
+      throw error;
+    }
+
+    const now = new Date().toISOString();
+    const user = {
+      id: crypto.randomUUID(),
+      name,
+      email: normalizedEmail,
+      passwordHash,
+      plan: 'trial',
+      dailyLeadLimit: 10,
+      totalLeadLimit: 10,
+      trialStartedAt: now,
+      subscriptionStatus: 'trial',
+      isActive: true,
+      role: 'user',
+      deviceId: String(deviceId || ''),
+      registrationIp: String(registrationIp || ''),
+      planActivatedAt: null,
+      planExpiresAt: null,
+      mercadoPagoLastPaymentId: '',
+      createdAt: now,
+      updatedAt: now
+    };
+
+    users.push(user);
+    await writeJsonFileAtomic(USERS_PATH, users);
+    return user;
+  });
+}
+
+async function updateLocalUserPlan(id, plan, dailyLeadLimit, totalLeadLimit = null, options = {}) {
+  return withJsonFileLock(USERS_PATH, async () => {
+    const users = await readUsers();
+    const index = users.findIndex((user) => String(user.id) === String(id));
+    if (index === -1) return null;
+
+    const isTrial = plan === 'trial';
+    users[index] = {
+      ...users[index],
+      plan,
+      dailyLeadLimit: Number(dailyLeadLimit || 0),
+      totalLeadLimit,
+      subscriptionStatus: options.subscriptionStatus || (isTrial ? 'trial' : 'simulated'),
+      planActivatedAt: options.planActivatedAt !== undefined
+        ? options.planActivatedAt
+        : isTrial ? null : users[index].planActivatedAt || new Date().toISOString(),
+      planExpiresAt: options.planExpiresAt !== undefined
+        ? options.planExpiresAt
+        : isTrial ? null : users[index].planExpiresAt || null,
+      mercadoPagoLastPaymentId: options.mercadoPagoLastPaymentId !== undefined
+        ? String(options.mercadoPagoLastPaymentId || '')
+        : users[index].mercadoPagoLastPaymentId || '',
+      updatedAt: new Date().toISOString()
+    };
+
+    await writeJsonFileAtomic(USERS_PATH, users);
+    return users[index];
+  });
 }
 
 module.exports = {
   readUsers,
   findUserByEmail,
   findUserById,
+  findUserByDeviceId,
+  countRecentLocalRegistrationsByIp,
   createLocalUser,
   updateLocalUserPlan
 };

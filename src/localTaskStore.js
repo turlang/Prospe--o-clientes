@@ -1,33 +1,19 @@
 /**
- * localTaskStore.js
- * -----------------------------------------------------------------------------
  * Agenda de follow-ups manuais.
- *
- * - Com MongoDB conectado: grava na collection Task.
- * - Sem MongoDB: usa data/tasks.json para desenvolvimento local.
- *
- * Não envia mensagens automaticamente. Apenas registra lembretes para o usuário.
+ * Não envia mensagens automaticamente; apenas persiste lembretes do usuário.
  */
 
-const fs = require('fs/promises');
-const path = require('path');
-const crypto = require('crypto');
+const path = require('node:path');
+const crypto = require('node:crypto');
 const Task = require('./models/Task');
 const { hasMongoUri } = require('./db');
+const { readJsonFile, writeJsonFileAtomic, withJsonFileLock } = require('./utils/jsonFileStore');
 
 const TASKS_PATH = path.join(__dirname, '..', 'data', 'tasks.json');
 
 async function readTasks() {
-  try {
-    return JSON.parse(await fs.readFile(TASKS_PATH, 'utf8'));
-  } catch {
-    return [];
-  }
-}
-
-async function writeTasks(tasks) {
-  await fs.mkdir(path.dirname(TASKS_PATH), { recursive: true });
-  await fs.writeFile(TASKS_PATH, JSON.stringify(tasks, null, 2));
+  const tasks = await readJsonFile(TASKS_PATH, []);
+  return Array.isArray(tasks) ? tasks : [];
 }
 
 function publicTask(task) {
@@ -47,40 +33,51 @@ function publicTask(task) {
   };
 }
 
+function normalizeDueAt(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) throw new Error('Data do follow-up inválida.');
+  return date;
+}
+
 async function createTask({ userId, leadId, leadName, title, dueAt, message, priority = 'MÉDIA', automationType = 'MANUAL' }) {
+  const dueDate = normalizeDueAt(dueAt);
+  const safeTitle = String(title || 'Follow-up comercial').trim().slice(0, 180);
+  const safeMessage = String(message || '').trim().slice(0, 4000);
+
   if (hasMongoUri()) {
     const task = await Task.create({
       userId,
       leadId: String(leadId),
-      leadName,
-      title: title || 'Follow-up comercial',
-      dueAt: new Date(dueAt),
-      message: message || '',
+      leadName: String(leadName || '').slice(0, 180),
+      title: safeTitle,
+      dueAt: dueDate,
+      message: safeMessage,
       priority,
       automationType,
       done: false
     });
-
     return publicTask(task);
   }
 
-  const tasks = await readTasks();
-  const task = {
-    id: crypto.randomUUID(),
-    userId: String(userId),
-    leadId: String(leadId),
-    leadName,
-    title,
-    dueAt,
-    message,
-    priority,
-    automationType,
-    done: false,
-    createdAt: new Date().toISOString()
-  };
-  tasks.push(task);
-  await writeTasks(tasks);
-  return task;
+  return withJsonFileLock(TASKS_PATH, async () => {
+    const tasks = await readTasks();
+    const task = {
+      id: crypto.randomUUID(),
+      userId: String(userId),
+      leadId: String(leadId),
+      leadName: String(leadName || '').slice(0, 180),
+      title: safeTitle,
+      dueAt: dueDate.toISOString(),
+      message: safeMessage,
+      priority,
+      automationType,
+      done: false,
+      createdAt: new Date().toISOString()
+    };
+    tasks.push(task);
+    await writeJsonFileAtomic(TASKS_PATH, tasks);
+    return task;
+  });
 }
 
 async function listTasks(userId) {
@@ -102,17 +99,18 @@ async function completeTask(userId, taskId) {
       { $set: { done: true, completedAt: new Date() } },
       { new: true }
     ).lean();
-
     return task ? publicTask(task) : null;
   }
 
-  const tasks = await readTasks();
-  const index = tasks.findIndex((task) => String(task.userId) === String(userId) && String(task.id) === String(taskId));
-  if (index === -1) return null;
-  tasks[index].done = true;
-  tasks[index].completedAt = new Date().toISOString();
-  await writeTasks(tasks);
-  return tasks[index];
+  return withJsonFileLock(TASKS_PATH, async () => {
+    const tasks = await readTasks();
+    const index = tasks.findIndex((task) => String(task.userId) === String(userId) && String(task.id) === String(taskId));
+    if (index === -1) return null;
+    tasks[index].done = true;
+    tasks[index].completedAt = new Date().toISOString();
+    await writeJsonFileAtomic(TASKS_PATH, tasks);
+    return tasks[index];
+  });
 }
 
-module.exports = { createTask, listTasks, completeTask };
+module.exports = { createTask, listTasks, completeTask, normalizeDueAt };

@@ -118,6 +118,11 @@ function escapeHtml(value) {
   return String(value || '').replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;' }[char]));
 }
 
+function jsArg(value) {
+  return escapeHtml(JSON.stringify(String(value ?? ''))).replace(/`/g, '&#096;');
+}
+
+
 function showStatus(message, isError = false) {
   adminStatus.innerHTML = `<p class="${isError ? 'error' : ''}">${escapeHtml(message)}</p>`;
 }
@@ -178,11 +183,11 @@ function renderUsers(users) {
             <td>${date(user.planExpiresAt)}</td>
             <td>
               <div class="admin-actions">
-                <button type="button" aria-label="Alterar plano de ${escapeHtml(user.email)} para Pro" onclick="updateUser('${user.id}', { plan: 'pro' })">Pro</button>
-                <button type="button" aria-label="Alterar plano de ${escapeHtml(user.email)} para Agência" onclick="updateUser('${user.id}', { plan: 'agency' })">Agência</button>
-                <button type="button" class="secondary" aria-label="Alterar plano de ${escapeHtml(user.email)} para Trial" onclick="updateUser('${user.id}', { plan: 'trial' })">Trial</button>
-                <button type="button" class="secondary" onclick="updateUser('${user.id}', { isActive: ${!user.isActive} })">${user.isActive ? 'Suspender' : 'Ativar'}</button>
-                <button type="button" class="secondary" onclick="updateUser('${user.id}', { role: '${user.role === 'admin' ? 'user' : 'admin'}' })">${user.role === 'admin' ? 'Remover admin' : 'Admin'}</button>
+                <button type="button" aria-label="Alterar plano de ${escapeHtml(user.email)} para Pro" onclick="updateUser(${jsArg(user.id)}, { plan: 'pro' })">Pro</button>
+                <button type="button" aria-label="Alterar plano de ${escapeHtml(user.email)} para Agência" onclick="updateUser(${jsArg(user.id)}, { plan: 'agency' })">Agência</button>
+                <button type="button" class="secondary" aria-label="Alterar plano de ${escapeHtml(user.email)} para Trial" onclick="updateUser(${jsArg(user.id)}, { plan: 'trial' })">Trial</button>
+                <button type="button" class="secondary" onclick="updateUser(${jsArg(user.id)}, { isActive: ${!user.isActive} })">${user.isActive ? 'Suspender' : 'Ativar'}</button>
+                <button type="button" class="secondary" onclick="updateUser(${jsArg(user.id)}, { role: '${user.role === 'admin' ? 'user' : 'admin'}' })">${user.role === 'admin' ? 'Remover admin' : 'Admin'}</button>
               </div>
             </td>
           </tr>
@@ -262,7 +267,7 @@ function renderPlanEditor(plan) {
       <label>Limite total<input id="plan-total-${plan.id}" type="number" min="0" placeholder="vazio = ilimitado" value="${plan.totalLeadLimit === null || plan.totalLeadLimit === undefined ? '' : Number(plan.totalLeadLimit)}" ${disabled} /></label>
       <label>Dias de validade<input id="plan-duration-${plan.id}" type="number" min="0" value="${Number(plan.durationDays || 0)}" ${disabled} /></label>
       <label>Benefícios<textarea id="plan-features-${plan.id}" ${disabled}>${escapeHtml(features)}</textarea></label>
-      ${isTrial ? '<button type="button" disabled>Trial fixo</button>' : `<button type="button" onclick="savePlan('${plan.id}')">Salvar plano</button>`}
+      ${isTrial ? '<button type="button" disabled>Trial fixo</button>' : `<button type="button" onclick="savePlan(${jsArg(plan.id)})">Salvar plano</button>`}
     </article>
   `;
 }
@@ -351,8 +356,8 @@ async function loadSecurity() {
               <td>${escapeHtml(item.reason)}</td>
               <td>
                 <div class="admin-actions">
-                  <button type="button" class="secondary" aria-label="Remover registro de segurança de ${escapeHtml(item.email)}" onclick="deleteSecurityRecord('${item.id}')">Remover</button>
-                  <button type="button" class="secondary" aria-label="Limpar registros de segurança do e-mail ${escapeHtml(item.email)}" onclick="clearSecurityByEmail('${escapeHtml(item.email)}')">Limpar e-mail</button>
+                  <button type="button" class="secondary" aria-label="Remover registro de segurança de ${escapeHtml(item.email)}" onclick="deleteSecurityRecord(${jsArg(item.id)})">Remover</button>
+                  <button type="button" class="secondary" aria-label="Limpar registros de segurança do e-mail ${escapeHtml(item.email)}" onclick="clearSecurityByEmail(${jsArg(item.email)})">Limpar e-mail</button>
                 </div>
               </td>
             </tr>
