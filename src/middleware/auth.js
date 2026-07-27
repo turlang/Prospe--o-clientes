@@ -71,9 +71,12 @@ async function requireAuth(req, res, next) {
       return res.status(401).json({ error: 'Usuário inexistente, inativo ou sessão revogada. Faça login novamente.' });
     }
 
-    const issuedAtMs = Number(payload.iat || 0) * 1000;
+    const issuedAtSeconds = Number(payload.iat || 0);
     const passwordChangedAtMs = user.passwordChangedAt ? new Date(user.passwordChangedAt).getTime() : 0;
-    if (passwordChangedAtMs && issuedAtMs < passwordChangedAtMs) {
+    const passwordChangedAtSeconds = passwordChangedAtMs ? Math.floor(passwordChangedAtMs / 1000) : 0;
+    // JWT usa precisão de segundos. Comparar milissegundos invalidava também uma
+    // sessão recém-criada no mesmo segundo da redefinição.
+    if (passwordChangedAtSeconds && issuedAtSeconds < passwordChangedAtSeconds) {
       return res.status(401).json({ error: 'Sua senha foi alterada. Faça login novamente.' });
     }
 

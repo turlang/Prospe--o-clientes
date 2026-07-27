@@ -23,4 +23,6 @@ test('recuperação de senha usa serviço de e-mail modularizado', () => {
 test('serviço de e-mail está preparado para Resend', () => {
   assert.match(emailService, /RESEND_API_KEY/);
   assert.match(emailService, /api\.resend\.com\/emails/);
+  assert.match(emailService, /Idempotency-Key/);
+  assert.match(emailService, /AbortController/);
 });

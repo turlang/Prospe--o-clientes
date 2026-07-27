@@ -30,8 +30,8 @@ test('checkout simulado é explicitamente bloqueável e sincronização valida p
 
 test('sessão consulta usuário atual e é invalidada após troca de senha', () => {
   assert.match(auth, /loadActiveUser\(payload\.sub\)/);
-  assert.match(auth, /passwordChangedAtMs/);
-  assert.match(authRoutes, /passwordChangedAt: new Date\(\)/);
+  assert.match(auth, /passwordChangedAtSeconds/);
+  assert.match(authRoutes, /passwordChangedAt/);
   assert.match(authRoutes, /PasswordReset\.findOneAndUpdate/);
 });
 

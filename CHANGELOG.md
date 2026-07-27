@@ -1,5 +1,26 @@
 # Changelog
 
+## 24.0.0 — Landing page React e nova identidade visual
+
+- Migrada a página pública para React com build dedicado pelo Vite.
+- Criada nova identidade visual responsiva, com hero comercial, dashboard demonstrativo, recursos, fluxo, planos e FAQ interativo.
+- Planos da landing agora são carregados de `/api/plans`, acompanhando as alterações feitas pelo administrador.
+- Mantidos separados o frontend público React e o painel autenticado legado para reduzir risco de regressão.
+- O Render passou a executar `npm run build` antes de iniciar o servidor.
+- Adicionado fallback da landing anterior para desenvolvimento quando o bundle React ainda não foi gerado.
+- Fixada a versão Node.js 20.20.2 para compatibilidade com o pipeline de frontend.
+
+## 23.9.2 — Recuperação de senha funcional e observável
+
+- Corrigido o falso sucesso quando o provedor de e-mail não estava configurado em produção.
+- Adicionadas as variáveis `RESEND_API_KEY` e `MAIL_FROM` ao Blueprint do Render.
+- Links de redefinição agora usam a URL pública real e ignoram `localhost` em produção.
+- O envio via Resend ganhou timeout, texto alternativo, idempotência e mensagens de erro operacionais.
+- Tokens não enviados são removidos e links anteriores só são invalidados após o novo envio ser confirmado.
+- O modo JSON local passou a permitir redefinição de senha durante o desenvolvimento.
+- Corrigida a invalidação de uma sessão criada no mesmo segundo da troca de senha.
+- A tela de login informa o sucesso após a redefinição e evita solicitações duplicadas.
+
 ## 23.9.1 — Correção de inicialização no Render
 
 - Corrigida a injeção do middleware `simpleRateLimit` em `commercialRoutes`.
@@ -175,6 +196,27 @@
 - Erros técnicos de IA são apresentados de forma amigável ao usuário.
 
 # Changelog
+
+## 24.0.0 — Landing page React e nova identidade visual
+
+- Migrada a página pública para React com build dedicado pelo Vite.
+- Criada nova identidade visual responsiva, com hero comercial, dashboard demonstrativo, recursos, fluxo, planos e FAQ interativo.
+- Planos da landing agora são carregados de `/api/plans`, acompanhando as alterações feitas pelo administrador.
+- Mantidos separados o frontend público React e o painel autenticado legado para reduzir risco de regressão.
+- O Render passou a executar `npm run build` antes de iniciar o servidor.
+- Adicionado fallback da landing anterior para desenvolvimento quando o bundle React ainda não foi gerado.
+- Fixada a versão Node.js 20.20.2 para compatibilidade com o pipeline de frontend.
+
+## 23.9.2 — Recuperação de senha funcional e observável
+
+- Corrigido o falso sucesso quando o provedor de e-mail não estava configurado em produção.
+- Adicionadas as variáveis `RESEND_API_KEY` e `MAIL_FROM` ao Blueprint do Render.
+- Links de redefinição agora usam a URL pública real e ignoram `localhost` em produção.
+- O envio via Resend ganhou timeout, texto alternativo, idempotência e mensagens de erro operacionais.
+- Tokens não enviados são removidos e links anteriores só são invalidados após o novo envio ser confirmado.
+- O modo JSON local passou a permitir redefinição de senha durante o desenvolvimento.
+- Corrigida a invalidação de uma sessão criada no mesmo segundo da troca de senha.
+- A tela de login informa o sucesso após a redefinição e evita solicitações duplicadas.
 
 ## 20.3.0 — Gemini e transparência da IA
 

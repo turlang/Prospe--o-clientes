@@ -40,7 +40,10 @@ form.addEventListener('submit', async (event) => {
       body: JSON.stringify({ token, password })
     });
 
-    const data = await response.json();
+    const responseText = await response.text();
+    let data = {};
+    try { data = responseText ? JSON.parse(responseText) : {}; }
+    catch { throw new Error('O servidor retornou uma resposta inválida.'); }
     if (!response.ok) throw new Error(data.error || 'Erro ao redefinir senha.');
 
     localStorage.removeItem('authToken');
@@ -49,7 +52,7 @@ form.addEventListener('submit', async (event) => {
     show(data.message || 'Senha redefinida com sucesso.');
     form.hidden = true;
 
-    setTimeout(() => window.location.replace('/app'), 1800);
+    setTimeout(() => window.location.replace('/app?passwordReset=success'), 1200);
   } catch (error) {
     show(error.message, true);
   }

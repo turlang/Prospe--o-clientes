@@ -24,6 +24,7 @@ function registerSystemRoutes(app, context) {
     requestCounters,
     hasMongoUri,
     getMongoStatus,
+    getPasswordResetEmailStatus,
     getAllPlans,
     getDailyUsage,
     getTotalUsage,
@@ -38,13 +39,14 @@ function registerSystemRoutes(app, context) {
     res.sendFile(path.join(process.cwd(), 'public', 'index.html'));
   });
 
-  app.get('/', (_req, res) => {
-    res.sendFile(path.join(process.cwd(), 'public', 'landing.html'));
-  });
+  const sendLandingPage = (_req, res) => {
+    const reactLanding = path.join(process.cwd(), 'public', 'landing-react', 'index.html');
+    const fallbackLanding = path.join(process.cwd(), 'public', 'landing-fallback.html');
+    res.sendFile(fs.existsSync(reactLanding) ? reactLanding : fallbackLanding);
+  };
 
-  app.get('/landing.html', (_req, res) => {
-    res.sendFile(path.join(process.cwd(), 'public', 'landing.html'));
-  });
+  app.get('/', sendLandingPage);
+  app.get('/landing.html', sendLandingPage);
 
   // Saúde, observabilidade e informações públicas de capacidade.
   app.get('/api/health', (_req, res) => {
@@ -103,6 +105,15 @@ function registerSystemRoutes(app, context) {
       provider: process.env.PLACES_PROVIDER || null,
       mongodbAtivo: hasMongoUri(),
       mongodbStatus: getMongoStatus(),
+      recuperacaoSenha: (() => {
+        const status = getPasswordResetEmailStatus();
+        return {
+          disponivel: status.available,
+          configurado: status.configured,
+          provedor: status.provider,
+          motivo: status.reason
+        };
+      })(),
       dica: fs.existsSync(envTxtPath) ? 'Você criou .env.txt. Renomeie para .env sem extensão.' : 'O arquivo .env deve ficar na raiz do projeto, ao lado do package.json.'
     });
   });

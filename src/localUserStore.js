@@ -98,6 +98,26 @@ async function createLocalUser({ name, email, passwordHash, deviceId = '', regis
   });
 }
 
+
+async function updateLocalUserPassword(id, passwordHash, passwordChangedAt = new Date()) {
+  return withJsonFileLock(USERS_PATH, async () => {
+    const users = await readUsers();
+    const index = users.findIndex((user) => String(user.id) === String(id));
+    if (index === -1) return null;
+
+    const changedAt = new Date(passwordChangedAt).toISOString();
+    users[index] = {
+      ...users[index],
+      passwordHash,
+      passwordChangedAt: changedAt,
+      updatedAt: changedAt
+    };
+
+    await writeJsonFileAtomic(USERS_PATH, users);
+    return users[index];
+  });
+}
+
 async function updateLocalUserPlan(id, plan, dailyLeadLimit, totalLeadLimit = null, options = {}) {
   return withJsonFileLock(USERS_PATH, async () => {
     const users = await readUsers();
@@ -135,5 +155,6 @@ module.exports = {
   findUserByDeviceId,
   countRecentLocalRegistrationsByIp,
   createLocalUser,
+  updateLocalUserPassword,
   updateLocalUserPlan
 };

@@ -152,6 +152,7 @@ if (forgotPasswordLink) {
       return;
     }
 
+    forgotPasswordLink.disabled = true;
     try {
       statusBox.innerHTML = '<p class="loading">Enviando instruções de recuperação...</p>';
       const response = await fetch('/api/auth/forgot-password', {
@@ -163,9 +164,14 @@ if (forgotPasswordLink) {
       const data = await readJson(response);
       if (!response.ok) throw new Error(data.error || 'Erro ao solicitar recuperação.');
 
-      statusBox.innerHTML = `<p>${escapeHtml(data.message)}</p>`;
+      const developmentLink = data.developmentResetUrl
+        ? `<p><a href="${escapeAttr(data.developmentResetUrl)}">Abrir link de desenvolvimento</a></p>`
+        : '';
+      statusBox.innerHTML = `<p>${escapeHtml(data.message)}</p>${developmentLink}`;
     } catch (error) {
       showError(error.message);
+    } finally {
+      forgotPasswordLink.disabled = false;
     }
   });
 }
@@ -2584,7 +2590,14 @@ window.requestExpansionMessage = requestExpansionMessage;
 function showPaymentReturnMessage() {
   const params = new URLSearchParams(window.location.search);
   const status = params.get('pagamento');
+  const passwordReset = params.get('passwordReset');
   const paymentId = params.get('payment_id') || params.get('collection_id');
+
+  if (passwordReset === 'success') {
+    statusBox.innerHTML = '<p>Senha redefinida com sucesso. Entre com sua nova senha.</p>';
+    window.history.replaceState({}, document.title, '/app');
+    return;
+  }
 
   if (!status) return;
 

@@ -1,3 +1,38 @@
+# Release 24.0.0 — Landing React
+
+## Interface pública
+
+- nova landing page desenvolvida em React;
+- layout responsivo com navegação móvel;
+- demonstração visual do dashboard comercial;
+- cards de recursos, processo comercial, públicos atendidos e FAQ interativo;
+- planos carregados dinamicamente pela API pública;
+- build isolado em `public/landing-react`, sem substituir o painel autenticado.
+
+## Deploy
+
+O Render executa `npm install && npm run build`. O build do Vite gera os arquivos públicos antes do comando `npm start`.
+
+---
+
+# Release 23.9.2 — Recuperação de senha
+
+## Corrigido
+
+- envio de e-mail obrigatório e verificável em produção;
+- configuração explícita do Resend no Render;
+- URL pública correta no link de redefinição;
+- remoção de tokens quando o envio falha;
+- suporte ao fluxo local de desenvolvimento;
+- login imediato após a troca de senha;
+- resposta inválida do servidor tratada na página de redefinição.
+
+## Configuração de produção
+
+Defina `PUBLIC_APP_URL`, `RESEND_API_KEY` e `MAIL_FROM`. O remetente deve usar um domínio verificado no Resend.
+
+---
+
 ## 23.5.0 — Visão Geral Analítica e UX Comercial
 
 - Visão Geral passa a abrir antes da Central de Inteligência e exibe somente gráficos executivos.

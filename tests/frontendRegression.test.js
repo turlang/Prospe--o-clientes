@@ -24,6 +24,8 @@ test('recuperação de senha e pipeline do cockpit existem na interface', () => 
   assert.match(html, /id="forgotPasswordLink"/);
   assert.match(html, /id="v23Pipeline"/);
   assert.match(app, /forgotPasswordLink\.addEventListener/);
+  assert.match(app, /forgotPasswordLink\.disabled = true/);
+  assert.match(app, /developmentResetUrl/);
 });
 
 test('dados dinâmicos não são interpolados diretamente em onclick', () => {

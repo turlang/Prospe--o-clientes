@@ -77,6 +77,7 @@ const { createSalesOsRoutes } = require('./core/routes/salesOsRoutes');
 const { sendApiError } = require('./utils/httpError');
 const { readJsonFile, writeJsonFileAtomic, withJsonFileLock } = require('./utils/jsonFileStore');
 const { createDatabaseResetService, RESET_CONFIRMATION_PHRASE } = require('./services/databaseResetService');
+const { getPasswordResetEmailStatus } = require('./services/emailService');
 const { LEAD_STATUS_SET } = require('./domain/leadStatus');
 
 const { registerSystemRoutes } = require('./routes/systemRoutes');
@@ -223,6 +224,7 @@ function createApp() {
     requestCounters,
     hasMongoUri,
     getMongoStatus,
+    getPasswordResetEmailStatus,
     User,
     Payment,
     Usage,

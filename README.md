@@ -1,6 +1,33 @@
-# LeadHunter Pro 23.9.1
+# LeadHunter Pro 24.0.0
 
 Sistema web para prospecção de estabelecimentos, qualificação de leads, CRM, automação comercial, relatórios e administração de assinaturas.
+
+## Landing page React 24.0.0
+
+A página pública foi reconstruída em React e possui um pipeline independente de build com Vite. O painel autenticado em `/app` continua preservado, enquanto a página inicial usa os componentes localizados em `frontend/landing`.
+
+Principais pontos:
+
+- interface moderna e responsiva;
+- menu móvel e FAQ interativo;
+- demonstração visual do painel comercial;
+- preços e recursos dos planos consumidos de `/api/plans`;
+- build isolado em `public/landing-react`;
+- fallback HTML para desenvolvimento antes do primeiro build.
+
+## Correção da recuperação de senha 23.9.2
+
+A recuperação agora falha de forma visível quando o e-mail transacional não está configurado, gera links com o domínio público correto e permite redefinição também no modo JSON local de desenvolvimento.
+
+No Render, configure obrigatoriamente:
+
+```env
+PUBLIC_APP_URL=https://seu-servico.onrender.com
+RESEND_API_KEY=re_sua_chave
+MAIL_FROM=LeadHunter Pro <noreply@seu-dominio-verificado.com>
+```
+
+O domínio usado em `MAIL_FROM` precisa estar verificado no Resend. Sem essas variáveis, a API não informa falsamente que enviou um e-mail em produção.
 
 ## Correção de implantação 23.9.1
 
@@ -14,7 +41,7 @@ A especificação completa está em [`docs/REINICIALIZACAO_BANCO_23.9.0.md`](doc
 
 ## Estado da versão
 
-A versão 23.9.0 mantém a arquitetura acadêmica da série 23.7, o motor comercial 23.8.0 e acrescenta a manutenção administrativa segura:
+A versão 24.0.0 mantém a arquitetura acadêmica da série 23.7, o motor comercial 23.8.0 e acrescenta a manutenção administrativa segura:
 
 - bootstrap separado da composição Express;
 - aplicação criada pelo padrão Application Factory;
@@ -59,7 +86,8 @@ src/
   models/                   # esquemas Mongoose
   types/domain.js           # contratos JSDoc
   *Store.js                 # persistência local permitida
-public/                     # interface web
+frontend/landing/            # código-fonte React da landing
+public/                     # painel legado e arquivos compilados
 scripts/                    # validações automatizadas
 tests/                      # suíte node:test
 docs/                       # documentação técnica e acadêmica
@@ -69,7 +97,7 @@ Detalhes: [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md).
 
 ## Requisitos de ambiente
 
-- Node.js 20, 21 ou 22;
+- Node.js 20.20.2 ou versão compatível com o intervalo definido em `package.json`;
 - npm 10 ou superior;
 - MongoDB para produção;
 - credenciais externas conforme as funcionalidades utilizadas.
@@ -77,9 +105,12 @@ Detalhes: [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md).
 ## Instalação
 
 ```bash
-npm ci
+npm install
 cp .env.example .env
-npm run check
+npm run build
+npm run check:syntax
+npm run check:docs
+npm test
 npm run dev
 ```
 

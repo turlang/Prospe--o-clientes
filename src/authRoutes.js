@@ -14,11 +14,19 @@ const crypto = require('crypto');
 const User = require('./models/User');
 const { createToken, requireAuth } = require('./middleware/auth');
 const { hasMongoUri } = require('./db');
-const { findUserByEmail, findUserById, findUserByDeviceId, countRecentLocalRegistrationsByIp, createLocalUser } = require('./localUserStore');
+const { findUserByEmail, findUserById, findUserByDeviceId, countRecentLocalRegistrationsByIp, createLocalUser, updateLocalUserPassword } = require('./localUserStore');
 const { getPlan } = require('./planConfig');
 const TrialGuard = require('./models/TrialGuard');
 const PasswordReset = require('./models/PasswordReset');
-const { sendPasswordResetEmail } = require('./services/emailService');
+const { getPasswordResetEmailStatus, sendPasswordResetEmail } = require('./services/emailService');
+const { resolvePublicAppUrl, shouldExposeDevelopmentResetLink } = require('./services/passwordRecoveryService');
+const {
+  createLocalPasswordReset,
+  invalidateOtherLocalPasswordResets,
+  consumeLocalPasswordReset,
+  releaseLocalPasswordReset,
+  deleteLocalPasswordReset
+} = require('./localPasswordResetStore');
 const { simpleRateLimit } = require('./middleware/rateLimit');
 
 const router = express.Router();
@@ -140,9 +148,6 @@ function hashResetToken(token) {
   return crypto.createHash('sha256').update(String(token)).digest('hex');
 }
 
-function publicAppUrl(req) {
-  return process.env.PUBLIC_APP_URL || `${req.protocol}://${req.get('host')}`;
-}
 
 router.post('/register', registerLimiter, async (req, res) => {
   try {
@@ -259,48 +264,106 @@ router.post('/login', loginLimiter, async (req, res) => {
 
 
 router.post('/forgot-password', recoveryLimiter, async (req, res) => {
+  const generic = {
+    ok: true,
+    message: 'Se o e-mail existir, enviaremos instruções para redefinir a senha.'
+  };
+
+  let createdReset = null;
+  let localMode = false;
+  let emailSent = false;
+
   try {
     const email = String(req.body.email || '').trim().toLowerCase().slice(0, 254);
-
-    // Resposta genérica para evitar enumeração de usuários.
-    const generic = {
-      ok: true,
-      message: 'Se o e-mail existir, enviaremos instruções para redefinir a senha.'
-    };
-
     if (!validateEmail(email)) return res.json(generic);
 
-    const user = hasMongoUri()
+    // A configuração é verificada antes de consultar o usuário para que a
+    // indisponibilidade do provedor não revele se o e-mail está cadastrado.
+    const emailStatus = getPasswordResetEmailStatus();
+    if (!emailStatus.available) {
+      console.error('[PASSWORD_RECOVERY_CONFIG]', emailStatus.reason);
+      return res.status(503).json({
+        error: 'A recuperação por e-mail está temporariamente indisponível. Tente novamente mais tarde.'
+      });
+    }
+
+    const mongoMode = hasMongoUri();
+    const user = mongoMode
       ? await User.findOne({ email })
       : await findUserByEmail(email);
 
-    if (!user) return res.json(generic);
-
-    if (!hasMongoUri()) return res.json(generic);
+    if (!user || user.isActive === false) return res.json(generic);
 
     const token = crypto.randomBytes(32).toString('hex');
     const tokenHash = hashResetToken(token);
     const expiresAt = new Date(Date.now() + 1000 * 60 * 30);
-    const resetUrl = `${publicAppUrl(req)}/reset-password.html?token=${token}`;
-
-    await PasswordReset.create({
-      userId: user._id,
+    const resetUrl = `${resolvePublicAppUrl(req)}/reset-password.html?token=${encodeURIComponent(token)}`;
+    const resetInput = {
+      userId: user._id || user.id,
       email,
       tokenHash,
       expiresAt,
       requestedIp: getClientIp(req),
-      userAgent: String(req.headers['user-agent'] || '')
-    });
+      userAgent: String(req.headers['user-agent'] || '').slice(0, 500)
+    };
 
-    await sendPasswordResetEmail({ email, resetUrl });
+    localMode = !mongoMode;
+    createdReset = mongoMode
+      ? await PasswordReset.create(resetInput)
+      : await createLocalPasswordReset(resetInput);
+
+    await sendPasswordResetEmail({
+      email,
+      resetUrl,
+      requestId: `password-reset-${createdReset._id || createdReset.id}`
+    });
+    emailSent = true;
+
+    try {
+      const usedAt = new Date();
+      if (mongoMode) {
+        await PasswordReset.updateMany(
+          { userId: user._id, _id: { $ne: createdReset._id }, usedAt: null },
+          { $set: { usedAt } }
+        );
+      } else {
+        await invalidateOtherLocalPasswordResets(user.id, createdReset.id);
+      }
+    } catch (error) {
+      // O novo link já foi enviado e deve continuar válido mesmo se a limpeza
+      // de links antigos falhar. A falha fica visível no log operacional.
+      console.error('[PASSWORD_RECOVERY_INVALIDATION_FAILED]', error?.message || error);
+    }
+
+    if (shouldExposeDevelopmentResetLink()) {
+      return res.json({
+        ...generic,
+        message: 'Link de recuperação gerado para desenvolvimento.',
+        developmentResetUrl: resetUrl
+      });
+    }
 
     return res.json(generic);
-  } catch {
-    res.status(500).json({ error: 'Não foi possível iniciar a recuperação de senha.' });
+  } catch (error) {
+    if (createdReset && !emailSent) {
+      try {
+        if (localMode) await deleteLocalPasswordReset(createdReset.id);
+        else await PasswordReset.deleteOne({ _id: createdReset._id });
+      } catch {}
+    }
+
+    console.error('[PASSWORD_RECOVERY_FAILED]', error?.message || error);
+    return res.status(error?.code === 'EMAIL_NOT_CONFIGURED' ? 503 : 502).json({
+      error: 'Não foi possível enviar o e-mail de recuperação agora. Tente novamente mais tarde.'
+    });
   }
 });
 
 router.post('/reset-password', recoveryLimiter, async (req, res) => {
+  let reset = null;
+  let localMode = false;
+  let passwordUpdated = false;
+
   try {
     const token = String(req.body.token || '').trim().slice(0, 256);
     const password = String(req.body.password || '');
@@ -313,30 +376,59 @@ router.post('/reset-password', recoveryLimiter, async (req, res) => {
       return res.status(400).json({ error: 'A senha deve ter entre 8 e 128 caracteres.' });
     }
 
-    if (!hasMongoUri()) {
-      return res.status(400).json({ error: 'Redefinição de senha requer MongoDB ativo.' });
-    }
-
     const tokenHash = hashResetToken(token);
-    const reset = await PasswordReset.findOneAndUpdate(
-      { tokenHash, usedAt: null, expiresAt: { $gt: new Date() } },
-      { $set: { usedAt: new Date() } },
-      { new: true }
-    );
-
-    if (!reset) {
-      return res.status(400).json({ error: 'Link inválido ou expirado.' });
-    }
-
+    const passwordChangedAt = new Date();
     const passwordHash = await bcrypt.hash(password, 12);
-    await User.findByIdAndUpdate(reset.userId, { passwordHash, passwordChangedAt: new Date() });
+    localMode = !hasMongoUri();
+
+    if (localMode) {
+      reset = await consumeLocalPasswordReset(tokenHash);
+      if (!reset) return res.status(400).json({ error: 'Link inválido ou expirado.' });
+
+      const updatedUser = await updateLocalUserPassword(reset.userId, passwordHash, passwordChangedAt);
+      if (!updatedUser) {
+        await releaseLocalPasswordReset(reset.id);
+        return res.status(400).json({ error: 'Link inválido ou expirado.' });
+      }
+      passwordUpdated = true;
+    } else {
+      reset = await PasswordReset.findOneAndUpdate(
+        { tokenHash, usedAt: null, expiresAt: { $gt: new Date() } },
+        { $set: { usedAt: passwordChangedAt } },
+        { new: true }
+      );
+
+      if (!reset) return res.status(400).json({ error: 'Link inválido ou expirado.' });
+
+      const updatedUser = await User.findByIdAndUpdate(
+        reset.userId,
+        { passwordHash, passwordChangedAt },
+        { new: true }
+      );
+
+      if (!updatedUser) {
+        await PasswordReset.updateOne(
+          { _id: reset._id, usedAt: passwordChangedAt },
+          { $set: { usedAt: null } }
+        );
+        return res.status(400).json({ error: 'Link inválido ou expirado.' });
+      }
+      passwordUpdated = true;
+    }
 
     return res.json({
       ok: true,
       message: 'Senha redefinida com sucesso. Faça login novamente.'
     });
-  } catch {
-    res.status(500).json({ error: 'Não foi possível redefinir a senha.' });
+  } catch (error) {
+    if (reset && !passwordUpdated) {
+      try {
+        if (localMode) await releaseLocalPasswordReset(reset.id);
+        else await PasswordReset.updateOne({ _id: reset._id }, { $set: { usedAt: null } });
+      } catch {}
+    }
+    console.error('[PASSWORD_RESET_FAILED]', error?.message || error);
+    return res.status(500).json({ error: 'Não foi possível redefinir a senha.' });
   }
 });
 
