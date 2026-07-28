@@ -15,6 +15,8 @@ test('painel limita a largura do documento em telas pequenas', () => {
   assert.match(css, /html,\s*\nbody\s*\{[\s\S]*?overflow-x:\s*clip;/);
   assert.match(css, /body\.is-authenticated \.app-shell[\s\S]*?grid-template-columns:\s*minmax\(0, 1fr\)/);
   assert.match(css, /body\.is-authenticated \.overview-chart-grid[\s\S]*?min-width:\s*0;/);
+  assert.match(css, /container-name:\s*dashboard-chart;/);
+  assert.match(css, /@container dashboard-chart \(max-width:\s*720px\)/);
 });
 
 test('gráficos executivos viram listas compactas no mobile', () => {
@@ -30,5 +32,5 @@ test('kanban preserva rolagem interna sem estourar o documento', () => {
 
 test('estado hidden e cache da folha comercial estão protegidos', () => {
   assert.match(css, /\[hidden\]\s*\{\s*display:\s*none\s*!important;/);
-  assert.match(html, /style\.css\?v=v24-1-0-commercial/);
+  assert.match(html, /style\.css\?v=v24-2-0-tailwind/);
 });

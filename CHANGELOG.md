@@ -547,3 +547,15 @@
 - Pipeline executivo foi movido da Central de Inteligência para a Visão Geral.
 - Pipeline comercial e histórico de contatos receberam rolagem interna.
 - Cards do funil nos Relatórios agora abrem os leads da etapa selecionada.
+
+## [24.2.0] - 2026-07-28
+
+### Added
+- Landing React modular com Tailwind CSS 4.
+- Comunicação voltada a desenvolvedores, freelancers, agências e automação.
+- Cards de varredura, diagnóstico web, abordagem com IA e CRM Kanban.
+- Container queries para gráficos do dashboard.
+
+### Changed
+- Hero, navegação, ferramentas, planos e CTA final redesenhados.
+- Cache da folha do painel atualizado.

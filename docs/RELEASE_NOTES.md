@@ -948,3 +948,13 @@ A tela inicial do Sales OS passa a conduzir o trabalho diário do vendedor, reun
 - Pipeline executivo na Visão Geral.
 - Rolagem no pipeline comercial e histórico.
 - Funil por etapa clicável com acesso aos leads.
+
+## 24.2.0 — Landing SaaS Tech em React + Tailwind
+
+- Landing reposicionada para desenvolvedores, freelancers, agências e automação.
+- Hero com mensagem específica para venda de sites, sistemas e IA.
+- Componentização da landing em Header, Hero, fluxo, público, ferramentas, planos e CTA.
+- Tailwind CSS 4 integrado ao Vite pelo plugin oficial.
+- Planos continuam dinâmicos via `/api/plans`.
+- Container queries adicionadas ao painel para corrigir gráficos em áreas estreitas.
+- Cache da folha do painel atualizado para `v24-2-0-tailwind`.

@@ -2316,3 +2316,111 @@ body.is-authenticated .overview-pipeline-card { min-width: 0; }
     max-width: 240px;
   }
 }
+
+/* --------------------------------------------------------------------------
+ * V24.2.0 — correção baseada na largura real do componente
+ * Evita que gráficos e cards estourem quando o painel está dentro de uma
+ * viewport emulada, iframe ou coluna estreita, mesmo em telas desktop.
+ * -------------------------------------------------------------------------- */
+.workspace,
+.active-view,
+.overview-chart-grid,
+.chart-panel,
+.column-chart,
+.column-chart-item,
+.overview-pipeline-cards,
+.overview-pipeline-card {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.chart-panel {
+  container-name: dashboard-chart;
+  container-type: inline-size;
+}
+
+.overview-chart-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr));
+}
+
+.chart-panel-wide {
+  grid-column: 1 / -1;
+}
+
+@container dashboard-chart (max-width: 720px) {
+  .column-chart {
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 9px;
+    overflow: visible;
+    padding: 0;
+  }
+
+  .column-chart-item {
+    min-width: 0;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto auto;
+    grid-template-areas:
+      "label value"
+      "detail value"
+      "track track";
+    align-items: center;
+    gap: 3px 10px;
+    padding: 11px;
+    border: 1px solid #e2e8f0;
+    border-radius: 13px;
+    background: #f8fafc;
+    text-align: left;
+  }
+
+  .column-chart-item strong { grid-area: label; font-size: .8rem; }
+  .column-chart-item small { grid-area: detail; min-height: 0; font-size: .68rem; }
+  .column-chart-value { grid-area: value; align-self: center; font-size: .95rem; }
+  .column-chart-track {
+    grid-area: track;
+    width: 100%;
+    height: 9px;
+    margin-top: 7px;
+    border-radius: 999px;
+  }
+  .column-chart-track span {
+    width: var(--mobile-bar, 100%);
+    height: 100% !important;
+    min-height: 0;
+    border-radius: inherit;
+  }
+
+  .overview-pipeline-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+    gap: 8px;
+    overflow: visible;
+  }
+}
+
+@media (max-width: 900px) {
+  body.is-authenticated .session-bar,
+  body.is-authenticated .app-shell,
+  body.is-authenticated .workspace,
+  body.is-authenticated .active-view,
+  body.is-authenticated .card-panel {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  body.is-authenticated .dashboard-header,
+  body.is-authenticated .section-title,
+  body.is-authenticated .pipeline-title-row {
+    flex-wrap: wrap;
+  }
+
+  body.is-authenticated button,
+  body.is-authenticated input,
+  body.is-authenticated select,
+  body.is-authenticated textarea {
+    max-width: 100%;
+  }
+}
