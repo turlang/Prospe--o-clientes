@@ -958,3 +958,11 @@ A tela inicial do Sales OS passa a conduzir o trabalho diário do vendedor, reun
 - Planos continuam dinâmicos via `/api/plans`.
 - Container queries adicionadas ao painel para corrigir gráficos em áreas estreitas.
 - Cache da folha do painel atualizado para `v24-2-0-tailwind`.
+
+## 24.3.0 — Hero comercial e demonstração do produto
+
+- Hero reconstruído em duas colunas, com tipografia responsiva e menor peso visual no celular.
+- Dashboard demonstrativo com leads recomendados, score e abordagem com IA.
+- Fluxo comercial em quatro etapas logo após o hero.
+- Ferramentas em composição bento com demonstração do CRM Kanban.
+- Planos e CTA final refinados para conversão.

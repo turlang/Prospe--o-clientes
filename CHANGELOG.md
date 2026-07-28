@@ -559,3 +559,11 @@
 ### Changed
 - Hero, navegação, ferramentas, planos e CTA final redesenhados.
 - Cache da folha do painel atualizado.
+
+## 24.3.0
+
+- Hero comercial reconstruído para reduzir peso visual e melhorar leitura em mobile.
+- Nova demonstração do dashboard com leads, Lead Score e abordagem com IA.
+- Ferramentas apresentadas em composição bento com CRM Kanban.
+- Planos e CTA final refinados para maior clareza e conversão.
+- Header escuro integrado ao hero e menu mobile ajustado.
