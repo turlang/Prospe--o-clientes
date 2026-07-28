@@ -1669,3 +1669,329 @@ body.modal-open {
   background: var(--primary, #2563eb);
   color: #fff;
 }
+
+/* --------------------------------------------------------------------------
+ * V24.0.1 — correção responsiva integral do painel autenticado
+ *
+ * Impede que grids internos (pipeline, gráficos e cards executivos) aumentem a
+ * largura do documento em telas pequenas. A rolagem horizontal permanece
+ * somente nos componentes que realmente precisam dela, como o Kanban.
+ * -------------------------------------------------------------------------- */
+html,
+body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+img,
+svg,
+canvas,
+video,
+table {
+  max-width: 100%;
+}
+
+.container,
+.app-shell,
+.workspace,
+.view,
+.active-view,
+.card,
+.card-panel,
+.dashboard-header,
+.overview-chart-grid,
+.chart-panel,
+.overview-pipeline-panel,
+.dashboard-analytics,
+.crm-workspace,
+.cockpit-main-grid,
+.cockpit-secondary-grid,
+.report-card-grid,
+.plans-grid {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.workspace > *,
+.active-view > *,
+.overview-chart-grid > *,
+.dashboard-analytics > *,
+.crm-workspace > * {
+  min-width: 0;
+}
+
+h1,
+h2,
+h3,
+h4,
+p,
+small,
+strong,
+span,
+a,
+button,
+label {
+  overflow-wrap: anywhere;
+}
+
+button,
+input,
+select,
+textarea {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.kanban-board,
+.overview-pipeline-cards,
+.column-chart,
+.report-scroll-list,
+.segment-performance-chart {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 720px) {
+  :root {
+    --radius-xl: 22px;
+    --radius-lg: 18px;
+    --radius-md: 13px;
+  }
+
+  body {
+    background:
+      radial-gradient(circle at top left, rgba(6,182,212,.16), transparent 22rem),
+      linear-gradient(180deg, #edf4ff, #f8fafc 55%, #eef4ff);
+  }
+
+  .container {
+    width: calc(100% - 16px);
+    padding: 8px 0 32px;
+  }
+
+  .hero {
+    padding: 20px 16px;
+    border-radius: 20px;
+  }
+
+  .hero h1 {
+    font-size: clamp(2rem, 11vw, 3rem);
+    line-height: 1;
+    letter-spacing: -.045em;
+  }
+
+  .app-shell,
+  .workspace,
+  .active-view {
+    width: 100%;
+  }
+
+  .app-shell {
+    gap: 12px;
+  }
+
+  .card,
+  .card-panel {
+    padding: 16px;
+    border-radius: 18px;
+  }
+
+  .sidebar {
+    gap: 12px;
+    overflow: hidden;
+  }
+
+  .sidebar-account {
+    align-items: flex-start;
+    margin-bottom: 0;
+  }
+
+  .sidebar-account > div {
+    min-width: 0;
+  }
+
+  .sidebar-account h2 {
+    font-size: 1.3rem;
+  }
+
+  .logout-top {
+    flex: 0 0 auto;
+    min-width: 62px;
+    white-space: nowrap;
+  }
+
+  .sidebar nav {
+    width: auto;
+    margin: 0 -16px;
+    padding: 2px 16px 9px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+  }
+
+  .sidebar .nav-list {
+    display: flex;
+    width: max-content;
+    min-width: 100%;
+    gap: 8px;
+  }
+
+  .sidebar .nav-list li {
+    flex: 0 0 auto;
+  }
+
+  .sidebar .nav-btn {
+    width: auto;
+    min-height: 42px;
+    padding: 10px 13px;
+    white-space: nowrap;
+    text-align: center;
+  }
+
+  .upgrade-box,
+  .usage-box,
+  .ai-status-box,
+  .plan-pill {
+    width: 100%;
+  }
+
+  .dashboard-header,
+  .pipeline-title-row,
+  .cockpit-header,
+  .cockpit-focus-card {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .dashboard-header > div,
+  .pipeline-title-row > div,
+  .cockpit-header > div,
+  .cockpit-focus-card > div {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .dashboard-header button,
+  .pipeline-title-row button,
+  .cockpit-header button,
+  .cockpit-focus-card button {
+    width: 100%;
+    white-space: normal;
+  }
+
+  .dashboard-header h2 {
+    font-size: clamp(1.55rem, 7vw, 2rem);
+    line-height: 1.12;
+  }
+
+  .section-title h3 {
+    font-size: 1.15rem;
+    line-height: 1.25;
+  }
+
+  .overview-chart-grid,
+  #overviewRevenueChart,
+  .report-card-grid,
+  .plans-grid,
+  .stats-grid,
+  .executive-grid,
+  .info-grid,
+  .detail-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .chart-panel-wide {
+    grid-column: auto;
+  }
+
+  .donut-chart-wrap {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    min-height: 0;
+  }
+
+  .donut-chart {
+    width: 150px;
+    height: 150px;
+  }
+
+  .donut-chart > div {
+    width: 94px;
+    height: 94px;
+  }
+
+  .overview-pipeline-cards {
+    grid-template-columns: repeat(6, minmax(210px, 78vw));
+    overflow-x: auto;
+    padding-bottom: 10px;
+  }
+
+  .column-chart {
+    grid-template-columns: repeat(6, minmax(92px, 1fr));
+    overflow-x: auto;
+  }
+
+  .kanban-board,
+  .crm-workspace .kanban-board,
+  .crm-pipeline-only .kanban-board {
+    grid-template-columns: repeat(6, minmax(230px, 82vw));
+    overflow-x: auto;
+    max-height: none;
+  }
+
+  .crm-pipeline-only .kanban-column,
+  .crm-pipeline-only .kanban-list {
+    max-height: none;
+  }
+
+  .pipeline-filters,
+  .search-card,
+  .toolbar,
+  .lead-crm-box,
+  .metrics,
+  .conversion-chart article,
+  .executive-bar-row,
+  .segment-chart-row,
+  .funnel-row,
+  .agenda-item,
+  .funnel-lead-item {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .history-item,
+  .lead header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .score-card {
+    min-width: 0;
+    width: 100%;
+    text-align: left;
+  }
+
+  .cockpit-action,
+  .recommendation-card,
+  .global-timeline-item {
+    max-width: 100%;
+  }
+
+  .modal-card,
+  .lead-detail,
+  .proposal-document {
+    width: min(100%, calc(100vw - 20px));
+    max-width: calc(100vw - 20px);
+  }
+}
+
+/* Garante que a propriedade HTML hidden não seja anulada por componentes grid. */
+[hidden] {
+  display: none !important;
+}

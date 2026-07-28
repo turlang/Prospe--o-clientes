@@ -189,3 +189,8 @@ A ferramenta deve ser utilizada de acordo com a legislação aplicável, termos 
 ### Manutenção administrativa
 
 O painel `/admin` possui uma zona de perigo para reinicializar os dados operacionais. A ferramenta mostra uma prévia, exige a senha atual e a frase `REINICIAR LEADHUNTER`, remove usuários comuns e preserva todas as contas administrativas. Consulte `docs/REINICIALIZACAO_BANCO_23.9.0.md` antes de usar em produção.
+
+
+## Versão atual
+
+Versão atual: **24.0.1** — landing React e painel autenticado responsivo.

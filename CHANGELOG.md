@@ -1,5 +1,14 @@
 # Changelog
 
+## 24.0.1 — Painel móvel corrigido
+
+- Eliminada a largura fixa/intrínseca que fazia o dashboard ultrapassar telas de 412 px.
+- Cards, gráficos, cabeçalhos e formulários agora respeitam a largura disponível.
+- Kanban, pipeline e menu lateral usam rolagem horizontal interna somente quando necessário.
+- Navegação móvel transformada em faixa horizontal compacta.
+- Corrigida a regra `[hidden]` para impedir que componentes `display: grid` reapareçam indevidamente.
+- Adicionado teste de regressão responsiva.
+
 ## 24.0.0 — Landing page React e nova identidade visual
 
 - Migrada a página pública para React com build dedicado pelo Vite.

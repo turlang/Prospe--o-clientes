@@ -1,3 +1,15 @@
+# Release 24.0.1 — Responsividade do painel
+
+## Corrigido
+
+- dashboard autenticado adaptado para 320–720 px;
+- remoção da rolagem horizontal do documento;
+- rolagem isolada para Kanban, pipeline e menu;
+- cabeçalhos, botões, cards e gráficos com largura fluida;
+- estado `hidden` protegido contra regras de layout grid.
+
+---
+
 # Release 24.0.0 — Landing React
 
 ## Interface pública
