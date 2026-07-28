@@ -39,6 +39,10 @@ const statusBox = document.querySelector('#status');
 const loadSaved = document.querySelector('#loadSaved');
 const authCard = document.querySelector('#authCard');
 const dashboard = document.querySelector('#dashboard');
+const publicIntro = document.querySelector('#publicIntro');
+const sessionBar = document.querySelector('#sessionBar');
+const sessionUserName = document.querySelector('#sessionUserName');
+const sessionPlanName = document.querySelector('#sessionPlanName');
 // -----------------------------------------------------------------------------
 // Referências da interface e estado da sessão
 // -----------------------------------------------------------------------------
@@ -194,15 +198,15 @@ logoutButton.addEventListener('click', () => {
   currentUser = null;
   lastLeads = [];
 
-  if (dashboard) dashboard.hidden = true;
-  if (authCard) authCard.hidden = false;
   if (results) {
     results.innerHTML = '';
     results.hidden = true;
   }
-  if (statusBox) statusBox.innerHTML = '';
+  if (statusBox) statusBox.innerHTML = '<p>Você saiu da conta com segurança.</p>';
 
-  window.location.replace('/');
+  showAuth();
+  window.history.replaceState({}, document.title, '/app');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 
 exportCsv.addEventListener('click', async () => {
@@ -329,13 +333,22 @@ function bootAuth() {
 }
 
 function showAuth() {
+  document.body.classList.remove('is-authenticated');
+  if (publicIntro) publicIntro.hidden = false;
+  if (sessionBar) sessionBar.hidden = true;
   authCard.hidden = false;
   dashboard.hidden = true;
 }
 
 async function showDashboard() {
+  document.body.classList.add('is-authenticated');
+  if (publicIntro) publicIntro.hidden = true;
   authCard.hidden = true;
   dashboard.hidden = false;
+  if (sessionBar) sessionBar.hidden = false;
+  if (sessionUserName) sessionUserName.textContent = currentUser?.name || 'Usuário';
+  if (sessionPlanName) sessionPlanName.textContent = `Plano ${String(currentUser?.planName || currentUser?.plan || 'Teste gratuito')}`;
+  if (statusBox) statusBox.innerHTML = '';
   welcome.textContent = `Olá, ${currentUser?.name || 'usuário'}`;
   planInfo.innerHTML = `<strong>Plano ${String(currentUser?.planName || currentUser?.plan || 'TESTE GRATUITO').toUpperCase()}</strong><span>${currentUser?.plan === 'trial' ? '10 leads totais' : `${currentUser?.dailyLeadLimit || 10} leads/dia`}</span>`;
   if (currentUser?.role === 'admin') addAdminShortcut();
@@ -454,7 +467,7 @@ function renderColumnChart(container, rows, { valueFormatter = (value) => String
   container.innerHTML = `<div class="column-chart">${safeRows.map((row) => {
     const value = Number(row.value || 0);
     const height = value ? Math.max(8, Math.round((value / max) * 100)) : 3;
-    return `<article class="column-chart-item" title="${escapeAttr(row.label)}: ${escapeAttr(valueFormatter(value))}"><div class="column-chart-value">${escapeHtml(valueFormatter(value))}</div><div class="column-chart-track"><span style="height:${height}%"></span></div><strong>${escapeHtml(row.label)}</strong><small>${escapeHtml(row.detail || '')}</small></article>`;
+    return `<article class="column-chart-item" title="${escapeAttr(row.label)}: ${escapeAttr(valueFormatter(value))}"><div class="column-chart-value">${escapeHtml(valueFormatter(value))}</div><div class="column-chart-track"><span style="height:${height}%;--mobile-bar:${height}%"></span></div><strong>${escapeHtml(row.label)}</strong><small>${escapeHtml(row.detail || '')}</small></article>`;
   }).join('')}</div>`;
 }
 

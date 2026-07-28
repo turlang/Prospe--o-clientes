@@ -1,3 +1,10 @@
+## [24.1.0] - 2026-07-28
+
+### Alterado
+- Landing React convertida em site comercial compacto e explicativo.
+- Painel autenticado ganhou barra de sessão e logout sem redirecionamento.
+- Gráficos executivos adaptados para mobile sem cortes horizontais.
+
 # Changelog
 
 ## 24.0.1 — Painel móvel corrigido

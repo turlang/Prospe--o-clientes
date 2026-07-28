@@ -1,6 +1,6 @@
 {
   "name": "agente-prospeccao-real",
-  "version": "24.0.1",
+  "version": "24.1.0",
   "description": "Plataforma SaaS de prospecção comercial com landing React, CRM e automação de funil",
   "main": "src/server.js",
   "type": "commonjs",

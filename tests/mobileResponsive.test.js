@@ -9,20 +9,26 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const css = fs.readFileSync(path.join(root, 'public', 'style.css'), 'utf8');
 const html = fs.readFileSync(path.join(root, 'public', 'index.html'), 'utf8');
+const app = fs.readFileSync(path.join(root, 'public', 'app.js'), 'utf8');
 
 test('painel limita a largura do documento em telas pequenas', () => {
   assert.match(css, /html,\s*\nbody\s*\{[\s\S]*?overflow-x:\s*clip;/);
-  assert.match(css, /\.workspace[\s\S]*?\.active-view[\s\S]*?min-width:\s*0;/);
-  assert.match(css, /\.overview-pipeline-cards[\s\S]*?max-width:\s*100%;/);
+  assert.match(css, /body\.is-authenticated \.app-shell[\s\S]*?grid-template-columns:\s*minmax\(0, 1fr\)/);
+  assert.match(css, /body\.is-authenticated \.overview-chart-grid[\s\S]*?min-width:\s*0;/);
 });
 
-test('componentes largos usam rolagem interna no mobile', () => {
-  assert.match(css, /@media \(max-width:\s*720px\)[\s\S]*?\.overview-pipeline-cards[\s\S]*?overflow-x:\s*auto;/);
-  assert.match(css, /@media \(max-width:\s*720px\)[\s\S]*?\.sidebar nav[\s\S]*?overflow-x:\s*auto;/);
+test('gráficos executivos viram listas compactas no mobile', () => {
+  assert.match(css, /body\.is-authenticated \.column-chart-item[\s\S]*?grid-template-areas:/);
+  assert.match(css, /body\.is-authenticated \.overview-pipeline-cards[\s\S]*?grid-template-columns:\s*repeat\(2,/);
+  assert.match(app, /--mobile-bar:\$\{height\}%/);
+});
+
+test('kanban preserva rolagem interna sem estourar o documento', () => {
   assert.match(css, /\.crm-pipeline-only \.kanban-board[\s\S]*?overflow-x:\s*auto;/);
+  assert.match(css, /body\.is-authenticated \.sidebar nav[\s\S]*?overflow-x:\s*auto;/);
 });
 
-test('estado hidden e cache da folha responsiva estão protegidos', () => {
+test('estado hidden e cache da folha comercial estão protegidos', () => {
   assert.match(css, /\[hidden\]\s*\{\s*display:\s*none\s*!important;/);
-  assert.match(html, /style\.css\?v=v24-0-1-mobile/);
+  assert.match(html, /style\.css\?v=v24-1-0-commercial/);
 });

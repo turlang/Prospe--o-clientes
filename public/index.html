@@ -10,12 +10,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>LeadHunter Pro — Dashboard</title>
   <link rel="icon" href="data:," />
-  <link rel="stylesheet" href="style.css?v=v24-0-1-mobile" />
+  <link rel="stylesheet" href="style.css?v=v24-1-0-commercial" />
 </head>
 <body>
-  <main class="container">
-    <section class="hero">
-      <p><a href="/landing.html" class="tag">← Voltar para a landing page</a></p>
+  <main id="appRoot" class="container">
+    <section id="publicIntro" class="hero app-intro">
+      <p><a href="/" class="tag">← Voltar para o site</a></p>
       <p class="tag">SaaS de prospecção para freelancers e agências</p>
       <h1>Sistema de prospecção comercial local</h1>
       <p>Busque empresas reais, audite presença digital, priorize oportunidades e organize seus contatos em um CRM profissional.</p>
@@ -53,6 +53,12 @@
 
     <section id="status" aria-live="polite"></section>
 
+    <header id="sessionBar" hidden class="session-bar card-panel" aria-label="Sessão autenticada">
+      <a href="/" class="session-brand" aria-label="Voltar para a landing page"><span>LH</span><strong>LeadHunter Pro</strong></a>
+      <div class="session-user"><span id="sessionUserName">Usuário</span><small id="sessionPlanName">Plano</small></div>
+      <button id="logout" type="button" class="secondary session-logout">Sair da conta</button>
+    </header>
+
     <!-- Shell principal exibido somente após autenticação. -->
     <section id="dashboard" hidden class="app-shell">
       <!-- Navegação persistente e contexto da assinatura. -->
@@ -63,7 +69,6 @@
             <h2 id="welcome">Sua central</h2>
             <p id="planInfo" class="plan-pill"></p>
           </div>
-          <button id="logout" type="button" class="secondary logout-top">Sair</button>
         </div>
         <div id="usageBox" class="usage-box"></div>
         <div id="aiStatusBox" class="ai-status-box"></div>

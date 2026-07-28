@@ -1995,3 +1995,324 @@ textarea {
 [hidden] {
   display: none !important;
 }
+
+/* --------------------------------------------------------------------------
+ * V24.1.0 — painel comercial compacto, sessão limpa e gráficos mobile
+ * -------------------------------------------------------------------------- */
+.session-bar {
+  position: sticky;
+  z-index: 30;
+  top: 10px;
+  min-height: 64px;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 14px;
+  padding: 10px 14px;
+  border-color: #d8e4f0;
+  background: rgba(255,255,255,.96);
+}
+.session-brand {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #0f172a;
+}
+.session-brand > span {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 11px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--primary), var(--cyan));
+  font-size: .75rem;
+  font-weight: 900;
+}
+.session-user { min-width: 0; text-align: right; }
+.session-user span, .session-user small { display: block; }
+.session-user span { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 900; }
+.session-user small { margin-top: 2px; color: var(--muted); }
+.session-logout { min-width: 112px; white-space: nowrap; }
+
+body.is-authenticated {
+  background: #eef4fb;
+}
+body.is-authenticated .container {
+  width: min(1580px, calc(100% - 24px));
+  padding-top: 10px;
+}
+body.is-authenticated #status:empty { display: none; }
+body.is-authenticated .app-shell {
+  grid-template-columns: 238px minmax(0, 1fr);
+  gap: 14px;
+}
+body.is-authenticated .sidebar {
+  top: 88px;
+  max-height: calc(100vh - 100px);
+  padding: 14px;
+  overflow: hidden;
+}
+body.is-authenticated .sidebar-account {
+  margin-bottom: 0;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e2e8f0;
+}
+body.is-authenticated .sidebar-account h2 { font-size: 1.08rem; }
+body.is-authenticated .plan-pill { padding: 9px 10px; font-size: .75rem; }
+body.is-authenticated .usage-box,
+body.is-authenticated .ai-status-box,
+body.is-authenticated .upgrade-box { padding: 11px; font-size: .78rem; }
+body.is-authenticated .sidebar nav { min-height: 100px; overflow-y: auto; }
+body.is-authenticated .nav-list { gap: 5px; }
+body.is-authenticated .nav-btn { min-height: 38px; padding: 9px 11px; border-radius: 10px; font-size: .78rem; }
+body.is-authenticated .workspace { gap: 13px; }
+body.is-authenticated .card-panel { padding: 17px; }
+body.is-authenticated .dashboard-header h2 { font-size: clamp(1.55rem, 2.6vw, 2.25rem); }
+body.is-authenticated .overview-chart-grid { gap: 13px; }
+body.is-authenticated .chart-panel { overflow: hidden; }
+body.is-authenticated .section-title { min-width: 0; }
+body.is-authenticated .section-title h3 { line-height: 1.2; }
+body.is-authenticated .revenue-stage-card,
+body.is-authenticated .overview-pipeline-card { min-width: 0; }
+
+@media (max-width: 900px) {
+  body.is-authenticated .container {
+    width: calc(100% - 16px);
+    padding-top: 8px;
+  }
+
+  .session-bar {
+    top: 6px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    min-height: 58px;
+    padding: 8px 10px;
+    border-radius: 16px;
+  }
+
+  .session-user { display: none; }
+  .session-brand strong { font-size: .9rem; }
+  .session-logout { min-width: 86px; padding: 10px 12px; font-size: .76rem; }
+
+  body.is-authenticated .app-shell {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  body.is-authenticated .sidebar {
+    position: static;
+    display: block;
+    max-height: none;
+    padding: 9px;
+    overflow: hidden;
+  }
+
+  body.is-authenticated .sidebar-account,
+  body.is-authenticated .usage-box,
+  body.is-authenticated .ai-status-box,
+  body.is-authenticated .upgrade-box {
+    display: none;
+  }
+
+  body.is-authenticated .sidebar nav {
+    width: auto;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  body.is-authenticated .sidebar .nav-list {
+    display: flex;
+    width: max-content;
+    min-width: 100%;
+    gap: 6px;
+  }
+
+  body.is-authenticated .sidebar .nav-btn {
+    width: auto;
+    min-height: 38px;
+    padding: 9px 12px;
+    white-space: nowrap;
+    font-size: .72rem;
+  }
+
+  body.is-authenticated .workspace,
+  body.is-authenticated .active-view,
+  body.is-authenticated .overview-chart-grid {
+    width: 100%;
+    min-width: 0;
+  }
+
+  body.is-authenticated .dashboard-header,
+  body.is-authenticated .pipeline-title-row {
+    gap: 9px;
+  }
+
+  body.is-authenticated .dashboard-header h2 {
+    font-size: clamp(1.35rem, 6vw, 1.75rem);
+  }
+
+  body.is-authenticated .meta {
+    font-size: .78rem;
+    line-height: 1.5;
+  }
+
+  body.is-authenticated .overview-chart-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  body.is-authenticated #overviewRevenueChart {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  body.is-authenticated .revenue-stage-card {
+    min-height: 102px;
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  body.is-authenticated .revenue-stage-card strong { font-size: 1.1rem; }
+  body.is-authenticated .revenue-stage-card span { font-size: .7rem; }
+
+  body.is-authenticated .donut-chart-wrap {
+    grid-template-columns: 120px minmax(0, 1fr);
+    justify-items: stretch;
+    gap: 12px;
+    min-height: 132px;
+  }
+
+  body.is-authenticated .donut-chart {
+    width: 116px;
+    height: 116px;
+  }
+
+  body.is-authenticated .donut-chart > div {
+    width: 72px;
+    height: 72px;
+  }
+
+  body.is-authenticated .donut-chart strong { font-size: 1.1rem; }
+  body.is-authenticated .donut-chart span { font-size: .58rem; }
+  body.is-authenticated .donut-legend { width: 100%; gap: 7px; }
+  body.is-authenticated .donut-legend span { grid-template-columns: 8px minmax(0, 1fr) auto; font-size: .7rem; }
+
+  body.is-authenticated .column-chart {
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 9px;
+    padding: 2px 0;
+    overflow: visible;
+  }
+
+  body.is-authenticated .column-chart-item {
+    min-width: 0;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto auto;
+    grid-template-areas:
+      "label value"
+      "detail value"
+      "track track";
+    align-items: center;
+    gap: 3px 10px;
+    padding: 11px;
+    border: 1px solid #e2e8f0;
+    border-radius: 13px;
+    background: #f8fafc;
+    text-align: left;
+  }
+
+  body.is-authenticated .column-chart-item strong {
+    grid-area: label;
+    font-size: .8rem;
+  }
+
+  body.is-authenticated .column-chart-item small {
+    grid-area: detail;
+    min-height: 0;
+    font-size: .68rem;
+  }
+
+  body.is-authenticated .column-chart-value {
+    grid-area: value;
+    align-self: center;
+    font-size: .95rem;
+  }
+
+  body.is-authenticated .column-chart-track {
+    grid-area: track;
+    width: 100%;
+    height: 9px;
+    margin-top: 7px;
+    border-radius: 999px;
+  }
+
+  body.is-authenticated .column-chart-track span {
+    width: var(--mobile-bar, 100%);
+    height: 100% !important;
+    min-height: 0;
+    border-radius: inherit;
+  }
+
+  body.is-authenticated .overview-pipeline-cards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    overflow: visible;
+  }
+
+  body.is-authenticated .overview-pipeline-card {
+    min-width: 0;
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  body.is-authenticated .overview-pipeline-card strong { font-size: 1.35rem; }
+  body.is-authenticated .overview-pipeline-card span,
+  body.is-authenticated .overview-pipeline-card b { font-size: .7rem; }
+}
+
+@media (max-width: 520px) {
+  .app-intro {
+    padding: 20px 16px;
+  }
+  .app-intro h1 {
+    font-size: 2rem;
+  }
+  .auth-card {
+    gap: 10px;
+  }
+  .auth-copy {
+    padding: 16px;
+  }
+  .auth-copy h2 {
+    font-size: 1.55rem;
+  }
+  body.is-authenticated .card-panel {
+    padding: 13px;
+    border-radius: 15px;
+  }
+  body.is-authenticated #overviewRevenueChart,
+  body.is-authenticated .overview-pipeline-cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  body.is-authenticated .donut-chart-wrap {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+  }
+  body.is-authenticated .donut-legend {
+    max-width: 240px;
+  }
+}

@@ -26,6 +26,8 @@ test('landing pública usa React e mantém o painel legado separado', () => {
 test('landing consulta planos públicos e mantém CTA para o aplicativo', () => {
   assert.match(appSource, /fetch\('\/api\/plans'/);
   assert.match(appSource, /href="\/app"/);
+  assert.match(appSource, /function Tools\(/);
+  assert.match(appSource, /Ferramentas do sistema/);
   assert.match(appSource, /function Pricing\(/);
   assert.match(appSource, /function Faq\(/);
 });

@@ -1,155 +1,57 @@
-<!--
-  @fileoverview Página pública de apresentação e conversão do produto.
-  As regiões principais usam elementos semânticos e identificadores consumidos
-  pelos controladores JavaScript documentados na pasta public/.
--->
 <!doctype html>
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="LeadHunter Pro é uma plataforma SaaS de prospecção comercial com CRM, automações, geração de leads locais e gestão de oportunidades." />
-  <meta name="keywords" content="CRM, prospecção, leads, vendas, automação comercial, freelancer, agência, Mercado Pago" />
-  <meta name="author" content="LeadHunter Pro" />
-  <meta property="og:title" content="LeadHunter Pro — Prospecção comercial com CRM e automações" />
-  <meta property="og:description" content="Encontre leads locais, organize oportunidades e acompanhe follow-ups em uma plataforma SaaS comercial." />
-  <meta property="og:type" content="website" />
-  <title>LeadHunter Pro — Prospecção para freelancers e agências</title>
-  <link rel="icon" href="data:," />
-  <link rel="stylesheet" href="landing-fallback.css" />
+  <meta name="description" content="LeadHunter Pro: prospecção comercial, CRM, follow-up, propostas e relatórios em um só lugar." />
+  <title>LeadHunter Pro — Prospecção e CRM comercial</title>
+  <link rel="stylesheet" href="/landing-fallback.css?v=24.1.0" />
 </head>
 <body>
-  <header class="topbar">
-    <a class="brand" href="/landing.html">LeadHunter Pro</a>
-    <nav aria-label="Menu principal">
-    <ul class="landing-nav-list">
-      <li><a href="#beneficios">Benefícios</a></li>
-      <li><a href="#planos">Planos</a></li>
-      <li><a href="#faq">FAQ</a></li>
-      <li><a class="login" href="/app">Entrar</a></li>
-    </ul>
-  </nav>
+  <header class="site-header">
+    <div class="shell header-inner">
+      <a class="brand" href="/"><span class="brand-mark">LH</span><span><strong>LeadHunter</strong><small>PRO</small></span></a>
+      <nav class="fallback-nav"><a href="#produto">O produto</a><a href="#ferramentas">Ferramentas</a><a href="#planos">Planos</a><a href="/app">Entrar</a><a class="button small" href="/app">Começar grátis →</a></nav>
+    </div>
   </header>
-
-  <main id="conteudo-principal">
-    <section class="hero">
+  <main>
+    <section class="hero shell" id="inicio">
       <div class="hero-copy">
-        <p class="eyebrow">SaaS de prospecção comercial</p>
-        <h1>Encontre empresas com potencial de compra e organize tudo em um CRM simples.</h1>
-        <p class="lead">Busque leads locais, analise presença digital, gere abordagens, acompanhe follow-ups e transforme prospecção em rotina comercial.</p>
-        <div class="actions">
-          <a class="primary" href="/app" aria-label="Acessar sistema LeadHunter Pro">Começar agora</a>
-          <a class="secondary" href="#demo">Ver como funciona</a>
-        </div>
-        <div class="proof">
-          <span>CRM Kanban</span>
-          <span>Lead Score</span>
-          <span>Follow-up</span>
-          <span>Teste/Pro</span>
-        </div>
+        <span class="eyebrow">✦ Prospecção, CRM e inteligência comercial</span>
+        <h1>Encontre clientes e organize todo o processo de venda em um só lugar.</h1>
+        <p>O LeadHunter Pro ajuda freelancers, pequenas empresas e agências a encontrar oportunidades, preparar abordagens e acompanhar cada lead até o fechamento.</p>
+        <div class="hero-actions"><a class="button primary" href="/app">Criar conta gratuita →</a><a class="button secondary" href="#ferramentas">Ver ferramentas</a></div>
+        <div class="hero-proof"><span>✓ 10 leads para testar</span><span>✓ Sem instalação</span><span>✓ CRM integrado</span></div>
       </div>
-
-      <div class="hero-card" id="demo">
-        <div class="window-bar"><span></span><span></span><span></span></div>
-        <h2>Central de oportunidades</h2>
-        <div class="metric-row">
-          <article><strong>128</strong><small>Leads encontrados</small></article>
-          <article><strong>37</strong><small>Oportunidades quentes</small></article>
-        </div>
-        <div class="pipeline">
-          <div><b>Novo</b><p>Clínica local</p><p>Score 86</p></div>
-          <div><b>Contato</b><p>Salão premium</p><p>Score 79</p></div>
-          <div><b>Proposta</b><p>Academia</p><p>Score 91</p></div>
-        </div>
+      <div class="product-preview fallback-preview">
+        <div class="fallback-preview-card"><h3>Seu radar comercial</h3><div class="fallback-metrics"><span><strong>1.284</strong><small>Leads</small></span><span><strong>186</strong><small>Oportunidades</small></span><span><strong>47</strong><small>Em contato</small></span></div><div class="fallback-bars"><span>Novos<i style="--w:92%"></i></span><span>Contato<i style="--w:68%"></i></span><span>Proposta<i style="--w:43%"></i></span><span>Fechados<i style="--w:24%"></i></span></div></div>
       </div>
     </section>
 
-    <section id="beneficios" class="section">
-      <p class="eyebrow">Por que usar</p>
-      <h2>Menos tempo procurando, mais tempo vendendo.</h2>
-      <div class="cards">
-        <article>
-          <h3>Busca direcionada</h3>
-          <p>Encontre empresas por segmento e região para criar listas comerciais mais objetivas.</p>
-        </article>
-        <article>
-          <h3>Prioridade por score</h3>
-          <p>O sistema ajuda a identificar quais leads parecem ter maior chance de compra.</p>
-        </article>
-        <article>
-          <h3>Campanhas guiadas</h3>
-          <p>Gere sequência de abordagem e agende follow-ups sem perder oportunidades.</p>
-        </article>
-      </div>
+    <section class="product-summary shell" id="produto">
+      <div class="summary-copy"><span class="section-kicker">O que o projeto resolve</span><h2>Uma operação comercial completa sem juntar várias ferramentas.</h2><p>O sistema centraliza a busca de empresas, a preparação do contato e o acompanhamento das oportunidades.</p></div>
+      <div class="summary-cards"><article><span class="fallback-icon">⌕</span><strong>Encontre</strong><p>Descubra empresas por segmento e região.</p></article><article><span class="fallback-icon">✦</span><strong>Aborde</strong><p>Use diagnóstico e mensagens mais relevantes.</p></article><article><span class="fallback-icon">↗</span><strong>Converta</strong><p>Acompanhe tarefas, propostas e próximos passos.</p></article></div>
     </section>
 
-    <section class="section dark">
-      <p class="eyebrow">Fluxo comercial</p>
-      <h2>Do lead encontrado ao follow-up em poucos passos.</h2>
-      <div class="steps">
-        <div><span>1</span><h3>Escolha nicho e região</h3><p>Exemplo: clínicas em Perus, restaurantes em Osasco ou salões em Campinas.</p></div>
-        <div><span>2</span><h3>Analise as oportunidades</h3><p>Veja score, site, telefone, diagnóstico e possíveis dores comerciais.</p></div>
-        <div><span>3</span><h3>Organize no CRM</h3><p>Mova leads entre Novo, Contatado, Respondeu, Proposta e Fechado.</p></div>
-        <div><span>4</span><h3>Faça follow-up</h3><p>Agende próximos contatos e acompanhe a rotina de prospecção.</p></div>
-      </div>
-    </section>
+    <section class="section tools-section" id="ferramentas"><div class="shell"><div class="section-heading"><span class="section-kicker">Ferramentas do sistema</span><h2>Recursos úteis conectados ao mesmo funil.</h2><p>As principais áreas da plataforma aparecem de forma clara antes de o cliente criar a conta.</p></div><div class="tools-grid">
+      <article class="tool-card"><div class="tool-top"><span class="tool-icon fallback-icon">⌕</span><small>01</small></div><h3>Prospecção por região</h3><p>Encontre empresas por nicho, cidade ou bairro.</p><div class="tool-preview preview-1"><span>Clínicas</span><span>São Paulo</span><b>Encontrar leads</b></div></article>
+      <article class="tool-card"><div class="tool-top"><span class="tool-icon fallback-icon">92</span><small>02</small></div><h3>Lead Score</h3><p>Priorize os contatos com melhor potencial.</p><div class="tool-preview preview-2"><strong>92</strong><small>Alta prioridade</small><i></i></div></article>
+      <article class="tool-card"><div class="tool-top"><span class="tool-icon fallback-icon">✦</span><small>03</small></div><h3>Abordagem assistida</h3><p>Prepare mensagens usando o contexto do lead.</p><div class="tool-preview preview-3"><small>Mensagem sugerida</small><p>Identifiquei uma oportunidade...</p></div></article>
+      <article class="tool-card"><div class="tool-top"><span class="tool-icon fallback-icon">▦</span><small>04</small></div><h3>CRM Kanban</h3><p>Acompanhe cada lead do contato ao fechamento.</p><div class="tool-preview preview-4"><span>Novo · 12</span><span>Contato · 7</span><span>Proposta · 3</span></div></article>
+      <article class="tool-card"><div class="tool-top"><span class="tool-icon fallback-icon">AI</span><small>05</small></div><h3>Central de Inteligência</h3><p>Veja prioridades, alertas e próximos passos.</p><div class="tool-preview preview-5"><small>Prioridade do dia</small><strong>Retomar 4 propostas</strong></div></article>
+      <article class="tool-card"><div class="tool-top"><span class="tool-icon fallback-icon">◷</span><small>06</small></div><h3>Agenda e follow-up</h3><p>Registre ações para não perder oportunidades.</p><div class="tool-preview preview-6"><span>Hoje</span><strong>5 ações</strong><small>2 urgentes</small></div></article>
+      <article class="tool-card"><div class="tool-top"><span class="tool-icon fallback-icon">R$</span><small>07</small></div><h3>Propostas e clientes</h3><p>Organize negociações e resultados comerciais.</p><div class="tool-preview preview-7"><span>Em negociação</span><strong>R$ 8.400</strong></div></article>
+      <article class="tool-card"><div class="tool-top"><span class="tool-icon fallback-icon">▥</span><small>08</small></div><h3>Relatórios</h3><p>Acompanhe conversão, receita e pipeline.</p><div class="tool-preview preview-8"><i style="height:42%"></i><i style="height:68%"></i><i style="height:88%"></i><i style="height:64%"></i></div></article>
+    </div></div></section>
 
-    <section id="planos" class="section">
-      <p class="eyebrow">Planos</p>
-      <h2>Teste grátis e evolua quando precisar.</h2>
-      <div class="pricing">
-        <article>
-          <h3>Teste</h3>
-          <strong>R$ 0/mês</strong>
-          <p>10 leads totais</p>
-          <ul><li>CRM básico</li><li>Exportação CSV</li><li>Follow-up manual</li></ul>
-          <a href="/app" class="secondary">Começar</a>
-        </article>
-        <article class="featured">
-          <h3>Pro</h3>
-          <strong>R$ 59/mês</strong>
-          <p>500 leads/dia</p>
-          <ul><li>Dashboard executivo</li><li>Campanhas comerciais</li><li>Histórico completo</li></ul>
-          <a href="/app" class="primary">Testar Pro</a>
-        </article>
-        <article>
-          <h3>Agência</h3>
-          <strong>R$ 199/mês</strong>
-          <p>5.000 leads/dia</p>
-          <ul><li>Uso intenso</li><li>Pipeline avançado</li><li>Preparado para times</li></ul>
-          <a href="/app" class="secondary">Conhecer</a>
-        </article>
-      </div>
-    </section>
+    <section class="section pricing-section" id="planos"><div class="shell"><div class="section-heading centered"><span class="section-kicker">Planos</span><h2>Comece gratuitamente e aumente o volume quando precisar.</h2></div><div class="pricing-grid">
+      <article class="price-card"><div class="price-head"><span>⚡</span><div><h3>Teste Gratuito</h3><small>Para conhecer o sistema</small></div></div><strong class="price-value">R$ 0</strong><a class="button outline" href="/app">Começar grátis →</a><ul><li>✓ 10 leads totais</li><li>✓ CRM Kanban básico</li><li>✓ Follow-ups manuais</li></ul></article>
+      <article class="price-card featured"><span class="popular">✦ Mais escolhido</span><div class="price-head"><span>↗</span><div><h3>Pro</h3><small>Para uma rotina comercial ativa</small></div></div><strong class="price-value">R$ 59/mês</strong><a class="button primary" href="/app">Escolher plano →</a><ul><li>✓ 500 leads por dia</li><li>✓ Dashboard executivo</li><li>✓ Campanhas e follow-ups</li></ul></article>
+      <article class="price-card"><div class="price-head"><span>♟</span><div><h3>Agência</h3><small>Para operações em escala</small></div></div><strong class="price-value">R$ 199/mês</strong><a class="button outline" href="/app">Escolher plano →</a><ul><li>✓ Até 5.000 leads por dia</li><li>✓ Uso para times</li><li>✓ Pipeline avançado</li></ul></article>
+    </div></div></section>
 
-    <section class="section testimonials">
-      <p class="eyebrow">Depoimentos</p>
-      <h2>Feito para quem precisa vender serviços.</h2>
-      <div class="cards">
-        <article><p>“Antes eu perdia horas procurando possíveis clientes. Agora começo o dia com uma lista mais organizada.”</p><strong>Desenvolvedor freelancer</strong></article>
-        <article><p>“O Kanban e os follow-ups ajudam a não esquecer nenhum contato importante.”</p><strong>Social media</strong></article>
-        <article><p>“A proposta é simples: encontrar oportunidades e dar o próximo passo com mais clareza.”</p><strong>Agência pequena</strong></article>
-      </div>
-    </section>
-
-    <section id="faq" class="section faq" aria-label="Perguntas frequentes">
-      <p class="eyebrow">FAQ</p>
-      <h2>Perguntas rápidas</h2>
-      <details open><summary>O sistema envia WhatsApp automaticamente?</summary><p>Não. Ele gera mensagens e organiza follow-ups, mas o envio deve ser revisado pelo usuário.</p></details>
-      <details><summary>Preciso de MongoDB para testar?</summary><p>Não. O projeto funciona localmente com JSON. Para produção, use MongoDB Atlas.</p></details>
-      <details><summary>O pagamento já está integrado?</summary><p>A estrutura está pronta e o checkout Mercado Pago é opcional quando o token é configurado.</p></details>
-    </section>
-
-    <section class="cta">
-      <h2>Pronto para transformar prospecção em rotina?</h2>
-      <p>Entre no painel, crie sua conta e teste o fluxo completo.</p>
-      <a href="/app" class="primary">Acessar o sistema</a>
-    </section>
+    <section class="final-cta shell"><div><span class="section-kicker">Pronto para testar?</span><h2>Transforme prospecção em uma rotina comercial organizada.</h2><p>Crie sua conta e encontre os primeiros leads.</p></div><a class="button light" href="/app">Acessar o LeadHunter →</a></section>
   </main>
-
-  <footer aria-label="Rodapé">
-    <strong>LeadHunter Pro</strong>
-    <span>SaaS de prospecção comercial local.</span>
-  </footer>
+  <footer class="site-footer"><div class="shell footer-bottom"><span>© 2026 LeadHunter Pro</span><span>Prospecção, CRM e inteligência comercial.</span></div></footer>
 </body>
 </html>

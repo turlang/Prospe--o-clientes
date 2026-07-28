@@ -1,21 +1,17 @@
 /**
- * @fileoverview Landing page pública do LeadHunter Pro em React.
- * Consome os planos configuráveis da API e mantém toda a navegação acessível.
+ * @fileoverview Landing page comercial do LeadHunter Pro em React.
+ * Explica o produto, apresenta suas ferramentas e carrega os planos da API.
  */
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ArrowRight,
-  BadgeCheck,
   BarChart3,
-  BriefcaseBusiness,
   Building2,
+  CalendarClock,
   Check,
   ChevronDown,
-  CircleCheck,
-  ClipboardCheck,
-  Clock3,
-  Crosshair,
-  Database,
+  ClipboardList,
+  FileText,
   Gauge,
   Layers3,
   Menu,
@@ -53,69 +49,69 @@ const fallbackPlans = [
   }
 ];
 
-const benefits = [
+const toolCards = [
   {
     icon: Search,
-    title: 'Busca orientada',
-    text: 'Escolha segmento e região para montar listas comerciais mais objetivas, sem começar do zero.'
+    title: 'Prospecção por região',
+    text: 'Encontre empresas por segmento, cidade ou bairro e transforme a busca em uma lista comercial organizada.',
+    preview: <><span>Clínicas</span><span>São Paulo</span><b>Encontrar leads</b></>
   },
   {
     icon: Gauge,
-    title: 'Prioridade por score',
-    text: 'Compare sinais comerciais e concentre esforço nas empresas com melhor potencial de abordagem.'
+    title: 'Lead Score',
+    text: 'Priorize oportunidades usando sinais comerciais, presença digital e potencial de abordagem.',
+    preview: <><strong>92</strong><small>Alta prioridade</small><i /></>
   },
   {
-    icon: MessageSquareText,
-    title: 'Abordagem guiada',
-    text: 'Receba sugestões de mensagens mais humanas e adequadas ao contexto de cada oportunidade.'
+    icon: WandSparkles,
+    title: 'Abordagem assistida',
+    text: 'Crie mensagens e argumentos mais relevantes com base no contexto de cada empresa.',
+    preview: <><small>Mensagem sugerida</small><p>“Identifiquei uma oportunidade…”</p></>
   },
   {
     icon: Layers3,
-    title: 'CRM visual',
-    text: 'Acompanhe cada lead do primeiro contato até a proposta, sem perder o histórico da conversa.'
+    title: 'CRM Kanban',
+    text: 'Mova leads entre etapas e acompanhe contato, interesse, reunião, proposta e fechamento.',
+    preview: <><span>Novo · 12</span><span>Contato · 7</span><span>Proposta · 3</span></>
   },
   {
-    icon: Clock3,
-    title: 'Follow-up organizado',
-    text: 'Registre o próximo passo e mantenha a rotina comercial ativa no momento certo.'
+    icon: Sparkles,
+    title: 'Central de Inteligência',
+    text: 'Receba prioridades, alertas e próximos passos para começar o dia sabendo onde agir.',
+    preview: <><small>Prioridade do dia</small><strong>Retomar 4 propostas</strong></>
+  },
+  {
+    icon: CalendarClock,
+    title: 'Agenda e follow-up',
+    text: 'Registre tarefas e mantenha o próximo contato visível para não perder oportunidades.',
+    preview: <><span>Hoje</span><strong>5 ações</strong><small>2 urgentes</small></>
+  },
+  {
+    icon: FileText,
+    title: 'Propostas e clientes',
+    text: 'Organize propostas comerciais e acompanhe oportunidades que avançaram para clientes.',
+    preview: <><span>Em negociação</span><strong>R$ 8.400</strong></>
   },
   {
     icon: BarChart3,
-    title: 'Visão executiva',
-    text: 'Entenda volume, avanço do funil e ações pendentes em uma visão simples e direta.'
+    title: 'Relatórios comerciais',
+    text: 'Visualize conversão, pipeline, receita potencial e desempenho sem depender de planilhas.',
+    preview: <><i style={{ height: '42%' }} /><i style={{ height: '68%' }} /><i style={{ height: '88%' }} /><i style={{ height: '64%' }} /></>
   }
 ];
 
-const steps = [
-  { number: '01', icon: Crosshair, title: 'Defina o alvo', text: 'Selecione o nicho, a cidade e os critérios que fazem sentido para sua oferta.' },
-  { number: '02', icon: Radar, title: 'Encontre oportunidades', text: 'Gere uma lista organizada e veja os dados úteis para iniciar a prospecção.' },
-  { number: '03', icon: WandSparkles, title: 'Prepare a abordagem', text: 'Use diagnóstico e contexto para criar uma conversa comercial mais relevante.' },
-  { number: '04', icon: TrendingUp, title: 'Avance no funil', text: 'Registre respostas, agende follow-ups e acompanhe cada próximo passo.' }
-];
-
-const audiences = [
-  { icon: BriefcaseBusiness, label: 'Freelancers', text: 'Mais constância para encontrar e abordar novos clientes.' },
-  { icon: Building2, label: 'Pequenas empresas', text: 'Uma operação comercial simples sem depender de planilhas espalhadas.' },
-  { icon: Users, label: 'Agências', text: 'Mais volume, organização e visibilidade sobre as oportunidades do time.' }
+const workflow = [
+  ['01', Target, 'Defina o público', 'Escolha segmento e região para direcionar sua prospecção.'],
+  ['02', Search, 'Encontre empresas', 'Gere leads e veja os principais dados comerciais disponíveis.'],
+  ['03', MessageSquareText, 'Prepare o contato', 'Use score, diagnóstico e abordagem para iniciar a conversa.'],
+  ['04', TrendingUp, 'Avance no funil', 'Registre respostas, follow-ups, propostas e resultados.']
 ];
 
 const faqs = [
-  {
-    question: 'O LeadHunter envia mensagens automaticamente?',
-    answer: 'Não. A plataforma ajuda a construir abordagens e organizar follow-ups, mas você revisa e decide quando realizar cada contato.'
-  },
-  {
-    question: 'Preciso instalar alguma coisa?',
-    answer: 'Não. O sistema funciona no navegador. Basta criar sua conta e acessar o painel.'
-  },
-  {
-    question: 'Posso começar sem pagar?',
-    answer: 'Sim. O plano de teste oferece uma quantidade inicial de leads para você conhecer o fluxo antes de contratar.'
-  },
-  {
-    question: 'Os planos exibidos são atualizados pelo painel administrativo?',
-    answer: 'Sim. A landing page consulta a API do próprio sistema, então preço, limites e benefícios acompanham as configurações publicadas pelo administrador.'
-  }
+  ['O que é o LeadHunter Pro?', 'É uma plataforma SaaS de prospecção comercial que reúne busca de empresas, lead score, abordagem assistida, CRM, agenda, propostas e relatórios.'],
+  ['O sistema envia mensagens automaticamente?', 'Não. Ele ajuda a preparar abordagens e organizar follow-ups, mas o usuário revisa e decide quando realizar cada contato.'],
+  ['Preciso instalar alguma coisa?', 'Não. O sistema funciona diretamente no navegador e pode ser acessado pelo computador ou celular.'],
+  ['Posso começar sem pagar?', 'Sim. O plano gratuito oferece uma quantidade inicial de leads para testar o fluxo antes de contratar outro plano.']
 ];
 
 function usePlans() {
@@ -134,7 +130,6 @@ function usePlans() {
       .catch((error) => {
         if (error.name !== 'AbortError') console.warn('[landing] Planos padrão em uso.', error.message);
       });
-
     return () => controller.abort();
   }, []);
 
@@ -144,186 +139,108 @@ function usePlans() {
 function Brand() {
   return (
     <a className="brand" href="#inicio" aria-label="LeadHunter Pro - início">
-      <span className="brand-mark"><Radar size={22} strokeWidth={2.4} /></span>
-      <span className="brand-copy"><strong>LeadHunter</strong><small>PRO</small></span>
+      <span className="brand-mark"><Radar size={21} /></span>
+      <span><strong>LeadHunter</strong><small>PRO</small></span>
     </a>
   );
 }
 
 function Header() {
   const [open, setOpen] = useState(false);
-
-  const closeMenu = () => setOpen(false);
+  const close = () => setOpen(false);
 
   return (
     <header className="site-header">
-      <div className="header-inner">
+      <div className="shell header-inner">
         <Brand />
-        <nav className={`main-nav ${open ? 'is-open' : ''}`} aria-label="Navegação principal">
-          <a href="#recursos" onClick={closeMenu}>Recursos</a>
-          <a href="#como-funciona" onClick={closeMenu}>Como funciona</a>
-          <a href="#planos" onClick={closeMenu}>Planos</a>
-          <a href="#faq" onClick={closeMenu}>Dúvidas</a>
-          <a className="nav-login" href="/app" onClick={closeMenu}>Entrar</a>
-          <a className="button button-small" href="/app" onClick={closeMenu}>Começar grátis <ArrowRight size={16} /></a>
+        <nav className={open ? 'main-nav open' : 'main-nav'} aria-label="Navegação principal">
+          <a href="#produto" onClick={close}>O produto</a>
+          <a href="#ferramentas" onClick={close}>Ferramentas</a>
+          <a href="#planos" onClick={close}>Planos</a>
+          <a href="#duvidas" onClick={close}>Dúvidas</a>
+          <a className="login-link" href="/app" onClick={close}>Entrar</a>
+          <a className="button small" href="/app" onClick={close}>Começar grátis <ArrowRight size={16} /></a>
         </nav>
-        <button
-          className="menu-button"
-          type="button"
-          aria-label={open ? 'Fechar menu' : 'Abrir menu'}
-          aria-expanded={open}
-          onClick={() => setOpen((current) => !current)}
-        >
-          {open ? <X /> : <Menu />}
-        </button>
+        <button className="menu-button" type="button" aria-label="Abrir menu" onClick={() => setOpen((value) => !value)}>{open ? <X /> : <Menu />}</button>
       </div>
     </header>
   );
 }
 
-function DashboardPreview() {
+function ProductPreview() {
   return (
-    <div className="dashboard-shell" aria-label="Prévia visual do painel comercial">
-      <div className="dashboard-topbar">
-        <div className="window-dots"><span /><span /><span /></div>
-        <div className="dashboard-title"><span className="status-dot" /> Operação comercial ativa</div>
-        <span className="dashboard-period">Últimos 30 dias</span>
-      </div>
-
-      <div className="dashboard-layout">
-        <aside className="dashboard-sidebar" aria-hidden="true">
-          <span className="sidebar-logo"><Radar size={18} /></span>
-          <span className="sidebar-item active"><Gauge size={17} /></span>
-          <span className="sidebar-item"><Target size={17} /></span>
-          <span className="sidebar-item"><Users size={17} /></span>
-          <span className="sidebar-item"><BarChart3 size={17} /></span>
-        </aside>
-
-        <div className="dashboard-content">
-          <div className="dashboard-heading">
-            <div><small>Bom dia</small><strong>Seu radar comercial</strong></div>
-            <button type="button" tabIndex="-1"><Search size={15} /> Nova busca</button>
+    <div className="product-preview" aria-label="Prévia do painel LeadHunter Pro">
+      <div className="preview-bar"><span><i /><i /><i /></span><small>Operação comercial</small><b>Ao vivo</b></div>
+      <div className="preview-body">
+        <aside><Radar /><Gauge /><Target /><Layers3 /><BarChart3 /></aside>
+        <div className="preview-content">
+          <div className="preview-heading"><div><small>Visão geral</small><strong>Seu radar comercial</strong></div><button type="button" tabIndex="-1">Nova busca</button></div>
+          <div className="preview-metrics">
+            <article><small>Leads</small><strong>1.284</strong><span>+18%</span></article>
+            <article><small>Oportunidades</small><strong>186</strong><span>14,5%</span></article>
+            <article><small>Em contato</small><strong>47</strong><span>9 novas</span></article>
           </div>
-
-          <div className="metric-grid">
-            <article><span className="metric-icon blue"><Search size={17} /></span><small>Leads mapeados</small><strong>1.284</strong><em>+18% este mês</em></article>
-            <article><span className="metric-icon green"><Target size={17} /></span><small>Oportunidades</small><strong>186</strong><em>14,5% qualificados</em></article>
-            <article><span className="metric-icon violet"><MessageSquareText size={17} /></span><small>Em contato</small><strong>47</strong><em>9 respostas novas</em></article>
-          </div>
-
-          <div className="dashboard-lower">
-            <article className="funnel-card">
-              <div className="card-heading"><div><small>Pipeline</small><strong>Funil comercial</strong></div><span>68% ativo</span></div>
-              <div className="funnel-bars">
-                <div><span>Novos</span><i style={{ '--bar': '92%' }} /><b>128</b></div>
-                <div><span>Contato</span><i style={{ '--bar': '68%' }} /><b>74</b></div>
-                <div><span>Proposta</span><i style={{ '--bar': '43%' }} /><b>31</b></div>
-                <div><span>Fechados</span><i style={{ '--bar': '24%' }} /><b>12</b></div>
-              </div>
-            </article>
-
-            <article className="opportunity-card">
-              <div className="card-heading"><div><small>Prioridade</small><strong>Próxima oportunidade</strong></div><Sparkles size={17} /></div>
-              <div className="company-row"><span className="company-avatar">AC</span><div><strong>Academia Central</strong><small>Serviços fitness · São Paulo</small></div><b>92</b></div>
-              <p>Boa aderência ao perfil e presença digital com pontos claros de melhoria.</p>
-              <button type="button" tabIndex="-1">Ver oportunidade <ArrowRight size={14} /></button>
-            </article>
+          <div className="preview-grid">
+            <article className="mini-pipeline"><div><small>Pipeline comercial</small><strong>R$ 32.450</strong></div><span style={{ '--size': '92%' }}>Novos</span><span style={{ '--size': '68%' }}>Contato</span><span style={{ '--size': '43%' }}>Proposta</span><span style={{ '--size': '24%' }}>Fechados</span></article>
+            <article className="mini-priority"><small>Próxima oportunidade</small><div><b>AC</b><span><strong>Academia Central</strong><em>Score 92</em></span></div><p>Boa aderência ao perfil e oportunidade clara de abordagem.</p></article>
           </div>
         </div>
       </div>
-      <span className="floating-note note-one"><CircleCheck size={15} /> Follow-up agendado</span>
-      <span className="floating-note note-two"><TrendingUp size={15} /> Score atualizado</span>
     </div>
   );
 }
 
 function Hero() {
   return (
-    <section className="hero section-shell" id="inicio">
-      <div className="hero-glow hero-glow-one" />
-      <div className="hero-glow hero-glow-two" />
+    <section className="hero shell" id="inicio">
       <div className="hero-copy">
-        <div className="eyebrow"><Sparkles size={15} /> Inteligência comercial para negócios que querem crescer</div>
-        <h1>Transforme busca por clientes em uma <span>rotina de vendas.</span></h1>
-        <p>Encontre empresas com potencial, entenda onde estão as melhores oportunidades e conduza cada contato em um CRM feito para ser simples.</p>
+        <span className="eyebrow"><Sparkles size={15} /> Prospecção, CRM e inteligência comercial</span>
+        <h1>Encontre clientes e organize todo o processo de venda em um só lugar.</h1>
+        <p>O LeadHunter Pro é uma plataforma para freelancers, pequenas empresas e agências encontrarem oportunidades, prepararem abordagens e acompanharem cada lead até o fechamento.</p>
         <div className="hero-actions">
-          <a className="button button-primary" href="/app">Começar gratuitamente <ArrowRight size={19} /></a>
-          <a className="button button-ghost" href="#como-funciona"><span className="play-dot"><Zap size={15} /></span> Ver como funciona</a>
+          <a className="button primary" href="/app">Criar conta gratuita <ArrowRight size={18} /></a>
+          <a className="button secondary" href="#ferramentas">Ver ferramentas</a>
         </div>
-        <div className="hero-trust">
-          <div className="avatar-stack"><span>F</span><span>A</span><span>P</span><span>+</span></div>
-          <div><strong>Feito para vender serviços</strong><small>Freelancers, pequenas empresas e agências.</small></div>
+        <div className="hero-proof"><span><Check /> 10 leads para testar</span><span><Check /> Sem instalação</span><span><Check /> CRM integrado</span></div>
+      </div>
+      <ProductPreview />
+    </section>
+  );
+}
+
+function ProductSummary() {
+  return (
+    <section className="product-summary shell" id="produto">
+      <div className="summary-copy">
+        <span className="section-kicker">O que o projeto resolve</span>
+        <h2>Uma operação comercial completa sem juntar várias ferramentas.</h2>
+        <p>Em vez de procurar empresas em um lugar, anotar contatos em outro e controlar follow-ups em planilhas, o LeadHunter centraliza o fluxo comercial.</p>
+      </div>
+      <div className="summary-cards">
+        <article><span><Search /></span><strong>Encontre</strong><p>Descubra empresas com potencial por segmento e região.</p></article>
+        <article><span><WandSparkles /></span><strong>Aborde</strong><p>Use contexto, diagnóstico e mensagens para iniciar conversas melhores.</p></article>
+        <article><span><TrendingUp /></span><strong>Converta</strong><p>Acompanhe pipeline, tarefas, propostas e próximos passos.</p></article>
+      </div>
+    </section>
+  );
+}
+
+function Tools() {
+  return (
+    <section className="section tools-section" id="ferramentas">
+      <div className="shell">
+        <div className="section-heading">
+          <span className="section-kicker">Ferramentas do sistema</span>
+          <h2>Recursos visíveis, úteis e conectados ao mesmo funil.</h2>
+          <p>Conheça as principais áreas que fazem parte da plataforma.</p>
         </div>
-      </div>
-      <div className="hero-visual"><DashboardPreview /></div>
-    </section>
-  );
-}
-
-function TrustStrip() {
-  return (
-    <section className="trust-strip" aria-label="Principais capacidades">
-      <div className="section-shell trust-inner">
-        <span><Radar size={18} /> Prospecção local</span>
-        <span><Gauge size={18} /> Lead score</span>
-        <span><Layers3 size={18} /> CRM Kanban</span>
-        <span><MessageSquareText size={18} /> Abordagens guiadas</span>
-        <span><Clock3 size={18} /> Follow-ups</span>
-      </div>
-    </section>
-  );
-}
-
-function SectionHeading({ tag, title, text, align = 'left' }) {
-  return (
-    <div className={`section-heading ${align === 'center' ? 'center' : ''}`}>
-      <span className="section-tag">{tag}</span>
-      <h2>{title}</h2>
-      {text ? <p>{text}</p> : null}
-    </div>
-  );
-}
-
-function Benefits() {
-  return (
-    <section className="content-section section-shell" id="recursos">
-      <SectionHeading
-        tag="Tudo em um só fluxo"
-        title="Menos improviso. Mais clareza em cada oportunidade."
-        text="O LeadHunter reúne descoberta, análise e acompanhamento para sua prospecção deixar de depender de várias ferramentas desconectadas."
-      />
-      <div className="benefit-grid">
-        {benefits.map(({ icon: Icon, title, text }, index) => (
-          <article className={`benefit-card benefit-${index + 1}`} key={title}>
-            <span className="benefit-icon"><Icon size={23} /></span>
-            <h3>{title}</h3>
-            <p>{text}</p>
-            <span className="card-link">Entenda o recurso <ArrowRight size={15} /></span>
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function Workflow() {
-  return (
-    <section className="workflow-section" id="como-funciona">
-      <div className="section-shell">
-        <SectionHeading
-          tag="Como funciona"
-          title="Da busca ao próximo passo, sem perder o contexto."
-          text="Um processo direto para você dedicar menos tempo à organização e mais tempo às conversas que podem virar negócio."
-          align="center"
-        />
-        <div className="workflow-grid">
-          {steps.map(({ number, icon: Icon, title, text }, index) => (
-            <article className="workflow-card" key={title}>
-              <span className="step-number">{number}</span>
-              <span className="workflow-icon"><Icon size={24} /></span>
+        <div className="tools-grid">
+          {toolCards.map(({ icon: Icon, title, text, preview }, index) => (
+            <article className="tool-card" key={title}>
+              <div className="tool-top"><span className="tool-icon"><Icon /></span><small>0{index + 1}</small></div>
               <h3>{title}</h3>
               <p>{text}</p>
-              {index < steps.length - 1 ? <span className="step-connector"><ArrowRight /></span> : null}
+              <div className={`tool-preview preview-${index + 1}`}>{preview}</div>
             </article>
           ))}
         </div>
@@ -332,59 +249,21 @@ function Workflow() {
   );
 }
 
-function ResultsPanel() {
+function Workflow() {
   return (
-    <section className="results-section section-shell">
-      <div className="results-copy">
-        <span className="section-tag">Visão comercial</span>
-        <h2>Saiba o que merece atenção antes de abrir outra planilha.</h2>
-        <p>O painel concentra seus principais indicadores, tarefas e movimentações do funil para que a operação continue avançando.</p>
-        <ul className="check-list">
-          <li><CircleCheck size={19} /> Histórico centralizado de cada lead</li>
-          <li><CircleCheck size={19} /> Próximas ações e tarefas pendentes</li>
-          <li><CircleCheck size={19} /> Indicadores para acompanhar evolução</li>
-        </ul>
-        <a className="text-link" href="/app">Conhecer o painel <ArrowRight size={17} /></a>
-      </div>
-      <div className="results-card">
-        <div className="chart-head"><div><small>Desempenho comercial</small><strong>Evolução das oportunidades</strong></div><span><TrendingUp size={15} /> +24,8%</span></div>
-        <div className="chart-area" aria-hidden="true">
-          <div className="chart-grid-lines"><i /><i /><i /><i /></div>
-          <svg viewBox="0 0 620 240" preserveAspectRatio="none" role="presentation">
-            <defs>
-              <linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#49d7ff" stopOpacity=".35" />
-                <stop offset="100%" stopColor="#49d7ff" stopOpacity="0" />
-              </linearGradient>
-            </defs>
-            <path className="chart-fill" d="M0,206 C55,188 78,170 118,180 C164,192 186,134 235,145 C284,156 305,99 357,116 C407,132 435,72 482,89 C527,105 564,46 620,42 L620,240 L0,240 Z" />
-            <path className="chart-line" d="M0,206 C55,188 78,170 118,180 C164,192 186,134 235,145 C284,156 305,99 357,116 C407,132 435,72 482,89 C527,105 564,46 620,42" />
-            <circle cx="620" cy="42" r="7" />
-          </svg>
+    <section className="section workflow-section">
+      <div className="shell workflow-layout">
+        <div className="section-heading left">
+          <span className="section-kicker">Como funciona</span>
+          <h2>Da busca ao fechamento em quatro passos.</h2>
+          <p>O sistema organiza a rotina sem substituir a decisão comercial do usuário.</p>
+          <a className="text-link" href="/app">Acessar o painel <ArrowRight size={17} /></a>
         </div>
-        <div className="chart-labels"><span>Jan</span><span>Fev</span><span>Mar</span><span>Abr</span><span>Mai</span><span>Jun</span></div>
-        <div className="mini-insights">
-          <div><span className="mini-icon"><ClipboardCheck size={18} /></span><div><small>Follow-ups concluídos</small><strong>84%</strong></div></div>
-          <div><span className="mini-icon"><BadgeCheck size={18} /></span><div><small>Leads qualificados</small><strong>186</strong></div></div>
+        <div className="workflow-list">
+          {workflow.map(([number, Icon, title, text]) => (
+            <article key={number}><span className="workflow-number">{number}</span><span className="workflow-icon"><Icon /></span><div><h3>{title}</h3><p>{text}</p></div></article>
+          ))}
         </div>
-      </div>
-    </section>
-  );
-}
-
-function Audience() {
-  return (
-    <section className="audience-section section-shell">
-      <SectionHeading
-        tag="Feito para sua operação"
-        title="Uma base comercial que acompanha seu ritmo."
-        text="Comece sozinho, organize sua rotina e evolua para uma operação com mais volume sem trocar de ferramenta."
-        align="center"
-      />
-      <div className="audience-grid">
-        {audiences.map(({ icon: Icon, label, text }) => (
-          <article key={label}><span><Icon size={24} /></span><h3>{label}</h3><p>{text}</p></article>
-        ))}
       </div>
     </section>
   );
@@ -398,63 +277,57 @@ function Pricing() {
   }, [plans]);
 
   return (
-    <section className="pricing-section" id="planos">
-      <div className="section-shell">
-        <SectionHeading
-          tag="Planos flexíveis"
-          title="Comece agora e aumente o volume quando precisar."
-          text="Sem complicação para testar. Escolha a estrutura que acompanha sua rotina comercial."
-          align="center"
-        />
+    <section className="section pricing-section" id="planos">
+      <div className="shell">
+        <div className="section-heading centered">
+          <span className="section-kicker">Planos</span>
+          <h2>Comece gratuitamente e aumente o volume quando precisar.</h2>
+          <p>Os valores e benefícios são carregados diretamente da configuração do sistema.</p>
+        </div>
         <div className="pricing-grid">
           {orderedPlans.map((plan) => {
             const featured = plan.id === 'pro';
+            const features = Array.isArray(plan.features) && plan.features.length ? plan.features : fallbackPlans.find((item) => item.id === plan.id)?.features || [];
             return (
-              <article className={`price-card ${featured ? 'featured' : ''}`} key={plan.id}>
-                {featured ? <span className="popular-label"><Sparkles size={14} /> Mais escolhido</span> : null}
-                <div className="price-card-head">
-                  <span className="plan-icon">{plan.id === 'trial' ? <Zap /> : plan.id === 'agency' ? <Users /> : <TrendingUp />}</span>
-                  <div><h3>{plan.name}</h3><p>{plan.id === 'trial' ? 'Para conhecer o sistema' : plan.id === 'agency' ? 'Para operações com escala' : 'Para manter ritmo comercial'}</p></div>
-                </div>
-                <div className="price-value"><strong>{plan.priceLabel || 'Consulte'}</strong>{plan.durationDays ? <small>ciclo de {plan.durationDays} dias</small> : <small>sem cobrança</small>}</div>
-                <a className={`button ${featured ? 'button-primary' : 'button-price'}`} href="/app">{plan.id === 'trial' ? 'Começar grátis' : 'Escolher plano'} <ArrowRight size={17} /></a>
-                <div className="plan-divider" />
-                <span className="includes">O plano inclui:</span>
-                <ul>
-                  {(Array.isArray(plan.features) ? plan.features : []).map((feature) => <li key={feature}><Check size={17} /> {feature}</li>)}
-                </ul>
+              <article className={featured ? 'price-card featured' : 'price-card'} key={plan.id}>
+                {featured && <span className="popular"><Sparkles size={14} /> Mais escolhido</span>}
+                <div className="price-head"><span>{plan.id === 'trial' ? <Zap /> : plan.id === 'agency' ? <Users /> : <TrendingUp />}</span><div><h3>{plan.name}</h3><small>{plan.id === 'trial' ? 'Para conhecer o sistema' : plan.id === 'agency' ? 'Para operações em escala' : 'Para uma rotina comercial ativa'}</small></div></div>
+                <strong className="price-value">{plan.priceLabel || 'Consulte'}</strong>
+                <a className={featured ? 'button primary' : 'button outline'} href="/app">{plan.id === 'trial' ? 'Começar grátis' : 'Escolher plano'} <ArrowRight size={17} /></a>
+                <ul>{features.map((feature) => <li key={feature}><Check size={16} /> {feature}</li>)}</ul>
               </article>
             );
           })}
         </div>
-        <p className="pricing-note"><ShieldCheck size={16} /> Os planos exibidos refletem a configuração atual do sistema.</p>
+      </div>
+    </section>
+  );
+}
+
+function Audience() {
+  return (
+    <section className="audience-strip">
+      <div className="shell audience-inner">
+        <div><span><Users /></span><strong>Freelancers</strong><small>Mais constância para prospectar.</small></div>
+        <div><span><Building2 /></span><strong>Pequenas empresas</strong><small>Processo comercial sem planilhas soltas.</small></div>
+        <div><span><ClipboardList /></span><strong>Agências</strong><small>Volume, organização e acompanhamento.</small></div>
       </div>
     </section>
   );
 }
 
 function Faq() {
-  const [active, setActive] = useState(0);
+  const [open, setOpen] = useState(0);
   return (
-    <section className="faq-section section-shell" id="faq">
-      <div className="faq-intro">
-        <span className="section-tag">Dúvidas frequentes</span>
-        <h2>O essencial antes de começar.</h2>
-        <p>Ainda ficou alguma dúvida? Entre no sistema e conheça o fluxo usando o plano gratuito.</p>
-        <a className="text-link" href="/app">Acessar agora <ArrowRight size={17} /></a>
-      </div>
+    <section className="section faq-section shell" id="duvidas">
+      <div className="section-heading left"><span className="section-kicker">Dúvidas frequentes</span><h2>O essencial antes de começar.</h2><p>O plano gratuito permite conhecer o fluxo usando o navegador.</p></div>
       <div className="faq-list">
-        {faqs.map((item, index) => {
-          const isOpen = active === index;
-          return (
-            <article className={`faq-item ${isOpen ? 'open' : ''}`} key={item.question}>
-              <button type="button" onClick={() => setActive(isOpen ? -1 : index)} aria-expanded={isOpen}>
-                <span>{item.question}</span><ChevronDown size={20} />
-              </button>
-              <div className="faq-answer"><p>{item.answer}</p></div>
-            </article>
-          );
-        })}
+        {faqs.map(([question, answer], index) => (
+          <article className={open === index ? 'faq-item open' : 'faq-item'} key={question}>
+            <button type="button" onClick={() => setOpen(open === index ? -1 : index)}><span>{question}</span><ChevronDown /></button>
+            <div><p>{answer}</p></div>
+          </article>
+        ))}
       </div>
     </section>
   );
@@ -462,17 +335,9 @@ function Faq() {
 
 function FinalCta() {
   return (
-    <section className="final-cta section-shell">
-      <div className="cta-glow" />
-      <div className="cta-icon"><Radar size={32} /></div>
-      <span className="section-tag">Seu próximo cliente pode estar mais perto</span>
-      <h2>Organize sua prospecção e comece a agir com mais clareza.</h2>
-      <p>Crie sua conta, teste o fluxo e transforme oportunidades em próximos passos comerciais.</p>
-      <div className="hero-actions cta-actions">
-        <a className="button button-primary" href="/app">Criar conta gratuita <ArrowRight size={19} /></a>
-        <a className="button button-ghost-light" href="#recursos">Rever recursos</a>
-      </div>
-      <div className="cta-proof"><span><Check size={15} /> Acesso pelo navegador</span><span><Check size={15} /> Plano gratuito para testar</span><span><Check size={15} /> CRM integrado</span></div>
+    <section className="final-cta shell">
+      <div><span className="section-kicker">Pronto para testar?</span><h2>Transforme prospecção em uma rotina comercial organizada.</h2><p>Crie sua conta, encontre os primeiros leads e acompanhe tudo pelo painel.</p></div>
+      <a className="button light" href="/app">Acessar o LeadHunter <ArrowRight size={18} /></a>
     </section>
   );
 }
@@ -480,13 +345,8 @@ function FinalCta() {
 function Footer() {
   return (
     <footer className="site-footer">
-      <div className="section-shell footer-grid">
-        <div className="footer-brand"><Brand /><p>Prospecção comercial simples, organizada e orientada a oportunidades reais.</p></div>
-        <div className="footer-links"><strong>Produto</strong><a href="#recursos">Recursos</a><a href="#como-funciona">Como funciona</a><a href="#planos">Planos</a></div>
-        <div className="footer-links"><strong>Acesso</strong><a href="/app">Entrar</a><a href="/app">Criar conta</a><a href="#faq">Dúvidas</a></div>
-        <div className="footer-security"><span><ShieldCheck size={20} /></span><div><strong>Operação protegida</strong><small>Autenticação e dados tratados pelo backend do LeadHunter Pro.</small></div></div>
-      </div>
-      <div className="section-shell footer-bottom"><span>© {new Date().getFullYear()} LeadHunter Pro.</span><span>Feito para transformar prospecção em rotina.</span></div>
+      <div className="shell footer-inner"><div><Brand /><p>Plataforma SaaS de prospecção, CRM e inteligência comercial.</p></div><nav><a href="#produto">Produto</a><a href="#ferramentas">Ferramentas</a><a href="#planos">Planos</a><a href="/app">Entrar</a></nav><span className="security"><ShieldCheck /> Autenticação protegida pelo backend</span></div>
+      <div className="shell footer-bottom"><span>© {new Date().getFullYear()} LeadHunter Pro</span><span>Feito para vender serviços com mais organização.</span></div>
     </footer>
   );
 }
@@ -494,14 +354,12 @@ function Footer() {
 export default function App() {
   return (
     <>
-      <a className="skip-link" href="#conteudo">Pular para o conteúdo</a>
       <Header />
-      <main id="conteudo">
+      <main>
         <Hero />
-        <TrustStrip />
-        <Benefits />
+        <ProductSummary />
+        <Tools />
         <Workflow />
-        <ResultsPanel />
         <Audience />
         <Pricing />
         <Faq />

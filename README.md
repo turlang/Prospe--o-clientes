@@ -194,3 +194,13 @@ O painel `/admin` possui uma zona de perigo para reinicializar os dados operacio
 ## Versão atual
 
 Versão atual: **24.0.1** — landing React e painel autenticado responsivo.
+
+
+## Versão 24.1.0
+
+- Landing page React reconstruída como site comercial compacto.
+- Cards visuais para as principais ferramentas do produto.
+- Planos dinâmicos destacados na página pública.
+- Login ocultado após autenticação e barra compacta de sessão com logout.
+- Logout retorna ao painel de acesso sem redirecionar para fora do aplicativo.
+- Gráficos e pipeline executivo reorganizados para celular.

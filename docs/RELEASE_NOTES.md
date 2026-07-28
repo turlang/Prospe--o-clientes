@@ -1,3 +1,12 @@
+
+## 24.1.0 — Landing comercial e painel mobile
+
+- Redesenho comercial da landing React, com explicação clara do produto, cards de ferramentas, fluxo de uso e planos.
+- Barra de sessão autenticada com botão único de logout.
+- Ocultação da apresentação e dos formulários de autenticação durante a sessão.
+- Logout local, reabrindo o formulário em `/app`.
+- Gráficos em barras horizontais e cards responsivos para telas pequenas.
+
 # Release 24.0.1 — Responsividade do painel
 
 ## Corrigido
