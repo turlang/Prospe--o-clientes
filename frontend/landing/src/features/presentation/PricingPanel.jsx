@@ -1,8 +1,9 @@
 /**
- * @fileoverview Tela compacta de planos publicados pelo Admin.
+ * @fileoverview Tela de comparação dos planos publicados pelo Admin.
  *
- * Apenas um plano é exibido por vez. Isso reduz a altura necessária e mantém a
- * landing sem rolagem, enquanto os botões permitem comparação direta.
+ * No desktop, os três planos permanecem visíveis para comparação imediata. Em
+ * telas pequenas, botões alternam um card por vez para preservar a experiência
+ * sem rolagem do documento.
  *
  * @module landing/features/presentation/PricingPanel
  */
@@ -22,10 +23,28 @@ function normalizeFeatures(plan) {
   return [...generated, 'CRM Kanban', 'Dashboard comercial'];
 }
 
-/**
- * @param {{plans: Array<object>, isUsingFallback: boolean}} props Planos publicados.
- * @returns {React.JSX.Element} Tela de preços.
- */
+function PlanCard({ plan, isUsingFallback, compact = false }) {
+  const features = normalizeFeatures(plan).slice(0, compact ? 4 : 5);
+  const displayPrice = plan.displayPrice || plan.priceLabel || formatPrice(plan.price);
+  const billingPeriod = plan.billingPeriod || (plan.isPaid ? 'mês' : 'sem cobrança');
+  const isFree = plan.isPaid === false || Number(plan.price || 0) === 0;
+  const featured = plan.featured || plan.id === 'pro';
+
+  return (
+    <article className="pricing-card" data-featured={featured ? 'true' : 'false'}>
+      <header>
+        <div><small>{isFree ? 'Comece agora' : 'Plano comercial'}</small><h3>{plan.name}</h3></div>
+        {featured ? <span><Sparkles size={11} /> Recomendado</span> : null}
+      </header>
+      <p>{plan.description || 'Plano comercial do LeadHunter Pro.'}</p>
+      <div className="pricing-card__price"><strong>{displayPrice}</strong><span>/{billingPeriod}</span></div>
+      <ul>{features.map((feature) => <li key={feature}><span><Check size={12} strokeWidth={3} /></span>{feature}</li>)}</ul>
+      <ActionLink href="/app">{isFree ? 'Ativar radar grátis' : 'Escolher plano'} <ArrowRight size={14} /></ActionLink>
+      <footer><Radio size={12} /><span>{isUsingFallback ? 'Sincronizando configuração…' : 'Publicado pelo Admin'}</span></footer>
+    </article>
+  );
+}
+
 export default function PricingPanel({ plans, isUsingFallback }) {
   const visiblePlans = useMemo(() => plans.slice(0, 3), [plans]);
   const recommendedIndex = Math.max(0, visiblePlans.findIndex((plan, index) => plan.featured || plan.id === 'pro' || index === 1));
@@ -35,39 +54,27 @@ export default function PricingPanel({ plans, isUsingFallback }) {
     setActivePlan((current) => Math.min(current, Math.max(0, visiblePlans.length - 1)));
   }, [visiblePlans.length]);
 
-  const plan = visiblePlans[activePlan] || visiblePlans[0];
-  if (!plan) return null;
-
-  const features = normalizeFeatures(plan).slice(0, 5);
-  const displayPrice = plan.displayPrice || plan.priceLabel || formatPrice(plan.price);
-  const billingPeriod = plan.billingPeriod || (plan.isPaid ? 'mês' : 'sem cobrança');
-  const isFree = plan.isPaid === false || Number(plan.price || 0) === 0;
+  if (!visiblePlans.length) return null;
+  const selectedPlan = visiblePlans[activePlan] || visiblePlans[0];
 
   return (
     <section id="panel-planos" className="landing-panel landing-panel--soft" role="tabpanel">
       <div className="pricing-experience">
         <header>
-          <div><p className="panel-eyebrow panel-eyebrow--light"><Radio size={12} /> Planos publicados pelo Admin</p><h2>Escolha a capacidade da sua operação.</h2></div>
-          <p>Preços, limites e benefícios continuam sincronizados com o painel administrativo.</p>
+          <div><p className="panel-eyebrow panel-eyebrow--light"><Radio size={12} /> Planos publicados pelo Admin</p><h2>Planos para cada fase da operação.</h2></div>
+          <p>Os valores e benefícios abaixo são lidos diretamente da configuração administrativa.</p>
         </header>
 
-        <nav className="plan-selector" role="tablist" aria-label="Planos comerciais">
-          {visiblePlans.map((item, index) => <button key={item.id || item.name} type="button" role="tab" aria-selected={activePlan === index} onClick={() => setActivePlan(index)}><span>{item.name}</span>{item.featured || item.id === 'pro' ? <small><Sparkles size={10} /> recomendado</small> : null}</button>)}
-        </nav>
+        <div className="pricing-grid pricing-grid--desktop">
+          {visiblePlans.map((plan) => <PlanCard key={plan.id || plan.name} plan={plan} isUsingFallback={isUsingFallback} />)}
+        </div>
 
-        <article className="plan-stage" key={`${plan.id}-${displayPrice}`}>
-          <div className="plan-stage__summary">
-            <small>Modo {plan.name}</small>
-            <h3>{plan.description || 'Plano comercial do LeadHunter Pro.'}</h3>
-            <div className="plan-stage__price"><strong>{displayPrice}</strong><span>/{billingPeriod}</span></div>
-            <ActionLink href="/app" className="w-full">{isFree ? 'Ativar radar grátis' : 'Escolher este plano'} <ArrowRight size={15} /></ActionLink>
-          </div>
-          <div className="plan-stage__features">
-            <small>Incluído na operação</small>
-            <ul>{features.map((feature) => <li key={feature}><span><Check size={13} strokeWidth={3} /></span>{feature}</li>)}</ul>
-            <div className="plan-stage__status"><Radio size={15} /><div><small>Publicação dinâmica</small><strong>{isUsingFallback ? 'Sincronizando configuração…' : 'Configuração atual do Admin'}</strong></div></div>
-          </div>
-        </article>
+        <div className="pricing-mobile">
+          <nav className="plan-selector" role="tablist" aria-label="Planos comerciais">
+            {visiblePlans.map((item, index) => <button key={item.id || item.name} type="button" role="tab" aria-selected={activePlan === index} onClick={() => setActivePlan(index)}><span>{item.name}</span>{item.featured || item.id === 'pro' ? <small><Sparkles size={10} /> recomendado</small> : null}</button>)}
+          </nav>
+          <PlanCard plan={selectedPlan} isUsingFallback={isUsingFallback} compact />
+        </div>
       </div>
     </section>
   );

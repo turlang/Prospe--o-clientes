@@ -1,3 +1,13 @@
+## 25.4.0 — Correção completa de diagramação
+
+- Cinco telas reorganizadas com a mesma régua visual.
+- Tipografia reduzida e hierarquia mais clara.
+- Fluxo ganhou trilha operacional para eliminar área vazia.
+- Ferramentas ganharam fila de oportunidades e preview mais informativo.
+- Público ganhou leitura comercial compacta e indicador de aderência.
+- Planos agora aparecem em três cards comparáveis no desktop e por botões no mobile.
+- Landing continua sem scroll e sincronizada com os planos do Admin.
+
 # Changelog
 
 ## 25.3.0 — Landing em tela única sem scroll

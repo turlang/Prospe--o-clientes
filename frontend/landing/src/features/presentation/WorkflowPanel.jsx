@@ -1,8 +1,8 @@
 /**
  * @fileoverview Tela interativa do fluxo comercial.
  *
- * Cada etapa é selecionada por botão e atualiza o conteúdo correspondente sem
- * mover a viewport.
+ * Cada etapa atualiza a composição central sem deslocar a viewport. A trilha
+ * visual explicita onde a oportunidade está e reduz áreas vazias no painel.
  *
  * @module landing/features/presentation/WorkflowPanel
  */
@@ -28,8 +28,11 @@ export default function WorkflowPanel() {
     <section id="panel-como-funciona" className="landing-panel" role="tabpanel">
       <div className="experience-card">
         <header className="experience-heading">
-          <div><p className="panel-eyebrow panel-eyebrow--light">Fluxo de prospecção tech</p><h2>Quatro decisões. Uma operação comercial completa.</h2></div>
-          <p>Selecione uma etapa para entender como o LeadHunter transforma dados públicos em uma próxima ação comercial.</p>
+          <div>
+            <p className="panel-eyebrow panel-eyebrow--light">Fluxo de prospecção tech</p>
+            <h2>Quatro decisões para transformar um sinal em contrato.</h2>
+          </div>
+          <p>Selecione uma etapa. O painel mostra o dado recebido, a decisão comercial e a próxima ação gerada.</p>
         </header>
 
         <div className="workflow-experience">
@@ -45,14 +48,26 @@ export default function WorkflowPanel() {
           </nav>
 
           <article className="workflow-detail" key={current.title}>
-            <div className="workflow-detail__icon"><Icon size={28} /></div>
-            <div className="workflow-detail__copy">
-              <small>{detail.label}</small>
-              <h3>{current.title}</h3>
-              <p>{current.text}</p>
-              <strong>{detail.outcome}</strong>
+            <div className="workflow-detail__topline">
+              <div className="workflow-detail__icon"><Icon size={26} /></div>
+              <div className="workflow-detail__copy">
+                <small>{detail.label}</small>
+                <h3>{current.title}</h3>
+                <p>{current.text}</p>
+                <strong>{detail.outcome}</strong>
+              </div>
+              <div className="workflow-detail__metric"><span>{detail.metric}</span><small>resultado demonstrativo</small></div>
             </div>
-            <div className="workflow-detail__metric"><span>{detail.metric}</span><small>resultado demonstrativo</small></div>
+
+            <div className="workflow-detail__board" aria-label="Trilha da oportunidade">
+              {WORKFLOW_STEPS.map((step, index) => (
+                <div key={step.title} className="workflow-node" data-state={index < activeStep ? 'done' : index === activeStep ? 'active' : 'next'}>
+                  <span>{index < activeStep ? '✓' : `0${index + 1}`}</span>
+                  <div><small>{index === activeStep ? 'etapa atual' : index < activeStep ? 'concluída' : 'próxima'}</small><strong>{step.title}</strong><p>{step.text}</p></div>
+                </div>
+              ))}
+            </div>
+
             <ul>{detail.bullets.map((item) => <li key={item}><CheckCircle2 size={15} /> {item}</li>)}</ul>
             <button type="button" className="workflow-next" onClick={() => setActiveStep((activeStep + 1) % WORKFLOW_STEPS.length)}>Próxima etapa <ArrowRight size={14} /></button>
           </article>

@@ -11,7 +11,7 @@ const packageMetadata = require('../../package.json');
 
 const APPLICATION_NAME = 'LeadHunter Pro';
 const APPLICATION_VERSION = packageMetadata.version;
-const LANDING_VERSION = '25.3.0';
+const LANDING_VERSION = '25.4.0';
 
 /** @returns {boolean} Indica se o processo está executando em produção. */
 function isProduction() {

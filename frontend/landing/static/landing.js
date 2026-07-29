@@ -84,11 +84,25 @@
     const item = WORKFLOW[state.workflowIndex];
     detail.replaceChildren();
 
+    const topline = create('div', 'workflow-detail__topline');
     const icon = create('div', 'workflow-detail__icon', item.icon);
     const copy = create('div', 'workflow-detail__copy');
     copy.append(create('small', '', item.label), create('h3', '', item.title), create('p', '', item.text), create('strong', '', item.outcome));
     const metric = create('div', 'workflow-detail__metric');
     metric.append(create('span', '', item.metric), create('small', '', 'resultado demonstrativo'));
+    topline.append(icon, copy, metric);
+
+    const board = create('div', 'workflow-detail__board');
+    WORKFLOW.forEach((step, index) => {
+      const node = create('div', 'workflow-node');
+      node.dataset.state = index < state.workflowIndex ? 'done' : index === state.workflowIndex ? 'active' : 'next';
+      node.append(create('span', '', index < state.workflowIndex ? '✓' : `0${index + 1}`));
+      const nodeCopy = create('div');
+      nodeCopy.append(create('small', '', index === state.workflowIndex ? 'etapa atual' : index < state.workflowIndex ? 'concluída' : 'próxima'), create('strong', '', step.title), create('p', '', step.text));
+      node.append(nodeCopy);
+      board.append(node);
+    });
+
     const list = create('ul');
     item.bullets.forEach((bullet) => list.append(create('li', '', `✓ ${bullet}`)));
     const next = create('button', 'workflow-next', 'Próxima etapa →');
@@ -97,7 +111,7 @@
       state.workflowIndex = (state.workflowIndex + 1) % WORKFLOW.length;
       renderWorkflow();
     });
-    detail.append(icon, copy, metric, list, next);
+    detail.append(topline, board, list, next);
     document.querySelectorAll('[data-workflow-index]').forEach((button) => button.setAttribute('aria-selected', String(Number(button.dataset.workflowIndex) === state.workflowIndex)));
   }
 
@@ -119,10 +133,17 @@
     const tool = TOOLS[state.toolIndex];
     stage.replaceChildren();
     const visual = create('div', 'tool-stage__visual');
-    visual.append(create('span', 'tool-stage__signal', 'LIVE'), create('div', 'tool-stage__orb', tool.icon));
+    visual.append(create('span', 'tool-stage__signal', 'LIVE'));
     const metric = create('div', 'tool-stage__metric');
     metric.append(create('small', '', tool.eyebrow), create('strong', '', tool.metric));
-    visual.append(metric);
+    visual.append(metric, create('div', 'tool-stage__orb', tool.icon));
+    const queue = create('div', 'tool-stage__queue');
+    [['Clínica Horizonte','Score 92','Diagnóstico pronto'],['Atlas Contábil','Score 86','Contato sugerido'],['Nova Forma','Score 81','Adicionar ao CRM']].forEach(([name, score, status], index) => {
+      const row = create('div', index === state.toolIndex % 3 ? 'is-highlighted' : '');
+      row.append(create('span', '', `0${index + 1}`), create('strong', '', name), create('small', '', `${score} · ${status}`));
+      queue.append(row);
+    });
+    visual.append(queue);
     const bars = create('div', 'tool-stage__bars');
     for (let i = 0; i < 5; i += 1) bars.append(create('i'));
     visual.append(bars);
@@ -155,20 +176,26 @@
     const audience = AUDIENCES[state.audienceIndex];
     stage.replaceChildren();
     const identity = create('div', 'audience-stage__identity');
-    identity.append(create('span', '', audience.icon), create('small', '', 'Modo de operação'), create('h3', '', audience.title), create('p', '', audience.text));
+    identity.append(create('span', '', audience.icon), create('small', '', 'Perfil selecionado'), create('h3', '', audience.title), create('p', '', audience.text));
+    const fit = create('div', 'audience-stage__fit');
+    fit.append(create('small', '', 'Aderência comercial'), create('strong', '', 'Alta'));
+    const fitBar = create('i'); fitBar.append(create('b')); fit.append(fitBar); identity.append(fit);
+
+    const commercial = create('div', 'audience-stage__commercial');
     const offer = create('div', 'audience-stage__offer');
     offer.append(create('small', '', 'O que você vende'), create('strong', '', audience.offer));
     const signals = create('div', 'audience-stage__signals');
     signals.append(create('small', '', 'Sinais encontrados pelo radar'));
     const list = create('ul');
     audience.signals.forEach((signal) => list.append(create('li', '', `✓ ${signal}`)));
-    signals.append(list);
+    signals.append(list); commercial.append(offer, signals);
+
     const result = create('div', 'audience-stage__result');
     result.append(create('b', '', '✦'));
     const resultCopy = create('div');
     resultCopy.append(create('small', '', 'Resultado esperado'), create('strong', '', audience.result));
     result.append(resultCopy);
-    stage.append(identity, offer, signals, result);
+    stage.append(identity, commercial, result);
   }
 
   function formatPrice(value) {
@@ -182,13 +209,49 @@
     return [...features, 'CRM Kanban', 'Dashboard comercial'];
   }
 
+  function buildPlanCard(plan, compact = false) {
+    const displayPrice = plan.displayPrice || plan.priceLabel || formatPrice(plan.price);
+    const billingPeriod = plan.billingPeriod || (plan.isPaid ? 'mês' : 'sem cobrança');
+    const isFree = plan.isPaid === false || Number(plan.price || 0) === 0;
+    const featured = plan.featured || plan.id === 'pro';
+    const card = create('article', 'pricing-card');
+    card.dataset.featured = String(featured);
+
+    const header = create('header');
+    const titleBox = create('div');
+    titleBox.append(create('small', '', isFree ? 'Comece agora' : 'Plano comercial'), create('h3', '', plan.name || 'LeadHunter'));
+    header.append(titleBox);
+    if (featured) header.append(create('span', '', '✦ Recomendado'));
+    card.append(header, create('p', '', plan.description || 'Plano comercial do LeadHunter Pro.'));
+
+    const price = create('div', 'pricing-card__price');
+    price.append(create('strong', '', displayPrice), create('span', '', `/${billingPeriod}`));
+    card.append(price);
+
+    const list = create('ul');
+    planFeatures(plan).slice(0, compact ? 4 : 5).forEach((feature) => list.append(create('li', '', `✓ ${feature}`)));
+    card.append(list);
+    const action = create('a', 'button button-primary', isFree ? 'Ativar radar grátis →' : 'Escolher plano →');
+    action.href = '/app'; card.append(action);
+    const footer = create('footer');
+    footer.append(create('b', '', '●'), create('span', '', state.usingFallback ? 'Sincronizando configuração…' : 'Publicado pelo Admin'));
+    card.append(footer);
+    return card;
+  }
+
   function renderPlans() {
+    const grid = document.getElementById('pricingGrid');
     const selector = document.getElementById('planSelector');
     const stage = document.getElementById('planStage');
-    if (!selector || !stage || !state.plans.length) return;
-    state.planIndex = Math.min(state.planIndex, state.plans.length - 1);
+    if (!grid || !selector || !stage || !state.plans.length) return;
+    const visiblePlans = state.plans.slice(0, 3);
+    state.planIndex = Math.min(state.planIndex, visiblePlans.length - 1);
+
+    grid.replaceChildren();
+    visiblePlans.forEach((plan) => grid.append(buildPlanCard(plan)));
+
     selector.replaceChildren();
-    state.plans.slice(0, 3).forEach((plan, index) => {
+    visiblePlans.forEach((plan, index) => {
       const button = create('button');
       button.type = 'button';
       button.setAttribute('role', 'tab');
@@ -199,31 +262,7 @@
       selector.append(button);
     });
 
-    const plan = state.plans[state.planIndex];
-    const displayPrice = plan.displayPrice || plan.priceLabel || formatPrice(plan.price);
-    const billingPeriod = plan.billingPeriod || (plan.isPaid ? 'mês' : 'sem cobrança');
-    const isFree = plan.isPaid === false || Number(plan.price || 0) === 0;
-    stage.replaceChildren();
-
-    const summary = create('div', 'plan-stage__summary');
-    summary.append(create('small', '', `Modo ${plan.name || 'LeadHunter'}`), create('h3', '', plan.description || 'Plano comercial do LeadHunter Pro.'));
-    const price = create('div', 'plan-stage__price');
-    price.append(create('strong', '', displayPrice), create('span', '', `/${billingPeriod}`));
-    const action = create('a', 'button button-primary', isFree ? 'Ativar radar grátis →' : 'Escolher este plano →');
-    action.href = '/app';
-    summary.append(price, action);
-
-    const featureBox = create('div', 'plan-stage__features');
-    featureBox.append(create('small', '', 'Incluído na operação'));
-    const featureList = create('ul');
-    planFeatures(plan).forEach((feature) => featureList.append(create('li', '', `✓ ${feature}`)));
-    const status = create('div', 'plan-stage__status');
-    status.append(create('b', '', '●'));
-    const statusCopy = create('div');
-    statusCopy.append(create('small', '', 'Publicação dinâmica'), create('strong', '', state.usingFallback ? 'Sincronizando configuração…' : 'Configuração atual do Admin'));
-    status.append(statusCopy);
-    featureBox.append(featureList, status);
-    stage.append(summary, featureBox);
+    stage.replaceChildren(buildPlanCard(visiblePlans[state.planIndex], true));
   }
 
   async function refreshPlans() {

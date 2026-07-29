@@ -15,8 +15,8 @@ export default function OverviewPanel() {
       <div className="landing-panel__grid landing-panel__grid--hero">
         <div className="hero-copy-compact">
           <p className="panel-eyebrow"><Sparkles size={12} /> Prospecção para profissionais de tecnologia</p>
-          <h1>Encontre empresas que precisam de <em>sites, sistemas e IA</em> — e transforme sinais em contratos.</h1>
-          <p className="hero-copy-compact__description">O LeadHunter identifica oportunidades, diagnostica o problema comercial, sugere a abordagem e organiza a próxima ação no CRM.</p>
+          <h1>Encontre empresas que precisam de <em>sites, sistemas e IA</em> — antes da concorrência.</h1>
+          <p className="hero-copy-compact__description">O LeadHunter encontra sinais de oportunidade, explica o que vender e entrega a próxima ação comercial dentro do CRM.</p>
           <div className="hero-copy-compact__actions">
             <ActionLink href="/app">Começar com 10 leads <ArrowRight size={15} /></ActionLink>
             <span>Sem cartão · CRM integrado · Configuração imediata</span>

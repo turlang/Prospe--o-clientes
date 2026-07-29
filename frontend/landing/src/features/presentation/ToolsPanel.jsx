@@ -17,6 +17,12 @@ const TOOL_POINTS = Object.freeze([
   ['Conversão por etapa', 'Motivos de perda', 'Previsão comercial']
 ]);
 
+const TOOL_EVENTS = Object.freeze([
+  ['Clínica Horizonte', 'Score 92', 'Diagnóstico pronto'],
+  ['Atlas Contábil', 'Score 86', 'Contato sugerido'],
+  ['Nova Forma', 'Score 81', 'Adicionar ao CRM']
+]);
+
 export default function ToolsPanel() {
   const [activeTool, setActiveTool] = useState(0);
   const tool = TOOL_CARDS[activeTool];
@@ -27,8 +33,8 @@ export default function ToolsPanel() {
       <div className="tools-experience">
         <header className="tools-experience__heading">
           <p className="panel-eyebrow panel-eyebrow--light">Sistema operacional de prospecção</p>
-          <h2>As ferramentas aparecem quando você precisa delas.</h2>
-          <p>Use os botões para explorar cada recurso sem atravessar uma página infinita.</p>
+          <h2>Uma ferramenta certa para cada decisão comercial.</h2>
+          <p>Escolha um recurso e veja como ele entra na operação sem abrir outra página.</p>
         </header>
 
         <nav className="tool-selector" role="tablist" aria-label="Ferramentas do LeadHunter">
@@ -41,8 +47,11 @@ export default function ToolsPanel() {
         <article className="tool-stage" key={tool.title}>
           <div className="tool-stage__visual">
             <span className="tool-stage__signal">LIVE</span>
-            <div className="tool-stage__orb"><Icon size={38} /></div>
             <div className="tool-stage__metric"><small>{tool.eyebrow}</small><strong>{tool.metric}</strong></div>
+            <div className="tool-stage__orb"><Icon size={36} /></div>
+            <div className="tool-stage__queue">
+              {TOOL_EVENTS.map(([name, score, status], index) => <div key={name} className={index === activeTool % TOOL_EVENTS.length ? 'is-highlighted' : ''}><span>0{index + 1}</span><strong>{name}</strong><small>{score} · {status}</small></div>)}
+            </div>
             <div className="tool-stage__bars"><i /><i /><i /><i /><i /></div>
           </div>
           <div className="tool-stage__copy">

@@ -26,7 +26,8 @@ export default function AudiencePanel() {
       <div className="audience-experience">
         <header>
           <p className="panel-eyebrow panel-eyebrow--light">Para quem vende tecnologia</p>
-          <h2>A mesma inteligência. Argumentos diferentes para cada operação.</h2>
+          <h2>O mesmo radar. Uma oferta específica para cada perfil.</h2>
+          <p>Selecione sua operação para ver os sinais que importam e a proposta de valor mais aderente.</p>
         </header>
 
         <nav className="audience-selector" role="tablist" aria-label="Perfis atendidos">
@@ -38,13 +39,16 @@ export default function AudiencePanel() {
 
         <article className="audience-stage" key={audience.title}>
           <div className="audience-stage__identity">
-            <span><Icon size={30} /></span>
-            <small>Modo de operação</small>
+            <span><Icon size={28} /></span>
+            <small>Perfil selecionado</small>
             <h3>{audience.title}</h3>
             <p>{audience.text}</p>
+            <div className="audience-stage__fit"><small>Aderência comercial</small><strong>Alta</strong><i><b /></i></div>
           </div>
-          <div className="audience-stage__offer"><small>O que você vende</small><strong>{detail.offer}</strong></div>
-          <div className="audience-stage__signals"><small>Sinais encontrados pelo radar</small><ul>{detail.signals.map((signal) => <li key={signal}><Check size={13} /> {signal}</li>)}</ul></div>
+          <div className="audience-stage__commercial">
+            <div className="audience-stage__offer"><small>O que você vende</small><strong>{detail.offer}</strong></div>
+            <div className="audience-stage__signals"><small>Sinais encontrados pelo radar</small><ul>{detail.signals.map((signal) => <li key={signal}><Check size={13} /> {signal}</li>)}</ul></div>
+          </div>
           <div className="audience-stage__result"><Sparkles size={18} /><div><small>Resultado esperado</small><strong>{detail.result}</strong></div></div>
         </article>
       </div>

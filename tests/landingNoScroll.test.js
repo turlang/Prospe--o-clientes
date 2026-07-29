@@ -32,10 +32,11 @@ test('todos os conteúdos possuem botão correspondente', () => {
   assert.match(staticJs, /panel\.hidden = panel\.dataset\.view !== state\.activeView/);
 });
 
-test('fluxo, ferramentas, público e planos usam seletores internos', () => {
+test('fluxo, ferramentas e público usam seletores; planos mantêm comparação responsiva', () => {
   assert.match(staticHtml, /data-workflow-index="0"/);
   assert.match(staticHtml, /id="toolSelector"/);
   assert.match(staticHtml, /id="audienceSelector"/);
+  assert.match(staticHtml, /id="pricingGrid"/);
   assert.match(staticHtml, /id="planSelector"/);
   assert.match(staticJs, /renderWorkflow/);
   assert.match(staticJs, /renderTools/);
