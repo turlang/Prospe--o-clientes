@@ -15,10 +15,10 @@
   const REFRESH_INTERVAL_MS = 30_000;
 
   const WORKFLOW = [
-    { icon: '⌖', label: 'Entrada', title: 'Varredura inteligente', text: 'Encontre negócios locais sem site ou com presença digital fraca.', metric: '186 sinais', outcome: 'Lista qualificada por região e nicho.', bullets: ['Presença digital fraca', 'Ausência de site', 'Baixa conversão local'] },
-    { icon: '◎', label: 'Análise', title: 'Diagnóstico web', text: 'Identifique demanda para páginas, sistemas, automações e agentes de IA.', metric: '84% aderência', outcome: 'Problema traduzido em oportunidade de serviço.', bullets: ['Site institucional', 'Sistema interno', 'Automação e IA'] },
-    { icon: '✦', label: 'Contato', title: 'Abordagem com IA', text: 'Gere mensagens comerciais contextualizadas, claras e humanizadas.', metric: '3 versões', outcome: 'Mensagem criada com contexto, não com spam genérico.', bullets: ['Tom humanizado', 'Argumento específico', 'CTA comercial objetivo'] },
-    { icon: '▦', label: 'Execução', title: 'CRM Kanban', text: 'Organize contatos, follow-ups, propostas e fechamentos no mesmo fluxo.', metric: 'Próxima ação', outcome: 'Negociação acompanhada até proposta e fechamento.', bullets: ['Follow-up', 'Reunião', 'Proposta e ganho'] }
+    { icon: '⌖', label: 'Entrada', title: 'Varredura inteligente', text: 'Encontramos negócios locais sem presença digital forte que estão perdendo oportunidades todos os dias.', metric: '186 sinais', bullets: ['Presença digital fraca', 'Ausência de site', 'Baixa conversão local'], features: [['◎','Varredura contínua','Coletamos e analisamos dados públicos de múltiplas fontes.'],['⌖','Detecção precisa','Avaliamos presença digital, reputação e conversão local.'],['↗','Oportunidades qualificadas','Priorizamos os melhores alvos para gerar impacto imediato.']] },
+    { icon: '◎', label: 'Análise', title: 'Diagnóstico web', text: 'Traduzimos sinais técnicos e comerciais em uma oportunidade objetiva de site, sistema, automação ou IA.', metric: '84% aderência', bullets: ['Site institucional', 'Sistema interno', 'Automação e IA'], features: [['◎','Leitura do cenário','Organizamos os sinais encontrados em um diagnóstico claro.'],['⌖','Problema prioritário','Destacamos a dor com maior potencial de gerar uma proposta.'],['↗','Oferta aderente','Relacionamos a necessidade ao serviço que você realmente vende.']] },
+    { icon: '✦', label: 'Contato', title: 'Abordagem com IA', text: 'A IA prepara uma abordagem contextualizada, humanizada e alinhada ao problema comercial encontrado.', metric: '3 versões', bullets: ['Tom humanizado', 'Argumento específico', 'CTA comercial objetivo'], features: [['◎','Contexto do lead','A mensagem parte do diagnóstico, não de um texto genérico.'],['⌖','Argumento específico','A proposta de conversa aponta um ganho concreto para o negócio.'],['↗','Próxima ação','O contato termina com um convite comercial claro e objetivo.']] },
+    { icon: '▦', label: 'Execução', title: 'CRM Kanban', text: 'O CRM acompanha cada contato, follow-up, reunião e proposta até o fechamento ou descarte da oportunidade.', metric: 'Próxima ação', bullets: ['Follow-up', 'Reunião', 'Proposta e ganho'], features: [['◎','Histórico centralizado','Interações e decisões ficam registradas na mesma oportunidade.'],['⌖','Cadência comercial','Tarefas e retornos mantêm a negociação em movimento.'],['↗','Previsibilidade','O pipeline revela volume, conversão e potencial de receita.']] }
   ];
 
   const TOOLS = [
@@ -84,25 +84,36 @@
     const item = WORKFLOW[state.workflowIndex];
     detail.replaceChildren();
 
-    const topline = create('div', 'workflow-detail__topline');
-    const icon = create('div', 'workflow-detail__icon', item.icon);
+    const topline = create('header', 'workflow-detail__topline');
     const copy = create('div', 'workflow-detail__copy');
-    copy.append(create('small', '', item.label), create('h3', '', item.title), create('p', '', item.text), create('strong', '', item.outcome));
+    const eyebrow = create('small');
+    eyebrow.append(create('span'), document.createTextNode(` ${item.label}`));
+    copy.append(eyebrow, create('h3', '', item.title), create('p', '', item.text));
     const metric = create('div', 'workflow-detail__metric');
-    metric.append(create('span', '', item.metric), create('small', '', 'resultado demonstrativo'));
-    topline.append(icon, copy, metric);
+    metric.append(create('span', '', item.metric), create('small', '', 'resultado encontrado'));
+    topline.append(copy, metric);
 
-    const board = create('div', 'workflow-detail__board');
-    WORKFLOW.forEach((step, index) => {
-      const node = create('div', 'workflow-node');
-      node.dataset.state = index < state.workflowIndex ? 'done' : index === state.workflowIndex ? 'active' : 'next';
-      node.append(create('span', '', index < state.workflowIndex ? '✓' : `0${index + 1}`));
-      const nodeCopy = create('div');
-      nodeCopy.append(create('small', '', index === state.workflowIndex ? 'etapa atual' : index < state.workflowIndex ? 'concluída' : 'próxima'), create('strong', '', step.title), create('p', '', step.text));
-      node.append(nodeCopy);
-      board.append(node);
+    const content = create('div', 'workflow-detail__content');
+    const radar = create('div', 'workflow-radar');
+    radar.setAttribute('aria-hidden', 'true');
+    const rings = create('div', 'workflow-radar__rings');
+    for (let index = 0; index < 4; index += 1) rings.append(create('i'));
+    radar.append(rings, create('div', 'workflow-radar__crosshair'), create('div', 'workflow-radar__beam'));
+    ['1','2','3'].forEach((point) => radar.append(create('span', `workflow-radar__point workflow-radar__point--${point}`)));
+    radar.append(create('span', 'workflow-radar__core'));
+
+    const featureList = create('div', 'workflow-feature-list');
+    item.features.forEach(([iconText, title, text]) => {
+      const feature = create('article');
+      feature.append(create('i', '', iconText));
+      const featureCopy = create('div');
+      featureCopy.append(create('strong', '', title), create('p', '', text));
+      feature.append(featureCopy);
+      featureList.append(feature);
     });
+    content.append(radar, featureList);
 
+    const footer = create('footer', 'workflow-detail__footer');
     const list = create('ul');
     item.bullets.forEach((bullet) => list.append(create('li', '', `✓ ${bullet}`)));
     const next = create('button', 'workflow-next', 'Próxima etapa →');
@@ -111,7 +122,9 @@
       state.workflowIndex = (state.workflowIndex + 1) % WORKFLOW.length;
       renderWorkflow();
     });
-    detail.append(topline, board, list, next);
+    footer.append(list, next);
+
+    detail.append(topline, content, footer);
     document.querySelectorAll('[data-workflow-index]').forEach((button) => button.setAttribute('aria-selected', String(Number(button.dataset.workflowIndex) === state.workflowIndex)));
   }
 

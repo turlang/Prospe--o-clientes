@@ -1,3 +1,13 @@
+## 25.5.0 — Fluxo editorial e analytics executivo
+
+- Tela **Fluxo** redesenhada com título equilibrado, seletor compacto, radar operacional e conteúdo sem áreas vazias.
+- Landing React e fallback estático receberam a mesma composição para impedir divergência no Render.
+- Gráfico **Níveis de prospecção** substituído por pipeline profissional com eixo, etapas, ícones e versão mobile em barras horizontais.
+- **Indicadores de conversão** agora combinam KPIs, conversão por etapa e resumo executivo de oportunidades e receita potencial.
+- Cálculos de conversão usam dados reais do relatório comercial e não fabricam comparação histórica.
+- Novos componentes não dependem de biblioteca externa de gráficos e mantêm acessibilidade e responsividade.
+- Adicionados testes de regressão específicos para analytics e sete etapas canônicas do funil.
+
 ## 25.4.0 — Correção completa de diagramação
 
 - Cinco telas reorganizadas com a mesma régua visual.
