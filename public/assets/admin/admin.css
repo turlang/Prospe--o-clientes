@@ -96,3 +96,26 @@
 .admin-ai-card.is-loading { opacity:.72; }
 .admin-ai-card.is-error { border-color:rgba(248,113,113,.45); }
 @media(max-width:700px){.admin-ai-heading{flex-direction:column}.admin-ai-heading button{width:100%}.admin-ai-status{grid-template-columns:1fr}.admin-ai-card-head{align-items:flex-start;flex-direction:column}}
+
+
+/* V25.7.1 — IA Comercial integrada à Visão executiva do Admin. */
+.admin-ai-overview {
+  display:grid;
+  grid-template-columns:minmax(260px,.72fr) minmax(320px,1.28fr);
+  gap:18px;
+  align-items:center;
+  margin-bottom:18px;
+  padding:18px 20px;
+  border:1px solid var(--admin-border);
+  border-radius:22px;
+  background:rgba(13,27,46,.91);
+  box-shadow:0 20px 54px rgba(0,0,0,.20);
+}
+.admin-ai-overview .admin-ai-heading { margin:0; }
+.admin-ai-overview .admin-ai-heading { display:grid; gap:10px; }
+.admin-ai-overview .admin-ai-heading button { justify-self:start; }
+.admin-ai-overview .admin-ai-status { grid-template-columns:1fr; }
+.admin-ai-overview .admin-ai-card { min-height:148px; padding:17px 18px; }
+.admin-ai-overview .admin-ai-provider strong { font-size:1.3rem; }
+@media(max-width:900px){.admin-ai-overview{grid-template-columns:1fr}.admin-ai-overview .admin-ai-heading{display:flex}.admin-ai-overview .admin-ai-heading button{justify-self:auto}}
+@media(max-width:700px){.admin-ai-overview{padding:16px}.admin-ai-overview .admin-ai-heading{display:grid}.admin-ai-overview .admin-ai-heading button{width:100%}}

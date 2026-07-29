@@ -2974,3 +2974,56 @@ body.is-authenticated .overview-pipeline-card { min-width: 0; }
 .action-radar-button:hover { transform:translateY(-1px); border-color:#67e8f9; box-shadow:0 10px 24px rgba(8,145,178,.18); }
 .action-radar-button span { font-size:1.25rem; }
 @media(max-width:620px){.action-radar-header{align-items:flex-start;flex-direction:column}.action-radar-count{align-self:flex-start}.action-radar-alert{grid-template-columns:1fr}.action-radar-button{white-space:normal;text-align:left}}
+
+
+/* V25.7.1 — plano de ação unificado: ações, alertas e orientação no mesmo componente. */
+.cockpit-action-workspace {
+  display:grid;
+  grid-template-columns:minmax(0,1.1fr) minmax(260px,.9fr);
+  gap:14px;
+  align-items:start;
+}
+.cockpit-action-column,.cockpit-alerts-inline {
+  min-width:0;
+}
+.cockpit-inline-heading {
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:10px;
+}
+.cockpit-inline-heading h4 { margin:0; color:#0f172a; font-size:1rem; }
+.cockpit-inline-heading span { color:#64748b; font-size:.76rem; text-align:right; }
+.cockpit-alerts-inline {
+  padding:13px;
+  border:1px solid #dbe4ef;
+  border-radius:17px;
+  background:linear-gradient(180deg,#f8fafc,#f1f5f9);
+}
+.cockpit-alerts-inline .history-list {
+  display:grid;
+  gap:8px;
+  max-height:420px;
+  overflow:auto;
+  padding-right:3px;
+}
+.cockpit-alerts-inline .history-item {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:8px;
+  align-items:center;
+  padding:10px 11px;
+  border:1px solid #dbe4ef;
+  border-radius:13px;
+  background:#fff;
+}
+.cockpit-alerts-inline .history-item p { margin:4px 0 0; color:#64748b; font-size:.82rem; line-height:1.35; }
+.cockpit-alerts-inline .manager-advice {
+  grid-template-columns:1fr;
+  border-color:#bbf7d0;
+  background:#f0fdf4;
+}
+.cockpit-timeline-panel { margin-bottom:16px; }
+@media(max-width:1250px){.cockpit-action-workspace{grid-template-columns:1fr}.cockpit-alerts-inline .history-list{max-height:300px}}
+@media(max-width:720px){.cockpit-inline-heading{align-items:flex-start;flex-direction:column}.cockpit-inline-heading span{text-align:left}.cockpit-alerts-inline .history-item{grid-template-columns:1fr}.cockpit-alerts-inline .history-item button{justify-self:start}}

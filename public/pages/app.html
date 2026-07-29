@@ -10,7 +10,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>LeadHunter Pro — Dashboard</title>
   <link rel="icon" href="data:," />
-  <link rel="stylesheet" href="/assets/dashboard/styles.css?v=25.7.0" />
+  <link rel="stylesheet" href="/assets/dashboard/styles.css?v=25.7.1" />
 </head>
 <body>
   <main id="appRoot" class="container">
@@ -127,7 +127,22 @@
                 <p class="meta">Ações ordenadas por prioridade, risco e estágio comercial.</p>
               </div>
               <div id="v23ActionRadar" class="cockpit-action-radar" aria-live="polite"></div>
-              <div id="v23DailyPlan" class="cockpit-action-list"></div>
+              <div class="cockpit-action-workspace">
+                <div class="cockpit-action-column">
+                  <div class="cockpit-inline-heading">
+                    <h4>Próximas ações</h4>
+                    <span>Prioridade operacional</span>
+                  </div>
+                  <div id="v23DailyPlan" class="cockpit-action-list"></div>
+                </div>
+                <aside class="cockpit-alerts-inline" aria-labelledby="v23AlertsTitle">
+                  <div class="cockpit-inline-heading">
+                    <h4 id="v23AlertsTitle">Alertas e orientação</h4>
+                    <span>Gargalos, riscos e recomendações</span>
+                  </div>
+                  <div id="v23Alerts" class="history-list compact-list"></div>
+                </aside>
+              </div>
             </section>
 
             <section class="card-panel">
@@ -139,23 +154,13 @@
             </section>
           </div>
 
-          <div class="cockpit-main-grid cockpit-secondary-grid">
-            <section class="card-panel">
-              <div class="section-title">
-                <h3>Alertas e orientação</h3>
-                <p class="meta">Gargalos, riscos e recomendações do gerente comercial.</p>
-              </div>
-              <div id="v23Alerts" class="history-list compact-list"></div>
-            </section>
-
-            <section class="card-panel">
-              <div class="section-title">
-                <h3>Timeline global</h3>
-                <p class="meta">Últimas atividades realizadas em toda a operação.</p>
-              </div>
-              <div id="v23Timeline" class="global-timeline"></div>
-            </section>
-          </div>
+          <section class="card-panel cockpit-timeline-panel">
+            <div class="section-title">
+              <h3>Timeline global</h3>
+              <p class="meta">Últimas atividades realizadas em toda a operação.</p>
+            </div>
+            <div id="v23Timeline" class="global-timeline"></div>
+          </section>
 
           <section class="card-panel copilot-panel">
             <div class="section-title copilot-title-row">
@@ -435,6 +440,6 @@
       </section>
     </section>
   </main>
-  <script src="/assets/dashboard/app.js?v=25.7.0"></script>
+  <script src="/assets/dashboard/app.js?v=25.7.1"></script>
 </body>
 </html>

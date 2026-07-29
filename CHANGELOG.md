@@ -1,3 +1,12 @@
+## 25.7.1 — Correção estrutural do Admin e Plano de Ação
+
+- move IA Comercial para dentro da Visão executiva do painel administrativo;
+- remove a seção isolada de IA Comercial do menu;
+- incorpora Alertas e orientação ao mesmo card do Plano de ação de hoje;
+- remove o quadro independente de Alertas e orientação;
+- mantém Saúde do pipeline em uma única ocorrência na Visão geral;
+- adiciona testes de regressão para impedir reintrodução das duplicidades.
+
 ## 25.7.0 — IA Comercial no Admin e radar no plano de ação
 
 - adiciona ao painel administrativo um card seguro de status do provedor de IA, modelo e configuração, sem expor chaves;
