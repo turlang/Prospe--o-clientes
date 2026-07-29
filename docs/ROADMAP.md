@@ -77,7 +77,7 @@ Persistência:
 src/data/plans.json
 
 Módulo:
-src/planStore.js
+src/domain/plans/planCatalog.js
 
 ## V23
 

@@ -9,7 +9,7 @@
  */
 
 const AdminAuditLog = require('../models/AdminAuditLog');
-const { hasMongoUri } = require('../db');
+const { hasMongoUri } = require('../infrastructure/database/mongoConnection');
 
 function getClientIp(req) {
   return String(req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip || req.socket?.remoteAddress || '';

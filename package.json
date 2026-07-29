@@ -1,19 +1,24 @@
 {
   "name": "agente-prospeccao-real",
-  "version": "24.3.0",
-  "description": "SaaS de prospecção tech com landing React + Tailwind CSS de alta conversão, CRM e automação comercial",
+  "version": "25.0.0",
+  "description": "SaaS de prospecção tech com landing React/Tailwind resiliente, CRM e arquitetura organizada por camadas",
   "main": "src/server.js",
   "type": "commonjs",
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "dev:landing": "vite --config frontend/landing/vite.config.mjs",
-    "build": "npm run build:landing",
-    "build:landing": "vite build --config frontend/landing/vite.config.mjs",
-    "check": "npm run check:syntax && npm run check:docs && npm run build && npm test",
+    "dev:landing": "npm --prefix frontend/landing run dev",
+    "build": "node scripts/build.js",
+    "build:react": "npm --prefix frontend/landing run build",
+    "build:static": "node scripts/sync-static-landing.js",
+    "verify:landing": "node scripts/verify-landing-build.js",
     "check:syntax": "node scripts/check-all.js",
     "check:docs": "node scripts/check-documentation.js",
-    "test": "node --test tests/*.test.js"
+    "check:architecture": "node scripts/check-architecture.js",
+    "check:frontend": "node scripts/check-frontend.js",
+    "test": "node --test tests/*.test.js",
+    "quality": "npm run check:syntax && npm run check:docs && npm run check:architecture && npm run check:frontend && npm run verify:landing && npm test",
+    "check": "npm run quality"
   },
   "dependencies": {
     "@fast-csv/format": "^5.0.5",
@@ -23,18 +28,10 @@
     "helmet": "^7.1.0",
     "bcryptjs": "^2.4.3",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.8.3",
-    "react": "^19.2.8",
-    "react-dom": "^19.2.8",
-    "lucide-react": "^1.27.0"
+    "mongoose": "^8.8.3"
   },
   "engines": {
     "node": ">=20.19 <23",
     "npm": ">=10"
-  },
-  "devDependencies": {
-    "vite": "^8.1.5",
-    "tailwindcss": "^4.3.3",
-    "@tailwindcss/vite": "^4.3.3"
   }
 }

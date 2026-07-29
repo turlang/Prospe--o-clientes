@@ -17,7 +17,7 @@ const path = require('path');
 require('dotenv').config({ path: path.join(process.cwd(), '.env') });
 
 const { createApp } = require('./app');
-const { connectDatabase, mustRequireMongo } = require('./db');
+const { connectDatabase, mustRequireMongo } = require('./infrastructure/database/mongoConnection');
 
 const DEFAULT_PORT = 3000;
 

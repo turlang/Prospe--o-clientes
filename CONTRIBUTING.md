@@ -1,50 +1,39 @@
-# Guia de contribuição
+# Contribuindo com o LeadHunter Pro
 
-## Objetivo
+## Fluxo
 
-Este documento define como alterar o LeadHunter Pro sem comprometer a clareza acadêmica, a segurança ou os contratos existentes.
+1. crie uma branch curta e orientada ao objetivo;
+2. mantenha a mudança dentro de uma responsabilidade;
+3. atualize testes e documentação quando houver alteração de contrato;
+4. execute o pipeline local;
+5. descreva risco, rollback e evidências na revisão.
 
-## Fluxo mínimo
+## Preparação
 
-1. Crie uma branch com nome descritivo.
-2. Faça alterações pequenas e relacionadas a um único objetivo.
-3. Atualize ou crie testes para regras de negócio e regressões.
-4. Atualize a documentação quando contratos, rotas ou arquitetura mudarem.
-5. Execute `npm run check` antes de abrir uma revisão.
-
-## Padrão de código
-
-- Use dois espaços de indentação e ponto e vírgula.
-- Prefira funções curtas e nomes que indiquem intenção.
-- Separe regras de domínio, acesso a dados e detalhes HTTP.
-- Não adicione comentários que apenas repitam o código.
-- Use JSDoc em módulos, funções exportadas, objetos complexos e decisões não evidentes.
-- Nunca registre tokens, senhas, chaves ou dados pessoais completos.
-- Toda entrada externa deve ser validada e toda saída HTML dinâmica deve ser escapada.
-
-## Commits
-
-Formato recomendado:
-
-```text
-tipo(escopo): descrição objetiva
+```bash
+npm ci
+npm --prefix frontend/landing install --include=dev
+cp .env.example .env
+npm run build
+npm run quality
 ```
 
-Exemplos:
+## Padrões obrigatórios
 
-```text
-fix(billing): validar proprietário do pagamento
-refactor(routes): separar rotas administrativas
- docs(architecture): registrar política de persistência
-```
+- siga `docs/CODING_STANDARDS.md`;
+- preserve os limites de `docs/ARQUITETURA.md`;
+- adicione `@fileoverview` a módulos mantidos;
+- use comentários para intenção e decisões não óbvias;
+- não comente linha por linha;
+- não inclua segredos, `.env`, `node_modules`, logs ou dados pessoais;
+- não introduza caminhos que o `check:architecture` marca como legados.
 
-## Critérios para revisão
+## Pull request
 
-Uma mudança só deve ser aceita quando:
+A descrição deve conter:
 
-- o comportamento esperado está documentado;
-- a suíte de testes passa;
-- não há dados sensíveis versionados;
-- o código mantém responsabilidade única;
-- a mudança não cria dependência circular;
-- erros retornados ao cliente não expõem detalhes internos.
+- problema e comportamento esperado;
+- solução e arquivos afetados;
+- testes executados;
+- impacto de segurança e acessibilidade;
+- estratégia de rollback para mudanças de deploy ou dados.

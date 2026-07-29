@@ -16,18 +16,18 @@ const cors = require('cors');
 const helmet = require('helmet');
 const bcrypt = require('bcryptjs');
 const { format } = require('@fast-csv/format');
-const { searchPlaces, testGoogleConnection } = require('./places');
-const { scoreLead, filterActionable } = require('./scorer');
-const { auditWebsite } = require('./siteAuditor');
-const { readLeads, saveLeads, updateLeadStatus, updateLeadMeta, getLeadStats } = require('./storage');
+const { searchPlaces, testGoogleConnection } = require('./integrations/googlePlaces');
+const { scoreLead, filterActionable } = require('./domain/leads/leadScoring');
+const { auditWebsite } = require('./integrations/siteAuditor');
+const { readLeads, saveLeads, updateLeadStatus, updateLeadMeta, getLeadStats } = require('./repositories/leadRepository');
 const SearchHistory = require('./models/SearchHistory');
-const { analyzeLeadResponse } = require('./conversationEngine');
-const authRoutes = require('./authRoutes');
+const { analyzeLeadResponse } = require('./domain/conversations/conversationEngine');
+const authRoutes = require('./routes/authRoutes');
 const { requireAuth, assertSecurityEnv } = require('./middleware/auth');
 const { requireAdmin } = require('./middleware/admin');
 const { requestLogger, requestCounters } = require('./middleware/requestLogger');
 const { simpleRateLimit } = require('./middleware/rateLimit');
-const { hasMongoUri, getMongoStatus } = require('./db');
+const { hasMongoUri, getMongoStatus } = require('./infrastructure/database/mongoConnection');
 const User = require('./models/User');
 const Payment = require('./models/Payment');
 const Usage = require('./models/Usage');
@@ -37,11 +37,11 @@ const PasswordReset = require('./models/PasswordReset');
 const Lead = require('./models/Lead');
 const Task = require('./models/Task');
 const CopilotConversation = require('./models/CopilotConversation');
-const { getAllPlans, getPlan, normalizePlan, updatePlan } = require('./planConfig');
-const { getDailyUsage, getTotalUsage, addDailyUsage } = require('./localUsageStore');
-const { findUserById, updateLocalUserPlan } = require('./localUserStore');
-const { buildCampaignSequence, nextFollowUpDate, buildAutomationPlan, getPriorityFromLead } = require('./campaignEngine');
-const { createTask, createTaskIfMissing, completePendingAutomationTasksForLead, listTasks, completeTask } = require('./localTaskStore');
+const { getAllPlans, getPlan, normalizePlan, updatePlan } = require('./domain/plans/planCatalog');
+const { getDailyUsage, getTotalUsage, addDailyUsage } = require('./repositories/local/usageRepository');
+const { findUserById, updateLocalUserPlan } = require('./repositories/local/userRepository');
+const { buildCampaignSequence, nextFollowUpDate, buildAutomationPlan, getPriorityFromLead } = require('./domain/campaigns/campaignEngine');
+const { createTask, createTaskIfMissing, completePendingAutomationTasksForLead, listTasks, completeTask } = require('./repositories/local/taskRepository');
 const {
   createMercadoPagoPreference,
   downgradeExpiredUserIfNeeded,
@@ -201,7 +201,15 @@ function createApp() {
     }
     return next();
   });
-  app.use(express.static('public', { index: false, maxAge: process.env.NODE_ENV === 'production' ? '1h' : 0 }));
+  app.use(express.static('public', {
+    index: false,
+    maxAge: process.env.NODE_ENV === 'production' ? '1h' : 0,
+    setHeaders(res, filePath) {
+      if (filePath.endsWith('.html')) {
+        res.setHeader('Cache-Control', 'no-store, max-age=0');
+      }
+    }
+  }));
 
   const routeContext = {
     path,

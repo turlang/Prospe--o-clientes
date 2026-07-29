@@ -28,11 +28,11 @@
 | `GET` | `/api/ai/status` | Autenticada | `src/routes/systemRoutes.js` |
 | `POST` | `/api/analisar-resposta` | Autenticada | `src/routes/leadRoutes.js` |
 | `POST` | `/api/auditar-site` | Autenticada | `src/routes/leadRoutes.js` |
-| `POST` | `/api/auth/forgot-password` | Pública | `src/authRoutes.js` |
-| `POST` | `/api/auth/login` | Pública | `src/authRoutes.js` |
-| `GET` | `/api/auth/me` | Autenticada | `src/authRoutes.js` |
-| `POST` | `/api/auth/register` | Pública | `src/authRoutes.js` |
-| `POST` | `/api/auth/reset-password` | Pública | `src/authRoutes.js` |
+| `POST` | `/api/auth/forgot-password` | Pública | `src/routes/authRoutes.js` |
+| `POST` | `/api/auth/login` | Pública | `src/routes/authRoutes.js` |
+| `GET` | `/api/auth/me` | Autenticada | `src/routes/authRoutes.js` |
+| `POST` | `/api/auth/register` | Pública | `src/routes/authRoutes.js` |
+| `POST` | `/api/auth/reset-password` | Pública | `src/routes/authRoutes.js` |
 | `POST` | `/api/automations/followup-sequence` | Autenticada | `src/routes/commercialRoutes.js` |
 | `GET` | `/api/automations/next-actions` | Autenticada | `src/routes/commercialRoutes.js` |
 | `POST` | `/api/billing/checkout` | Autenticada | `src/routes/billingRoutes.js` |

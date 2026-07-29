@@ -5,9 +5,9 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 
-const html = fs.readFileSync('public/index.html', 'utf8');
-const app = fs.readFileSync('public/app.js', 'utf8');
-const css = fs.readFileSync('public/style.css', 'utf8');
+const html = fs.readFileSync('public/pages/app.html', 'utf8');
+const app = fs.readFileSync('public/assets/dashboard/app.js', 'utf8');
+const css = fs.readFileSync('public/assets/dashboard/styles.css', 'utf8');
 
 test('sessão autenticada usa barra compacta com único botão de logout', () => {
   assert.match(html, /id="sessionBar"/);

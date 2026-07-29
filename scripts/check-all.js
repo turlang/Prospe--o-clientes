@@ -12,7 +12,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
-const ROOTS = ['src', 'public', 'scripts', 'tests'];
+const ROOTS = ['src', 'public', 'scripts', 'tests', 'frontend'];
 const EXTENSIONS = new Set(['.js', '.cjs', '.mjs']);
 const IGNORED_DIRECTORIES = new Set(['node_modules', '.git', 'coverage']);
 

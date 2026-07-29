@@ -7,9 +7,9 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const root = path.resolve(__dirname, '..');
-const css = fs.readFileSync(path.join(root, 'public', 'style.css'), 'utf8');
-const html = fs.readFileSync(path.join(root, 'public', 'index.html'), 'utf8');
-const app = fs.readFileSync(path.join(root, 'public', 'app.js'), 'utf8');
+const css = fs.readFileSync(path.join(root, 'public', 'assets', 'dashboard', 'styles.css'), 'utf8');
+const html = fs.readFileSync(path.join(root, 'public', 'pages', 'app.html'), 'utf8');
+const app = fs.readFileSync(path.join(root, 'public', 'assets', 'dashboard', 'app.js'), 'utf8');
 
 test('painel limita a largura do documento em telas pequenas', () => {
   assert.match(css, /html,\s*\nbody\s*\{[\s\S]*?overflow-x:\s*clip;/);
@@ -32,5 +32,5 @@ test('kanban preserva rolagem interna sem estourar o documento', () => {
 
 test('estado hidden e cache da folha comercial estão protegidos', () => {
   assert.match(css, /\[hidden\]\s*\{\s*display:\s*none\s*!important;/);
-  assert.match(html, /style\.css\?v=v24-2-0-tailwind/);
+  assert.match(html, /\/assets\/dashboard\/styles\.css\?v=25\.0\.0/);
 });

@@ -1,55 +1,27 @@
-# Auditoria de engenharia — LeadHunter Pro 23.9.1
+# Auditoria de Engenharia — versão 25.0.0
 
-## Parecer
+## Resultado
 
-O projeto foi reestruturado para um padrão mais adequado à manutenção profissional e à apresentação acadêmica. A correção não se limitou a inserir comentários: responsabilidades de inicialização, composição HTTP, rotas e políticas financeiras foram separadas.
+A higienização reorganizou o projeto por responsabilidades e corrigiu o pipeline que mantinha a landing antiga em produção.
 
-## Problemas identificados na versão anterior
+## Pontos resolvidos
 
-1. `server.js` concentrava bootstrap, middleware e 58 rotas em aproximadamente 1.579 linhas.
-2. `public/app.js` possuía milhares de linhas sem divisão explícita por responsabilidade.
-3. arquivos relevantes não declaravam finalidade ou contrato.
-4. testes estruturais dependiam da localização antiga do código.
-5. regras financeiras puras carregavam modelos Mongoose durante testes unitários.
-6. havia duas atribuições de `module.exports` em `campaignEngine.js`.
-7. faltavam requisitos, rastreabilidade, catálogo de API e registros de decisão.
+- módulos de domínio, persistência, integração e rotas deixaram a raiz de `src`;
+- páginas e assets públicos foram separados por contexto;
+- landing React foi dividida em `app`, `features`, `shared`, `hooks`, `services` e `data`;
+- artefato público versionado passou a integrar o ZIP;
+- fallback antigo foi substituído por uma contingência equivalente à release;
+- testes e verificadores impedem caminhos legados e builds incompletos;
+- documentação e rastreabilidade foram atualizadas.
 
-## Correções aplicadas
+## Dívida técnica restante
 
-- Application Factory e bootstrap isolado;
-- rotas por domínio com dependências explícitas;
-- política de billing pura e testável;
-- comentários de intenção, não comentários redundantes;
-- contratos JSDoc e tipos de domínio;
-- documentação acadêmica e técnica integrada;
-- verificador documental automático;
-- atualização de testes de regressão e modularização.
+O controlador `public/assets/dashboard/app.js` continua amplo por compatibilidade com o painel já operacional. A redução deve ocorrer por fatias verticais, começando por autenticação, CRM e gráficos, sempre mantendo os testes de interface. A CSP ainda aceita handlers inline exclusivamente nessa interface legada.
 
-## Evolução funcional da versão 23.8.0
+## Regras de evolução
 
-- motor de abordagem hiper-humana desacoplado das rotas;
-- auditoria prudente de WhatsApp, telefone, e-mail e redes sociais;
-- tarefas automáticas idempotentes por etapa comercial;
-- saída padronizada em mensagem, contatos e próxima ação;
-- integração da agenda comercial e do fluxo até clientes ativos;
-- fallback local quando a IA externa viola as regras de linguagem.
-
-## Dívidas técnicas mantidas de forma consciente
-
-- `public/app.js` continua amplo e deve ser dividido gradualmente;
-- a CSP mantém `unsafe-inline` por compatibilidade com handlers legados;
-- alguns módulos de rota recebem um contexto de dependências ainda amplo;
-- faltam testes HTTP reais com banco e provedores em ambiente isolado.
-
-Essas limitações estão registradas para evitar que sejam confundidas com decisões permanentes.
-
-
-## Evolução funcional da versão 23.9.0
-
-- serviço isolado para reinicialização controlada de MongoDB e JSON local;
-- prévia de impacto antes da exclusão;
-- reautenticação por senha e frase destrutiva exata;
-- preservação obrigatória de contas administrativas;
-- exclusão ordenada e bloqueio de execuções concorrentes;
-- recibo administrativo criado depois da limpeza;
-- testes de domínio, persistência, autorização e interface.
+1. Código novo não deve ser adicionado ao controlador legado quando puder viver em módulo independente.
+2. Nenhuma rota acessa arquivo de dados diretamente; use repositórios.
+3. Nenhuma regra de negócio nova deve depender de Express.
+4. Toda alteração pública da landing deve atualizar a versão e passar por `verify:landing`.
+5. Nenhum deploy deve usar `npm install`; a instalação reproduzível é `npm ci`.

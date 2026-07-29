@@ -7,7 +7,7 @@
  * @module domain/billingPolicy
  */
 
-const { getPlan } = require('../planConfig');
+const { getPlan } = require('./plans/planCatalog');
 
 /**
  * Converte uma representação monetária brasileira para número.

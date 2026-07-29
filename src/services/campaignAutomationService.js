@@ -19,7 +19,7 @@
  * e enviar no canal adequado.
  */
 
-const { buildCampaignSequence } = require('../campaignEngine');
+const { buildCampaignSequence } = require('../domain/campaigns/campaignEngine');
 const { generateAiJsonContent } = require('./aiApproachService');
 const { estimateTicketValue } = require('./customerSuccessService');
 const { normalizeLeadStatus } = require('../domain/leadStatus');

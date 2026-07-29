@@ -5,7 +5,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { analyzeLeadResponse } = require('../src/conversationEngine');
+const { analyzeLeadResponse } = require('../src/domain/conversations/conversationEngine');
 
 test('resposta positiva move contato para interessado', () => {
   const result = analyzeLeadResponse('Sim, pode me enviar mais detalhes.', { status: 'CONTATADO', nome: 'Empresa A' });

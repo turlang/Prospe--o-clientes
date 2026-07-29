@@ -7,6 +7,8 @@
  * @module routes/adminRoutes
  */
 
+const { ADMIN_PAGE_PATH } = require('../config/paths');
+
 /**
  * Registra o conjunto de rotas deste domínio na aplicação Express.
  *
@@ -16,7 +18,6 @@
  */
 function registerAdminRoutes(app, context) {
   const {
-    path,
     SearchHistory,
     requireAuth,
     requireAdmin,
@@ -43,7 +44,8 @@ function registerAdminRoutes(app, context) {
 
   // Interface e visão geral administrativa.
   app.get('/admin', (_req, res) => {
-    res.sendFile(path.join(process.cwd(), 'public', 'admin.html'));
+    res.setHeader('Cache-Control', 'no-store, max-age=0');
+    res.sendFile(ADMIN_PAGE_PATH);
   });
 
   app.get('/api/admin/overview', requireAuth, requireAdmin, async (_req, res) => {

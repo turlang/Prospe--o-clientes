@@ -10,7 +10,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { getPlan, getAllPlans, normalizePlan } = require('../src/planConfig');
+const { getPlan, getAllPlans, normalizePlan } = require('../src/domain/plans/planCatalog');
 
 test('trial possui regra oficial de 10 leads totais', () => {
   const trial = getPlan('trial');
@@ -43,7 +43,7 @@ test('getAllPlans retorna trial, pro e agency', () => {
 
 
 test('trial oficial prevalece mesmo se o arquivo editável estiver antigo', () => {
-  const { updatePlan, getPlan } = require('../src/planConfig');
+  const { updatePlan, getPlan } = require('../src/domain/plans/planCatalog');
   const updated = updatePlan('trial', {
     dailyLeadLimit: 20,
     totalLeadLimit: null,

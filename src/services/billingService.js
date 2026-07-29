@@ -10,9 +10,9 @@
 
 const User = require('../models/User');
 const Payment = require('../models/Payment');
-const { hasMongoUri } = require('../db');
-const { findUserById, updateLocalUserPlan } = require('../localUserStore');
-const { getPlan } = require('../planConfig');
+const { hasMongoUri } = require('../infrastructure/database/mongoConnection');
+const { findUserById, updateLocalUserPlan } = require('../repositories/local/userRepository');
+const { getPlan } = require('../domain/plans/planCatalog');
 const {
   getPlanDurationDays,
   getPlanExpirationDate,

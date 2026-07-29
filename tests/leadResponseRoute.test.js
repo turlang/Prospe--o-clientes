@@ -6,7 +6,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { registerLeadRoutes } = require('../src/routes/leadRoutes');
-const { analyzeLeadResponse } = require('../src/conversationEngine');
+const { analyzeLeadResponse } = require('../src/domain/conversations/conversationEngine');
 
 function createRouteHarness(overrides = {}) {
   const handlers = new Map();

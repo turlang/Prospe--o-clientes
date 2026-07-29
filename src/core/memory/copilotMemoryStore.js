@@ -12,7 +12,7 @@ const fs = require('fs/promises');
 const path = require('path');
 const crypto = require('crypto');
 const CopilotConversation = require('../../models/CopilotConversation');
-const { hasMongoUri } = require('../../db');
+const { hasMongoUri } = require('../../infrastructure/database/mongoConnection');
 
 const LOCAL_PATH = path.join(__dirname, '..', '..', '..', 'data', 'copilot-conversations.json');
 

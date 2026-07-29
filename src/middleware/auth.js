@@ -10,8 +10,8 @@
 
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const { hasMongoUri } = require('../db');
-const { findUserById } = require('../localUserStore');
+const { hasMongoUri } = require('../infrastructure/database/mongoConnection');
+const { findUserById } = require('../repositories/local/userRepository');
 
 const DEVELOPMENT_JWT_SECRET = 'dev-local-secret-change-before-deploy';
 

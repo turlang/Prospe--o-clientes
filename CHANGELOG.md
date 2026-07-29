@@ -1,11 +1,22 @@
+# Changelog
+
+## 25.0.0 — Higienização arquitetural e landing resiliente
+
+- Corrigida a causa que mantinha a landing antiga em produção: o pacote não continha o artefato React e o servidor servia um fallback obsoleto.
+- Landing React/Tailwind reorganizada por funcionalidades, com hero escuro, produto visível, cards, público e planos.
+- Adicionado artefato público versionado e contingência estática equivalente.
+- Build de produção bloqueia falhas do React com `STRICT_REACT_BUILD=true`.
+- Backend reorganizado em domínio, serviços, repositórios, integrações, infraestrutura e rotas.
+- Páginas e assets públicos separados por contexto.
+- Adicionados padrões de código, verificação arquitetural, validação documental e regressões de deploy.
+- Dados existentes preservados e 143 testes aprovados.
+
 ## [24.1.0] - 2026-07-28
 
 ### Alterado
 - Landing React convertida em site comercial compacto e explicativo.
 - Painel autenticado ganhou barra de sessão e logout sem redirecionamento.
 - Gráficos executivos adaptados para mobile sem cortes horizontais.
-
-# Changelog
 
 ## 24.0.1 — Painel móvel corrigido
 

@@ -10,8 +10,8 @@ const fs = require('node:fs');
 
 const routes = fs.readFileSync('src/routes/adminRoutes.js', 'utf8');
 const app = fs.readFileSync('src/app.js', 'utf8');
-const html = fs.readFileSync('public/admin.html', 'utf8');
-const frontend = fs.readFileSync('public/admin.js', 'utf8');
+const html = fs.readFileSync('public/pages/admin.html', 'utf8');
+const frontend = fs.readFileSync('public/assets/admin/admin.js', 'utf8');
 
 test('rotas de limpeza exigem autenticação e papel administrativo', () => {
   assert.match(routes, /\/api\/admin\/database-reset\/preview', requireAuth, requireAdmin/);

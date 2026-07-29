@@ -1,206 +1,114 @@
-# LeadHunter Pro 24.0.0
+# LeadHunter Pro 25.0.0
 
-Sistema web para prospecção de estabelecimentos, qualificação de leads, CRM, automação comercial, relatórios e administração de assinaturas.
+SaaS de prospecção comercial para desenvolvedores, freelancers e agências que vendem sites, sistemas, automações e agentes de IA.
 
-## Landing page React 24.0.0
+## O que mudou na versão 25
 
-A página pública foi reconstruída em React e possui um pipeline independente de build com Vite. O painel autenticado em `/app` continua preservado, enquanto a página inicial usa os componentes localizados em `frontend/landing`.
+A versão corrige a causa de a landing antiga continuar em produção. O pacote anterior não continha o bundle React e o servidor servia silenciosamente um HTML legado. Agora o projeto:
 
-Principais pontos:
-
-- interface moderna e responsiva;
-- menu móvel e FAQ interativo;
-- demonstração visual do painel comercial;
-- preços e recursos dos planos consumidos de `/api/plans`;
-- build isolado em `public/landing-react`;
-- fallback HTML para desenvolvimento antes do primeiro build.
-
-## Correção da recuperação de senha 23.9.2
-
-A recuperação agora falha de forma visível quando o e-mail transacional não está configurado, gera links com o domínio público correto e permite redefinição também no modo JSON local de desenvolvimento.
-
-No Render, configure obrigatoriamente:
-
-```env
-PUBLIC_APP_URL=https://seu-servico.onrender.com
-RESEND_API_KEY=re_sua_chave
-MAIL_FROM=LeadHunter Pro <noreply@seu-dominio-verificado.com>
-```
-
-O domínio usado em `MAIL_FROM` precisa estar verificado no Resend. Sem essas variáveis, a API não informa falsamente que enviou um e-mail em produção.
-
-## Correção de implantação 23.9.1
-
-Esta versão corrige a falha de bootstrap no Render causada pela ausência da injeção de `simpleRateLimit` em `commercialRoutes`. Também elimina o aviso de índice duplicado no modelo de recuperação de senha e inclui testes de regressão da composição das rotas.
-
-## Reinicialização administrativa segura 23.9.0
-
-O painel administrativo agora possui uma zona de perigo para reinicializar os dados operacionais com segurança. A ferramenta calcula uma prévia, exige reautenticação pela senha atual, confirmação textual e confirmação final, remove usuários comuns e preserva todas as contas administrativas.
-
-A especificação completa está em [`docs/REINICIALIZACAO_BANCO_23.9.0.md`](docs/REINICIALIZACAO_BANCO_23.9.0.md). O motor comercial da versão 23.8.0 permanece documentado em [`docs/MOTOR_INTELIGENCIA_COMERCIAL_23.8.0.md`](docs/MOTOR_INTELIGENCIA_COMERCIAL_23.8.0.md).
-
-## Estado da versão
-
-A versão 24.0.0 mantém a arquitetura acadêmica da série 23.7, o motor comercial 23.8.0 e acrescenta a manutenção administrativa segura:
-
-- bootstrap separado da composição Express;
-- aplicação criada pelo padrão Application Factory;
-- rotas agrupadas por domínio;
-- módulos identificados com `@fileoverview`;
-- contratos centrais documentados com JSDoc;
-- requisitos, arquitetura, API, testes e rastreabilidade formalizados;
-- verificação automática do padrão documental;
-- pacote sem dados reais, `.env` ou `node_modules`.
-
-## Funcionalidades
-
-- cadastro, autenticação e recuperação de senha;
-- prospecção por segmento e região;
-- pontuação e priorização de oportunidades;
-- CRM Kanban e histórico de interações;
-- abordagens comerciais com IA e fallback local;
-- campanhas, tarefas e agenda de follow-ups;
-- propostas, customer success e crescimento de clientes;
-- relatórios executivos e exportação CSV;
-- planos Trial, Pro e Agência;
-- integração com Mercado Pago;
-- painel administrativo, auditoria e reinicialização controlada do banco;
-- controles antiabuso e segurança de URLs.
+- inclui uma landing comercial versionada em `public/landing-react`;
+- gera o bundle React/Tailwind quando o Vite está disponível;
+- mantém uma landing estática equivalente como contingência segura;
+- interrompe a validação quando a versão ou as seções obrigatórias não estão presentes;
+- envia cabeçalhos `X-Landing-Version` e `X-Landing-Source` para diagnóstico;
+- organiza backend, frontend, páginas e assets por responsabilidade;
+- preserva login, recuperação de senha, CRM, planos e painel administrativo.
 
 ## Arquitetura
 
 ```text
+frontend/landing/
+  src/app/                 composição da aplicação React
+  src/features/            seções comerciais por funcionalidade
+  src/shared/              componentes reutilizáveis
+  src/hooks/               estado assíncrono da interface
+  src/services/            acesso à API pública
+  src/data/                conteúdo estático tipado por estrutura
+  static/                  contingência equivalente ao bundle React
+
 src/
-  server.js                 # bootstrap: banco e porta HTTP
-  app.js                    # factory: middlewares e composição
-  routes/                   # adaptadores HTTP por domínio
-    systemRoutes.js
-    billingRoutes.js
-    leadRoutes.js
-    adminRoutes.js
-    commercialRoutes.js
-  services/                 # regras comerciais e integrações
-  core/                     # Sales OS, IA, memória e automação
-  middleware/               # autenticação, autorização, logs e limites
-  security/                 # validação de recursos externos
-  models/                   # esquemas Mongoose
-  types/domain.js           # contratos JSDoc
-  *Store.js                 # persistência local permitida
-frontend/landing/            # código-fonte React da landing
-public/                     # painel legado e arquivos compilados
-scripts/                    # validações automatizadas
-tests/                      # suíte node:test
-docs/                       # documentação técnica e acadêmica
+  app.js                   Application Factory do Express
+  server.js                bootstrap de processo e banco
+  config/                  configuração e catálogo de caminhos
+  domain/                  regras de negócio puras
+  repositories/            persistência MongoDB/JSON
+  integrations/            provedores externos
+  services/                casos de uso
+  routes/                  adaptadores HTTP
+  middleware/              autenticação, autorização e limites
+  infrastructure/          conexões e detalhes técnicos
+
+public/
+  pages/                   páginas HTML do painel
+  assets/                  CSS e JavaScript por contexto
+  landing-react/           artefato público versionado da landing
 ```
 
-Detalhes: [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md).
+Detalhes em [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md) e [`docs/CODING_STANDARDS.md`](docs/CODING_STANDARDS.md).
 
-## Requisitos de ambiente
+## Requisitos
 
-- Node.js 20.20.2 ou versão compatível com o intervalo definido em `package.json`;
+- Node.js 20.20.2 ou versão compatível com `package.json`;
 - npm 10 ou superior;
-- MongoDB para produção;
-- credenciais externas conforme as funcionalidades utilizadas.
+- MongoDB obrigatório em produção;
+- chaves externas somente por variáveis de ambiente.
 
 ## Instalação
 
 ```bash
-npm install
+npm ci
+npm --prefix frontend/landing install --include=dev
 cp .env.example .env
 npm run build
-npm run check:syntax
-npm run check:docs
-npm test
-npm run dev
+npm run quality
+npm start
 ```
 
-No Windows PowerShell, crie manualmente `.env` a partir de `.env.example` quando `cp` não estiver disponível.
+No PowerShell, copie `.env.example` manualmente quando o comando `cp` não estiver disponível.
 
-Aplicação local:
+## Comandos
 
-```text
-http://localhost:3000
-```
-
-Painel administrativo:
-
-```text
-http://localhost:3000/admin
-```
-
-## Validação
-
-```bash
-npm run check
-```
-
-O comando executa:
-
-1. `check:syntax`: sintaxe de todos os arquivos JavaScript;
-2. `check:docs`: cabeçalhos, documentos obrigatórios e limites estruturais;
-3. `test`: regras de negócio, segurança, regressões e arquitetura.
-
-## Configuração
-
-Use `.env.example` como referência. Em produção:
-
-- defina um `JWT_SECRET` longo e aleatório;
-- configure `MONGODB_URI` e mantenha `REQUIRE_MONGODB=true`;
-- defina `PUBLIC_APP_URL` e origens CORS explícitas;
-- desative cobrança simulada;
-- configure credenciais do Mercado Pago;
-- habilite Resend para recuperação real de senha;
-- não registre dados pessoais ou segredos em logs.
-
-## Regra oficial do Trial
-
-```text
-Teste Gratuito
-R$ 0
-10 leads totais
-CRM Kanban básico
-Abordagens comerciais por templates
-Follow-ups manuais
-Uso único por usuário/dispositivo
-```
-
-## Documentação
-
-| Documento | Finalidade |
+| Comando | Finalidade |
 |---|---|
-| [`RELATORIO_ACADEMICO.md`](docs/RELATORIO_ACADEMICO.md) | texto-base para apresentação acadêmica |
-| [`ESPECIFICACAO_REQUISITOS.md`](docs/ESPECIFICACAO_REQUISITOS.md) | requisitos funcionais e não funcionais |
-| [`ARQUITETURA.md`](docs/ARQUITETURA.md) | camadas, fluxos e responsabilidades |
-| [`API.md`](docs/API.md) | catálogo de endpoints |
-| [`PLANO_DE_TESTES.md`](docs/PLANO_DE_TESTES.md) | estratégia e critérios de aceite |
-| [`MATRIZ_RASTREABILIDADE.md`](docs/MATRIZ_RASTREABILIDADE.md) | relação entre requisito, código e teste |
-| [`GUIA_DE_CODIGO.md`](docs/GUIA_DE_CODIGO.md) | padrão de comentários e implementação |
-| [`decisoes/`](docs/decisoes/) | registros de decisões arquiteturais |
-| [`CONTRIBUTING.md`](CONTRIBUTING.md) | fluxo de contribuição |
+| `npm run dev` | inicia o backend em modo watch |
+| `npm run dev:landing` | inicia a landing React pelo Vite |
+| `npm run build` | sincroniza contingência, tenta o bundle React e valida a release |
+| `npm run build:react` | gera exclusivamente o bundle React/Tailwind |
+| `npm run build:static` | sincroniza a landing estática equivalente |
+| `npm run verify:landing` | bloqueia artefatos antigos ou incompletos |
+| `npm run quality` | executa estrutura, documentação, frontend e testes |
 
-## Limitações conhecidas
+## Rotas principais
 
-`public/app.js` continua amplo por ser um controlador legado. Ele foi organizado por seções e documentado, mas sua divisão em módulos deve ocorrer de forma incremental, acompanhada por testes de interface. A CSP ainda permite handlers inline por compatibilidade; a meta futura é remover essa exceção.
+- `/` — landing comercial;
+- `/app` — autenticação e aplicação;
+- `/admin` — painel administrativo;
+- `/api/health` — saúde, versão da aplicação e origem da landing.
+
+## Variáveis de produção essenciais
+
+```env
+NODE_ENV=production
+REQUIRE_MONGODB=true
+MONGODB_URI=mongodb+srv://...
+JWT_SECRET=segredo-longo-e-aleatorio
+PUBLIC_APP_URL=https://seu-servico.onrender.com
+RESEND_API_KEY=re_...
+MAIL_FROM=LeadHunter Pro <noreply@dominio-verificado.com>
+```
+
+Nunca publique `.env`, tokens, senhas ou dados pessoais no repositório.
+
+## Qualidade e comentários
+
+Todos os módulos mantidos possuem `@fileoverview`. Funções públicas e decisões não óbvias recebem JSDoc ou comentários de intenção. O projeto não comenta cada linha: comentários que apenas repetem o código são evitados porque aumentam ruído e ficam desatualizados.
+
+As regras completas de nomenclatura, pureza, acessibilidade, segurança, erros, testes e revisão estão em [`docs/CODING_STANDARDS.md`](docs/CODING_STANDARDS.md).
+
+## Recuperação de senha
+
+Para teste com `onboarding@resend.dev`, o destinatário deve ser o e-mail proprietário da conta Resend. Para usuários reais, utilize domínio verificado e configure `MAIL_FROM` no Render.
 
 ## Uso responsável
 
-A ferramenta deve ser utilizada de acordo com a legislação aplicável, termos dos provedores e boas práticas de privacidade. A existência de um dado público não autoriza mensagens abusivas, coleta excessiva ou disparos não solicitados.
-
-### Manutenção administrativa
-
-O painel `/admin` possui uma zona de perigo para reinicializar os dados operacionais. A ferramenta mostra uma prévia, exige a senha atual e a frase `REINICIAR LEADHUNTER`, remove usuários comuns e preserva todas as contas administrativas. Consulte `docs/REINICIALIZACAO_BANCO_23.9.0.md` antes de usar em produção.
-
-
-## Versão atual
-
-Versão atual: **24.0.1** — landing React e painel autenticado responsivo.
-
-
-## Versão 24.1.0
-
-- Landing page React reconstruída como site comercial compacto.
-- Cards visuais para as principais ferramentas do produto.
-- Planos dinâmicos destacados na página pública.
-- Login ocultado após autenticação e barra compacta de sessão com logout.
-- Logout retorna ao painel de acesso sem redirecionar para fora do aplicativo.
-- Gráficos e pipeline executivo reorganizados para celular.
+A prospecção deve respeitar legislação, privacidade, termos dos provedores e mecanismos de descadastro. Dados públicos não autorizam coleta excessiva ou disparos abusivos.

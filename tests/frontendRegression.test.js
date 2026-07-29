@@ -12,9 +12,9 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 
-const html = fs.readFileSync('public/index.html', 'utf8');
-const app = fs.readFileSync('public/app.js', 'utf8');
-const admin = fs.readFileSync('public/admin.js', 'utf8');
+const html = fs.readFileSync('public/pages/app.html', 'utf8');
+const app = fs.readFileSync('public/assets/dashboard/app.js', 'utf8');
+const admin = fs.readFileSync('public/assets/admin/admin.js', 'utf8');
 
 test('dashboard não quebra quando o bloco legado de estatísticas não existe', () => {
   assert.match(app, /async function refreshStats\(\) \{\s*if \(!statsBox\) return;/);

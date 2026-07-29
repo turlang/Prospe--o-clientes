@@ -1,115 +1,72 @@
-# Arquitetura do LeadHunter Pro
+# Arquitetura — LeadHunter Pro 25.0.0
 
-## 1. Visão geral
+## 1. Objetivos
 
-A aplicação adota uma arquitetura em camadas com composição explícita. O objetivo é impedir que detalhes de HTTP, persistência e integrações externas contaminem regras comerciais reutilizáveis.
+A arquitetura prioriza separação de responsabilidades, baixo acoplamento, testabilidade, segurança por padrão e deploy reproduzível.
 
-```mermaid
-flowchart TD
-  START[src/server.js] --> FACTORY[src/app.js createApp]
-  FACTORY --> MIDDLEWARE[Middlewares]
-  FACTORY --> ROUTES[Rotas por domínio]
-  ROUTES --> SERVICES[Serviços de domínio]
-  SERVICES --> CORE[Núcleo Sales OS]
-  SERVICES --> STORE[Repositórios e modelos]
-  STORE --> MONGO[(MongoDB)]
-  STORE -. apenas desenvolvimento .-> JSON[(JSON local)]
-  SERVICES --> PROVIDERS[Provedores externos]
+## 2. Camadas do backend
+
+```text
+HTTP → routes → services/use cases → domain → repositories/integrations
 ```
 
-## 2. Responsabilidades
+- `routes`: valida o contrato HTTP, aplica políticas e serializa respostas;
+- `services`: coordena casos de uso e transações lógicas;
+- `domain`: regras puras, sem Express, rede ou persistência;
+- `repositories`: adapta MongoDB e armazenamento JSON local;
+- `integrations`: encapsula provedores externos;
+- `infrastructure`: inicialização de conexões e detalhes operacionais;
+- `config`: valores da aplicação e caminhos absolutos centralizados.
 
-### `src/server.js`
+`src/app.js` usa Application Factory e não abre porta. `src/server.js` executa o bootstrap do processo.
 
-Ponto de entrada. Carrega ambiente, conecta persistência, cria a aplicação e abre a porta. Não define rotas nem regras de negócio.
+## 3. Frontend público
 
-### `src/app.js`
+A landing adota organização por funcionalidades:
 
-Implementa o padrão Application Factory. Configura Helmet, CORS, parser JSON, logging, rate limit e composição das rotas. Não inicia o servidor.
-
-### `src/routes/`
-
-Adapta o protocolo HTTP aos serviços:
-
-- `systemRoutes.js`: páginas, saúde e diagnóstico;
-- `billingRoutes.js`: consumo, checkout e reconciliação;
-- `leadRoutes.js`: prospecção, CRM e exportação;
-- `adminRoutes.js`: usuários, planos, segurança, auditoria e reinicialização controlada;
-- `commercialRoutes.js`: campanhas, agenda, propostas, clientes e relatórios.
-
-### `src/services/`
-
-Contém regras comerciais, construção de relatórios, geração de campanhas, propostas, billing e integrações. Serviços devem ser independentes do DOM.
-
-### `src/core/`
-
-Núcleo do Sales OS: copiloto, memória, prompts, automação e inteligência. Deve permanecer desacoplado das rotas legadas.
-
-### Persistência
-
-- MongoDB/Mongoose: modo obrigatório em produção;
-- JSON local: fallback permitido somente em desenvolvimento autorizado;
-- `jsonFileStore.js`: escrita atômica e serialização para reduzir corrupção.
-
-### Interface
-
-`public/` contém páginas estáticas e controladores JavaScript. `public/app.js` ainda é um controlador legado amplo; está organizado por seções e registrado como dívida técnica de redução incremental.
-
-## 3. Fluxo de uma prospecção
-
-```mermaid
-sequenceDiagram
-  actor User as Usuário
-  participant UI as Interface
-  participant API as leadRoutes
-  participant Places as Provedor de lugares
-  participant Score as Scorer
-  participant Store as Repositório
-  participant Usage as Controle de uso
-
-  User->>UI: informa segmento e região
-  UI->>API: POST /api/prospectar
-  API->>API: valida entrada e limite
-  API->>Places: consulta estabelecimentos
-  Places-->>API: resultados normalizados
-  API->>Score: qualifica e filtra
-  Score-->>API: leads priorizados
-  API->>Store: persiste por proprietário
-  Store-->>API: confirmação
-  API->>Usage: contabiliza leads persistidos
-  API-->>UI: resultados e consumo
+```text
+src/app        composição
+src/features   hero, fluxo, ferramentas, público, preços e CTA
+src/shared     layout e UI reutilizável
+src/hooks      estado e efeitos
+src/services   acesso à API
+src/data       conteúdo estático
 ```
 
-## 4. Fluxo de autorização
+A página pública tem duas saídas da mesma release:
 
-1. O cliente envia JWT no cabeçalho `Authorization`.
-2. `requireAuth` verifica assinatura, emissor e audiência.
-3. O usuário é recarregado da persistência.
-4. Conta suspensa ou inexistente é rejeitada.
-5. Rotas administrativas aplicam `requireAdmin`.
-6. Consultas de domínio sempre recebem o identificador do proprietário.
+1. bundle React/Tailwind produzido pelo Vite;
+2. contingência estática visualmente equivalente.
 
-## 5. Dependências externas
+O script `verify-landing-build.js` exige a versão `25.0.0`, o título comercial e todas as seções obrigatórias. Assim, a aplicação não volta silenciosamente para a landing antiga.
 
-| Dependência | Uso | Falha esperada |
-|---|---|---|
-| MongoDB | persistência de produção | bootstrap falha quando obrigatório |
-| Google Places | busca de estabelecimentos | erro controlado e diagnóstico admin |
-| Mercado Pago | checkout e assinatura | nenhum plano pago é ativado sem validação |
-| Resend | recuperação de senha | fallback de desenvolvimento sem expor token em produção |
-| Provedor de IA | textos comerciais | fallback local determinístico |
+## 4. Painel autenticado
 
-## 6. Decisões arquiteturais
+As páginas ficam em `public/pages`; CSS e controladores ficam em `public/assets` separados por domínio (`dashboard`, `admin`, `auth`). O painel legado continua funcional e deve ser migrado progressivamente para componentes, sempre protegido por testes de regressão.
 
-As decisões relevantes ficam em `docs/decisoes/` e não devem ser alteradas silenciosamente. Uma nova decisão estrutural deve gerar um novo ADR.
+## 5. Fluxo de dados
 
-## Vocabulário centralizado do funil
+- entrada externa é normalizada na borda;
+- regras de negócio não dependem de objetos Express;
+- persistência é acessada por repositórios;
+- erros operacionais são convertidos para respostas pela camada HTTP;
+- segredos são lidos somente de variáveis de ambiente.
 
-A partir da versão 23.7.1, `src/domain/leadStatus.js` é a fonte única de verdade das etapas comerciais. Serviços não devem criar nomes próprios de status. Intenções como “qualificando” e eventos como “respondeu” pertencem à timeline de interações; a posição do lead deve usar exclusivamente as etapas descritas em `docs/FUNIL_COMERCIAL.md`.
+## 6. Segurança
 
+- autenticação JWT e verificação de usuário ativo;
+- autorização administrativa separada;
+- rate limit para APIs;
+- Helmet/CSP, CORS explícito e limite de corpo;
+- URLs públicas normalizadas;
+- MongoDB obrigatório em produção;
+- recuperação de senha com token de uso único e e-mail transacional;
+- logs sem segredos e respostas sem detalhes internos.
 
-## 7. Reinicialização administrativa
+## 7. Decisões de compatibilidade
 
-`databaseResetService.js` concentra a política destrutiva fora da camada HTTP. A rota apenas autentica, repassa a solicitação e grava o recibo de auditoria. O serviço opera por adaptadores para MongoDB e JSON local, exige reautenticação e preserva todas as contas administrativas.
+A CSP ainda permite handlers inline apenas no painel legado. Isso é dívida técnica registrada; código novo React não usa handlers HTML inline ou `dangerouslySetInnerHTML`.
 
-A exclusão é ordenada: dados operacionais primeiro e usuários comuns por último. Em instalações MongoDB sem replica set, essa estratégia oferece repetibilidade e preservação do acesso administrativo mesmo sem transações multidocumento.
+## 8. Diagnóstico de release
+
+`GET /api/health` informa versão e origem do artefato da landing. Respostas HTML públicas recebem `Cache-Control: no-store`, `X-Application-Version`, `X-Landing-Version` e `X-Landing-Source`.

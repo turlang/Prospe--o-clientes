@@ -1,0 +1,62 @@
+<!--
+  @fileoverview Painel administrativo para usuários, planos, segurança e pagamentos.
+  As regiões principais usam elementos semânticos e identificadores consumidos
+  pelos controladores JavaScript documentados na pasta public/.
+-->
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Executivo — LeadHunter Pro</title>
+  <link rel="stylesheet" href="/assets/dashboard/styles.css" />
+  <link rel="stylesheet" href="/assets/admin/admin.css?v=25.0.0" />
+</head>
+<body>
+  <!-- Conteúdo administrativo protegido por autenticação e papel admin. -->
+  <main class="admin-shell">
+    <header class="admin-header">
+      <div><p class="tag">Sales OS · Administração</p><h1>Central Executiva</h1><p>Uso da plataforma, crescimento, receita, clientes e operação em uma única visão.</p></div>
+      <div class="admin-actions"><a class="admin-dashboard-link" href="/app?adminDashboard=1">← Abrir Sales OS</a><button id="adminReloadBtn" type="button">Atualizar dados</button><button id="adminLogout" class="secondary" type="button">Sair</button></div>
+    </header>
+
+    <nav class="admin-nav" aria-label="Seções administrativas">
+      <a href="#visao-executiva">Visão executiva</a><a href="#economia">Economia</a><a href="#usuarios">Usuários</a><a href="#planos">Planos</a><a href="#pagamentos">Pagamentos</a><a href="#seguranca">Segurança</a><a href="#manutencao">Manutenção</a><a href="#auditoria">Auditoria</a>
+    </nav>
+
+    <section id="visao-executiva"><div id="adminStats" class="admin-grid"></div></section>
+
+    <section id="economia" class="admin-panel">
+      <h2>Desempenho econômico e uso</h2><p class="meta">Indicadores consolidados dos últimos 30 dias e evolução dos últimos seis meses.</p>
+      <div class="admin-charts">
+        <article class="chart-card"><header><div><h3>Receita aprovada</h3><p>Evolução mensal dos pagamentos confirmados</p></div></header><div id="revenueChart"></div></article>
+        <article class="chart-card"><header><div><h3>Distribuição dos planos</h3><p>Composição atual da base de usuários</p></div></header><div id="planChart"></div></article>
+        <article class="chart-card"><header><div><h3>Consumo de leads</h3><p>Leads gerados diariamente nos últimos 30 dias</p></div></header><div id="usageChart"></div></article>
+        <article class="chart-card"><header><div><h3>Crescimento da base</h3><p>Novos usuários cadastrados por mês</p></div></header><div id="growthChart"></div></article>
+      </div>
+    </section>
+
+    <section id="usuarios" class="admin-panel"><h2>Gestão de usuários</h2><p class="meta">Pesquise, altere planos, suspenda acessos e gerencie administradores.</p><div class="admin-search"><label class="sr-only" for="adminSearch">Buscar usuário</label><input id="adminSearch" placeholder="Nome, e-mail ou plano" /><button id="adminSearchBtn" type="button">Buscar</button><button id="adminClearSearchBtn" type="button" class="secondary">Limpar</button></div><div id="adminUsers"></div></section>
+    <section id="planos" class="admin-panel"><h2>Planos comerciais</h2><p class="meta">Edite preços, limites e benefícios sem alterar o código.</p><div id="adminPlans"></div></section>
+    <section id="pagamentos" class="admin-panel"><h2>Pagamentos recentes</h2><div id="adminPayments"></div></section>
+    <section id="seguranca" class="admin-panel"><h2>Segurança e antiabuso</h2><div id="adminSecurity"></div></section>
+    <section id="manutencao" class="admin-panel danger-zone">
+      <h2>Zona de perigo — reinicializar banco</h2>
+      <p class="danger-warning"><strong>Operação irreversível.</strong> Remove pesquisas, leads, tarefas, histórico comercial, pagamentos, uso, registros de segurança, conversas do copiloto e usuários comuns. Somente contas com função <code>admin</code> serão preservadas.</p>
+      <div id="databaseResetPreview" aria-live="polite"><p class="meta">Calculando os registros que serão removidos...</p></div>
+      <form id="databaseResetForm" class="danger-form" autocomplete="off">
+        <label for="databaseResetPassword">Senha atual do administrador
+          <input id="databaseResetPassword" name="password" type="password" maxlength="128" required autocomplete="current-password" />
+        </label>
+        <label for="databaseResetConfirmation">Digite <strong id="databaseResetPhrase">REINICIAR LEADHUNTER</strong>
+          <input id="databaseResetConfirmation" name="confirmation" maxlength="80" required placeholder="REINICIAR LEADHUNTER" />
+        </label>
+        <button id="databaseResetBtn" class="danger-button" type="submit" disabled>Reinicializar banco</button>
+      </form>
+    </section>
+    <section id="auditoria" class="admin-panel"><h2>Auditoria administrativa</h2><div id="adminAudit"></div></section>
+    <section id="adminStatus" aria-live="polite"></section>
+  </main>
+  <script src="/assets/admin/admin.js?v=25.0.0"></script>
+</body>
+</html>

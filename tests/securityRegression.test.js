@@ -17,9 +17,9 @@ const billingRoutes = fs.readFileSync('src/routes/billingRoutes.js', 'utf8');
 const leadRoutes = fs.readFileSync('src/routes/leadRoutes.js', 'utf8');
 const billing = fs.readFileSync('src/services/billingService.js', 'utf8');
 const auth = fs.readFileSync('src/middleware/auth.js', 'utf8');
-const authRoutes = fs.readFileSync('src/authRoutes.js', 'utf8');
-const database = fs.readFileSync('src/db.js', 'utf8');
-const scorer = fs.readFileSync('src/scorer.js', 'utf8');
+const authRoutes = fs.readFileSync('src/routes/authRoutes.js', 'utf8');
+const database = fs.readFileSync('src/infrastructure/database/mongoConnection.js', 'utf8');
+const scorer = fs.readFileSync('src/domain/leads/leadScoring.js', 'utf8');
 
 test('checkout simulado é explicitamente bloqueável e sincronização valida proprietário', () => {
   assert.match(billingRoutes, /if \(!isSimulatedBillingAllowed\(\)\)/);
