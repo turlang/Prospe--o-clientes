@@ -1,17 +1,28 @@
-# LeadHunter Pro 25.2.0
+# LeadHunter Pro 25.3.0
 
 SaaS de prospecção comercial para desenvolvedores, freelancers e agências que vendem sites, sistemas, automações e agentes de IA.
 
-## O que mudou na versão 25
+## Experiência pública em tela única
 
-A versão corrige a causa de a landing antiga continuar em produção. O pacote anterior não continha o bundle React e o servidor servia silenciosamente um HTML legado. Agora o projeto:
+A versão 25.3.0 transforma a landing em uma interface sem rolagem de página. O documento ocupa `100dvh`, mantém `overflow: hidden` e apresenta o conteúdo em cinco painéis alternáveis:
 
-- inclui uma landing comercial versionada em `public/landing-react`;
+- **Início** — proposta de valor e central de sinais;
+- **Como funciona** — etapas da prospecção comercial;
+- **Ferramentas** — demonstrações dos recursos do produto;
+- **Para quem é** — conteúdo adaptado ao público escolhido;
+- **Planos** — catálogo dinâmico publicado pelo painel administrativo.
+
+No desktop, os painéis são acionados por abas no cabeçalho e por controles anterior/próximo. No mobile, a navegação principal fica em uma barra inferior fixa. A troca acontece sem recarregar a página e sem mover o documento.
+
+## Resiliência da landing
+
+O projeto:
+
 - gera o bundle React/Tailwind quando o Vite está disponível;
-- mantém uma landing estática equivalente como contingência segura;
-- interrompe a validação quando a versão ou as seções obrigatórias não estão presentes;
-- envia cabeçalhos `X-Landing-Version` e `X-Landing-Source` para diagnóstico;
-- organiza backend, frontend, páginas e assets por responsabilidade;
+- inclui uma versão estática equivalente e interativa como contingência;
+- impede o retorno silencioso à landing antiga;
+- envia `X-Landing-Version` e `X-Landing-Source` para diagnóstico;
+- valida versão, painéis, navegação e ausência de scroll antes da release;
 - preserva login, recuperação de senha, CRM, planos e painel administrativo.
 
 ## Arquitetura
@@ -19,11 +30,11 @@ A versão corrige a causa de a landing antiga continuar em produção. O pacote 
 ```text
 frontend/landing/
   src/app/                 composição da aplicação React
-  src/features/            seções comerciais por funcionalidade
-  src/shared/              componentes reutilizáveis
-  src/hooks/               estado assíncrono da interface
+  src/features/            painéis comerciais por funcionalidade
+  src/shared/              layout, navegação e UI reutilizável
+  src/hooks/               navegação e estado assíncrono
   src/services/            acesso à API pública
-  src/data/                conteúdo estático tipado por estrutura
+  src/data/                conteúdo estático estruturado
   static/                  contingência equivalente ao bundle React
 
 src/
@@ -80,9 +91,10 @@ No PowerShell, copie `.env.example` manualmente quando o comando `cp` não estiv
 
 ## Rotas principais
 
-- `/` — landing comercial;
+- `/` — landing comercial em tela única;
 - `/app` — autenticação e aplicação;
 - `/admin` — painel administrativo;
+- `/api/plans` — planos publicados pelo Admin;
 - `/api/health` — saúde, versão da aplicação e origem da landing.
 
 ## Variáveis de produção essenciais
@@ -99,11 +111,15 @@ MAIL_FROM=LeadHunter Pro <noreply@dominio-verificado.com>
 
 Nunca publique `.env`, tokens, senhas ou dados pessoais no repositório.
 
+## Planos sincronizados com o Admin
+
+Os planos exibidos no painel **Planos** são carregados de `GET /api/plans`. Em produção, as alterações administrativas são persistidas no MongoDB e propagadas para abas abertas sem novo deploy. Consulte [`docs/PLANOS_DINAMICOS.md`](docs/PLANOS_DINAMICOS.md).
+
 ## Qualidade e comentários
 
-Todos os módulos mantidos possuem `@fileoverview`. Funções públicas e decisões não óbvias recebem JSDoc ou comentários de intenção. O projeto não comenta cada linha: comentários que apenas repetem o código são evitados porque aumentam ruído e ficam desatualizados.
+Todos os módulos mantidos possuem `@fileoverview`. Funções públicas e decisões não óbvias recebem JSDoc ou comentários de intenção. O projeto evita comentários que apenas repetem o código, pois eles aumentam ruído e ficam desatualizados.
 
-As regras completas de nomenclatura, pureza, acessibilidade, segurança, erros, testes e revisão estão em [`docs/CODING_STANDARDS.md`](docs/CODING_STANDARDS.md).
+As regras de nomenclatura, pureza, acessibilidade, segurança, erros, testes e revisão estão em [`docs/CODING_STANDARDS.md`](docs/CODING_STANDARDS.md).
 
 ## Recuperação de senha
 
@@ -112,10 +128,3 @@ Para teste com `onboarding@resend.dev`, o destinatário deve ser o e-mail propri
 ## Uso responsável
 
 A prospecção deve respeitar legislação, privacidade, termos dos provedores e mecanismos de descadastro. Dados públicos não autorizam coleta excessiva ou disparos abusivos.
-## Planos sincronizados com o Admin
-
-Os planos exibidos na landing são carregados de `GET /api/plans`. Em produção,
-as alterações do painel administrativo são persistidas no MongoDB e propagadas
-para abas abertas da landing sem depender de novo deploy. Consulte
-`docs/PLANOS_DINAMICOS.md` para o fluxo completo.
-

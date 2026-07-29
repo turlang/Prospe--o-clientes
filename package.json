@@ -1,7 +1,7 @@
 {
   "name": "agente-prospeccao-real",
-  "version": "25.2.0",
-  "description": "SaaS de prospecção tech com landing React/Tailwind resiliente, CRM e arquitetura organizada por camadas",
+  "version": "25.3.0",
+  "description": "SaaS de prospecção tech com landing React/Tailwind em tela única, CRM e arquitetura organizada por camadas",
   "main": "src/server.js",
   "type": "commonjs",
   "scripts": {

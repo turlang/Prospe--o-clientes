@@ -42,7 +42,7 @@ test('landing e API desativam cache e revalidam alterações administrativas', (
   const systemRoutes = fs.readFileSync('src/routes/systemRoutes.js', 'utf8');
   const plansApi = fs.readFileSync('frontend/landing/src/services/plansApi.js', 'utf8');
   const plansHook = fs.readFileSync('frontend/landing/src/hooks/usePlans.js', 'utf8');
-  const pricing = fs.readFileSync('frontend/landing/src/features/pricing/PricingSection.jsx', 'utf8');
+  const pricing = fs.readFileSync('frontend/landing/src/features/presentation/PricingPanel.jsx', 'utf8');
   const admin = fs.readFileSync('public/assets/admin/admin.js', 'utf8');
   const staticLanding = fs.readFileSync('public/landing-static.js', 'utf8');
 

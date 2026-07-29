@@ -1,10 +1,6 @@
 /**
  * @fileoverview Verifica contratos estáticos do frontend React e do painel legado.
  *
- * O build Vite realiza a validação sintática completa do JSX quando as
- * dependências estão instaladas. Este script cobre invariantes de segurança,
- * acessibilidade e estrutura mesmo em ambientes sem registro npm disponível.
- *
  * @module scripts/check-frontend
  */
 
@@ -34,9 +30,19 @@ for (const file of jsxFiles) {
 }
 
 const landingApp = fs.readFileSync(path.join(ROOT, 'frontend', 'landing', 'src', 'app', 'App.jsx'), 'utf8');
-for (const marker of ['<Header />', '<HeroSection />', '<ToolsSection />', '<PricingSection', '<Footer />']) {
+for (const marker of ['<Header ', '<LandingExperience', '<BottomNavigation']) {
   if (!landingApp.includes(marker)) failures.push(`Composição da landing sem ${marker}`);
 }
+if (landingApp.includes('<Footer />')) failures.push('A landing sem rolagem não deve renderizar rodapé vertical.');
+
+const experience = fs.readFileSync(path.join(ROOT, 'frontend', 'landing', 'src', 'features', 'presentation', 'LandingExperience.jsx'), 'utf8');
+for (const marker of ['OverviewPanel', 'WorkflowPanel', 'ToolsPanel', 'AudiencePanel', 'PricingPanel']) {
+  if (!experience.includes(marker)) failures.push(`Experiência sem painel ${marker}`);
+}
+
+const styles = fs.readFileSync(path.join(ROOT, 'frontend', 'landing', 'src', 'styles', 'index.css'), 'utf8');
+if (!/html, body, #root \{[^}]*overflow: hidden;/.test(styles)) failures.push('Landing React não bloqueia o scroll do documento.');
+if (!styles.includes('height: 100dvh')) failures.push('Landing React não usa altura dinâmica da viewport.');
 
 const publicApp = fs.readFileSync(path.join(ROOT, 'public', 'pages', 'app.html'), 'utf8');
 if (!publicApp.includes('id="authCard"') || !publicApp.includes('id="sessionBar" hidden')) {
@@ -49,4 +55,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log(`Frontend validado: ${jsxFiles.length} componentes JSX e contratos do painel preservados.`);
+console.log(`Frontend validado: ${jsxFiles.length} componentes JSX, landing sem scroll e painel preservado.`);

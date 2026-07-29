@@ -1,5 +1,5 @@
 /**
- * @fileoverview Regressão da landing React/Tailwind e do artefato público resiliente.
+ * @fileoverview Regressão da landing React/Tailwind em viewport única.
  *
  * @module tests/landingReact.test
  */
@@ -11,9 +11,11 @@ const fs = require('node:fs');
 const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 const landingPackage = JSON.parse(fs.readFileSync('frontend/landing/package.json', 'utf8'));
 const appSource = fs.readFileSync('frontend/landing/src/app/App.jsx', 'utf8');
-const heroSource = fs.readFileSync('frontend/landing/src/features/hero/HeroSection.jsx', 'utf8');
-const toolsSource = fs.readFileSync('frontend/landing/src/features/tools/ToolsSection.jsx', 'utf8');
-const pricingSource = fs.readFileSync('frontend/landing/src/features/pricing/PricingSection.jsx', 'utf8');
+const experienceSource = fs.readFileSync('frontend/landing/src/features/presentation/LandingExperience.jsx', 'utf8');
+const overviewSource = fs.readFileSync('frontend/landing/src/features/presentation/OverviewPanel.jsx', 'utf8');
+const toolsSource = fs.readFileSync('frontend/landing/src/features/presentation/ToolsPanel.jsx', 'utf8');
+const pricingSource = fs.readFileSync('frontend/landing/src/features/presentation/PricingPanel.jsx', 'utf8');
+const navigationHook = fs.readFileSync('frontend/landing/src/hooks/useLandingView.js', 'utf8');
 const styles = fs.readFileSync('frontend/landing/src/styles/index.css', 'utf8');
 const viteConfig = fs.readFileSync('frontend/landing/vite.config.mjs', 'utf8');
 const systemRoutes = fs.readFileSync('src/routes/systemRoutes.js', 'utf8');
@@ -34,23 +36,31 @@ test('landing pública usa React/Tailwind e mantém artefato pré-compilado vers
   assert.match(styles, /@import "tailwindcss"/);
   assert.match(systemRoutes, /LANDING_BUILD_PATH/);
   assert.match(systemRoutes, /X-Landing-Version/);
-  assert.match(staticLanding, /data-landing-version="25\.2\.0"/);
+  assert.match(staticLanding, /data-landing-version="25\.3\.0"/);
 });
 
-test('landing fala com o público tech e compõe todas as seções comerciais', () => {
-  assert.match(appSource, /<HeroSection \/>/);
-  assert.match(appSource, /<WorkflowSection \/>/);
-  assert.match(appSource, /<ToolsSection \/>/);
-  assert.match(appSource, /<AudienceSection \/>/);
-  assert.match(appSource, /<PricingSection/);
-  assert.match(heroSource, /Encontre empresas que precisam de/);
-  assert.match(heroSource, /sites, sistemas e IA/);
-  assert.match(heroSource, /href="\/app"/);
-  assert.match(toolsSource, /sistema operacional de prospecção/);
-  assert.match(heroSource, /Signal Engine ativo/);
-  assert.match(styles, /radar-sweep/);
-  assert.match(pricingSource, /id="planos"/);
+test('landing troca informações por botões e não empilha seções verticais', () => {
+  assert.match(appSource, /<LandingExperience/);
+  assert.match(appSource, /<BottomNavigation/);
+  assert.doesNotMatch(appSource, /<HeroSection \/>/);
+  assert.match(experienceSource, /hidden=\{activeView !== item\.id\}/);
+  assert.match(experienceSource, /PricingPanel/);
+  assert.match(navigationHook, /history\[replace \? 'replaceState' : 'pushState'\]/);
+  assert.match(navigationHook, /navigateRelative/);
+  assert.match(styles, /html, body, #root \{[^}]*overflow: hidden;/);
+  assert.match(styles, /height: 100dvh/);
+  assert.match(styles, /landing-bottom-nav/);
+});
+
+test('copy e recursos permanecem direcionados ao público tech', () => {
+  assert.match(overviewSource, /Encontre empresas que precisam de/);
+  assert.match(overviewSource, /sites, sistemas e IA/);
+  assert.match(overviewSource, /href="\/app"/);
+  assert.match(toolsSource, /Sistema operacional de prospecção/i);
+  assert.match(pricingSource, /plan\.displayPrice \|\| plan\.priceLabel/);
+  assert.match(pricingSource, /Planos publicados pelo Admin/);
   for (const id of REQUIRED_SECTIONS) assert.match(staticLanding, new RegExp(`id="${id}"`));
+  assert.match(staticLanding, /data-view-target="ferramentas"/);
 });
 
 test('deploy do Render instala dependências reproduzíveis e valida a landing', () => {

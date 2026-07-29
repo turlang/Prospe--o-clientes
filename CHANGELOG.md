@@ -1,5 +1,16 @@
 # Changelog
 
+## 25.3.0 — Landing em tela única sem scroll
+
+- Documento público fixado em `100dvh`, sem rolagem vertical ou horizontal da página.
+- Navegação por botões entre Início, Como funciona, Ferramentas, Para quem é e Planos.
+- Abas acessíveis no desktop, barra inferior no mobile e controles sequenciais.
+- Seletores internos atualizam etapas, ferramentas, públicos e planos sem recarregar a página.
+- Hash e histórico do navegador preservam a tela ativa sem deslocar o documento.
+- Planos dinâmicos do Admin permanecem sincronizados por `GET /api/plans`.
+- React e contingência estática receberam o mesmo comportamento interativo.
+- Testes de regressão verificam viewport, ausência de overflow e troca de painéis.
+
 ## 25.2.0 — Identidade Signal Engine
 
 - Nova identidade visual baseada em radar de oportunidades e central comercial.

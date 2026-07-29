@@ -1,9 +1,8 @@
 /**
- * @fileoverview Configuração imutável da landing page pública.
+ * @fileoverview Configuração imutável da experiência pública.
  *
- * Valores de navegação e identidade ficam centralizados para evitar textos e
- * URLs divergentes entre componentes. O objeto é congelado porque esses dados
- * são configuração de build, não estado da interface.
+ * A navegação representa telas, não âncoras verticais. Isso mantém a landing em
+ * uma única viewport e evita divergência entre cabeçalho e navegação mobile.
  *
  * @module landing/config/site
  */
@@ -11,12 +10,13 @@
 export const SITE_CONFIG = Object.freeze({
   name: 'LeadHunter Pro',
   shortName: 'LH',
-  version: '25.2.0',
+  version: '25.3.0',
   appUrl: '/app',
-  navigation: [
-    { label: 'Como funciona', href: '#como-funciona' },
-    { label: 'Ferramentas', href: '#ferramentas' },
-    { label: 'Para quem é', href: '#publico' },
-    { label: 'Planos', href: '#planos' }
-  ]
+  navigation: Object.freeze([
+    { id: 'inicio', label: 'Visão geral', mobileLabel: 'Início' },
+    { id: 'como-funciona', label: 'Fluxo', mobileLabel: 'Fluxo' },
+    { id: 'ferramentas', label: 'Ferramentas', mobileLabel: 'Recursos' },
+    { id: 'publico', label: 'Para quem é', mobileLabel: 'Público' },
+    { id: 'planos', label: 'Planos', mobileLabel: 'Planos' }
+  ])
 });

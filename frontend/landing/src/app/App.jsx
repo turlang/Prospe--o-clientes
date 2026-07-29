@@ -1,39 +1,35 @@
 /**
- * @fileoverview Composição principal da landing page pública.
+ * @fileoverview Composição da landing pública em viewport única.
  *
- * A composição mantém as seções desacopladas e delega carregamento de dados ao
- * hook específico. Nenhuma regra de negócio ou autenticação vive nesta camada.
+ * A página não usa seções empilhadas. O usuário escolhe a informação pelos
+ * botões do cabeçalho ou pela barra mobile, reduzindo esforço de navegação e
+ * mantendo a proposta comercial visível em uma única tela.
  *
  * @module landing/app/App
  */
 
 import React from 'react';
-import AudienceSection from '../features/audience/AudienceSection.jsx';
-import FinalCtaSection from '../features/cta/FinalCtaSection.jsx';
-import HeroSection from '../features/hero/HeroSection.jsx';
-import PricingSection from '../features/pricing/PricingSection.jsx';
-import ToolsSection from '../features/tools/ToolsSection.jsx';
-import WorkflowSection from '../features/workflow/WorkflowSection.jsx';
+import LandingExperience from '../features/presentation/LandingExperience.jsx';
+import { useLandingView } from '../hooks/useLandingView.js';
 import { usePlans } from '../hooks/usePlans.js';
-import Footer from '../shared/layout/Footer.jsx';
+import BottomNavigation from '../shared/layout/BottomNavigation.jsx';
 import Header from '../shared/layout/Header.jsx';
 
 export default function App() {
   const { plans, isUsingFallback } = usePlans();
+  const { activeView, navigateTo, navigateRelative } = useLandingView();
 
   return (
-    <>
+    <div className="landing-shell">
       <a href="#main-content" className="skip-link">Pular para o conteúdo principal</a>
-      <Header />
-      <main id="main-content">
-        <HeroSection />
-        <WorkflowSection />
-        <ToolsSection />
-        <AudienceSection />
-        <PricingSection plans={plans} isUsingFallback={isUsingFallback} />
-        <FinalCtaSection />
-      </main>
-      <Footer />
-    </>
+      <Header activeView={activeView} onNavigate={navigateTo} />
+      <LandingExperience
+        activeView={activeView}
+        onNavigateRelative={navigateRelative}
+        plans={plans}
+        isUsingFallback={isUsingFallback}
+      />
+      <BottomNavigation activeView={activeView} onNavigate={navigateTo} />
+    </div>
   );
 }

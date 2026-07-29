@@ -22,7 +22,9 @@ const STATIC_MARKERS = [
   'id="publico"',
   'id="planos"',
   'Signal Engine ativo',
-  'sistema operacional de prospecção'
+  'sistema operacional de prospecção',
+  'data-view-target="planos"',
+  'landing-bottom-nav'
 ];
 
 /**
