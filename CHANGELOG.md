@@ -1,5 +1,14 @@
 # Changelog
 
+## 25.2.0 — Identidade Signal Engine
+
+- Nova identidade visual baseada em radar de oportunidades e central comercial.
+- Hero, ferramentas, público, planos e CTA redesenhados.
+- Fallback estático equivalente ao React para impedir retorno da landing antiga.
+- Diagnóstico correto da origem do artefato público.
+- Planos dinâmicos do Admin preservados.
+
+
 ## 25.1.0 — Planos dinâmicos e persistentes
 
 - Corrige preços zerados na landing por incompatibilidade entre `priceLabel` e `price`.

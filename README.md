@@ -1,4 +1,4 @@
-# LeadHunter Pro 25.1.0
+# LeadHunter Pro 25.2.0
 
 SaaS de prospecção comercial para desenvolvedores, freelancers e agências que vendem sites, sistemas, automações e agentes de IA.
 

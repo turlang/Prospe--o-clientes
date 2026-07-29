@@ -38,11 +38,25 @@ function setHtmlResponseHeaders(res, pageName) {
  * Retorna o estado do artefato público da landing.
  *
  * @param {{existsSync: Function}} fs Adaptador de sistema de arquivos.
- * @returns {{source: 'react-build'|'static-fallback', path: string, available: boolean}} Estado resolvido.
+ * @returns {{source: 'react-build'|'static-prebuilt'|'static-fallback', path: string, available: boolean}} Estado resolvido.
  */
 function resolveLandingArtifact(fs) {
   if (fs.existsSync(LANDING_BUILD_PATH)) {
-    return { source: 'react-build', path: LANDING_BUILD_PATH, available: true };
+    let source = 'static-prebuilt';
+
+    // O Vite monta a aplicação em #root. A versão estática contém as seções
+    // completas no HTML. Identificar o formato evita diagnóstico incorreto.
+    if (typeof fs.readFileSync === 'function') {
+      try {
+        const document = fs.readFileSync(LANDING_BUILD_PATH, 'utf8');
+        if (document.includes('id=\"root\"')) source = 'react-build';
+      } catch {
+        // A existência do artefato já foi confirmada. A leitura será refeita
+        // pelo sendFile e eventuais erros serão tratados pelo Express.
+      }
+    }
+
+    return { source, path: LANDING_BUILD_PATH, available: true };
   }
 
   return {

@@ -1,0 +1,119 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  CUSTOMER
+  ADMIN
+}
+
+enum ProductCategory {
+  BURGER
+  DRINK
+  SIDE
+}
+
+enum DeliveryMode {
+  DELIVERY
+  PICKUP
+}
+
+enum PaymentMethod {
+  PIX
+  CARD
+  CASH
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  READY
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELED
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  name         String   @db.VarChar(120)
+  email        String   @unique @db.VarChar(180)
+  passwordHash String   @map("password_hash") @db.VarChar(255)
+  role         UserRole @default(CUSTOMER)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  orders Order[]
+
+  @@map("users")
+}
+
+model Product {
+  id          String          @id @default(uuid()) @db.Uuid
+  name        String          @db.VarChar(120)
+  slug        String          @unique @db.VarChar(150)
+  description String          @db.VarChar(500)
+  imageUrl    String          @map("image_url") @db.VarChar(500)
+  price       Decimal         @db.Decimal(10, 2)
+  category    ProductCategory
+  available   Boolean         @default(true)
+  featured    Boolean         @default(false)
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+
+  orderItems OrderItem[]
+
+  @@index([category, available])
+  @@map("products")
+}
+
+model Order {
+  id             String        @id @default(uuid()) @db.Uuid
+  code           String        @unique @db.VarChar(20)
+  userId         String        @map("user_id") @db.Uuid
+  status         OrderStatus   @default(PENDING)
+  deliveryMode   DeliveryMode  @map("delivery_mode")
+  paymentMethod  PaymentMethod @map("payment_method")
+  subtotal       Decimal       @db.Decimal(10, 2)
+  deliveryFee    Decimal       @map("delivery_fee") @db.Decimal(10, 2)
+  total          Decimal       @db.Decimal(10, 2)
+  addressStreet  String?       @map("address_street") @db.VarChar(180)
+  addressNumber  String?       @map("address_number") @db.VarChar(30)
+  addressDistrict String?      @map("address_district") @db.VarChar(120)
+  addressCity    String?       @map("address_city") @db.VarChar(120)
+  addressState   String?       @map("address_state") @db.Char(2)
+  addressZipCode String?       @map("address_zip_code") @db.VarChar(10)
+  addressComplement String?    @map("address_complement") @db.VarChar(180)
+  notes          String?       @db.VarChar(500)
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  user  User        @relation(fields: [userId], references: [id], onDelete: Restrict)
+  items OrderItem[]
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@map("orders")
+}
+
+model OrderItem {
+  id               String   @id @default(uuid()) @db.Uuid
+  orderId          String   @map("order_id") @db.Uuid
+  productId        String?  @map("product_id") @db.Uuid
+  productName      String   @map("product_name") @db.VarChar(120)
+  productImageUrl  String   @map("product_image_url") @db.VarChar(500)
+  unitPrice        Decimal  @map("unit_price") @db.Decimal(10, 2)
+  quantity         Int
+  lineTotal        Decimal  @map("line_total") @db.Decimal(10, 2)
+
+  order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+  @@map("order_items")
+}

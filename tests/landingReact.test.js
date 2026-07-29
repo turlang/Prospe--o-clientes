@@ -34,7 +34,7 @@ test('landing pública usa React/Tailwind e mantém artefato pré-compilado vers
   assert.match(styles, /@import "tailwindcss"/);
   assert.match(systemRoutes, /LANDING_BUILD_PATH/);
   assert.match(systemRoutes, /X-Landing-Version/);
-  assert.match(staticLanding, /data-landing-version="25\.1\.0"/);
+  assert.match(staticLanding, /data-landing-version="25\.2\.0"/);
 });
 
 test('landing fala com o público tech e compõe todas as seções comerciais', () => {
@@ -46,7 +46,9 @@ test('landing fala com o público tech e compõe todas as seções comerciais', 
   assert.match(heroSource, /Encontre empresas que precisam de/);
   assert.match(heroSource, /sites, sistemas e IA/);
   assert.match(heroSource, /href="\/app"/);
-  assert.match(toolsSource, /Ferramentas do sistema/);
+  assert.match(toolsSource, /sistema operacional de prospecção/);
+  assert.match(heroSource, /Signal Engine ativo/);
+  assert.match(styles, /radar-sweep/);
   assert.match(pricingSource, /id="planos"/);
   for (const id of REQUIRED_SECTIONS) assert.match(staticLanding, new RegExp(`id="${id}"`));
 });
