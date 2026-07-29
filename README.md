@@ -1,10 +1,10 @@
-# LeadHunter Pro 25.5.0
+# LeadHunter Pro 25.6.0
 
 SaaS de prospecção comercial para desenvolvedores, freelancers e agências que vendem sites, sistemas, automações e agentes de IA.
 
 ## Experiência pública em tela única
 
-A versão 25.5.0 mantém a landing em uma interface sem rolagem de página. O documento ocupa `100dvh`, mantém `overflow: hidden` e apresenta o conteúdo em cinco painéis alternáveis:
+A versão 25.6.0 mantém a landing em uma interface sem rolagem de página. O documento ocupa `100dvh`, mantém `overflow: hidden` e apresenta o conteúdo em cinco painéis alternáveis:
 
 - **Início** — proposta de valor e central de sinais;
 - **Como funciona** — etapas da prospecção comercial;

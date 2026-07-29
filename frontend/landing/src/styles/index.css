@@ -1054,7 +1054,7 @@ img, svg { max-width: 100%; }
 }
 
 /* --------------------------------------------------------------------------
- * V25.5.0 — fluxo editorial com radar operacional
+ * V25.6.0 — fluxo editorial com radar operacional
  * -------------------------------------------------------------------------- */
 .workflow-card {
   grid-template-columns: minmax(17rem, .72fr) minmax(0, 1.55fr);
@@ -1413,4 +1413,23 @@ img, svg { max-width: 100%; }
   .workflow-card .workflow-detail__footer ul { gap: .25rem; }
   .workflow-card .workflow-detail__footer li { padding: .3rem .2rem; font-size: .32rem; }
   .workflow-card .workflow-next { font-size: .35rem; }
+}
+
+
+/* V25.6.0 — estado ativo do seletor de fluxo.
+ * A regra fica depois do refinamento específico do card para impedir que o
+ * background branco sobrescreva o estado selecionado e torne o texto invisível.
+ */
+.workflow-card .workflow-selector__button[aria-selected="true"] {
+  border-color: #60a5fa;
+  background: linear-gradient(135deg, #0f172a, #0b1730);
+  color: #ffffff;
+  box-shadow: 0 16px 38px rgba(15, 23, 42, .18);
+}
+.workflow-card .workflow-selector__button[aria-selected="true"] > strong {
+  color: #ffffff;
+}
+.workflow-card .workflow-selector__button[aria-selected="true"] > i {
+  background: rgba(103, 232, 249, .1);
+  color: #67e8f9;
 }

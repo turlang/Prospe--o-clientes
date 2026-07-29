@@ -209,6 +209,14 @@ function createApp() {
     setHeaders(res, filePath) {
       if (filePath.endsWith('.html')) {
         res.setHeader('Cache-Control', 'no-store, max-age=0');
+        return;
+      }
+
+      // Assets do painel e da landing precisam ser revalidados após cada deploy.
+      // Isso evita que o navegador mantenha JavaScript/CSS de releases antigas,
+      // mesmo quando o HTML já foi atualizado pelo Render.
+      if (/\.(?:css|js)$/i.test(filePath)) {
+        res.setHeader('Cache-Control', 'no-cache, must-revalidate');
       }
     }
   }));

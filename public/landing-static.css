@@ -1,4 +1,4 @@
-/** @fileoverview Fallback estático da landing v25.5.0 sem rolagem. */
+/** @fileoverview Fallback estático da landing v25.6.0 sem rolagem. */
 
 :root{--font-sans:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 .brand-cluster{display:flex;min-width:0;align-items:center;gap:1rem}.brand{display:inline-flex;min-width:0;align-items:center;gap:.65rem;color:#fff;text-decoration:none}.brand-mark{display:grid;width:2.35rem;height:2.35rem;place-items:center;border-radius:.75rem;background:linear-gradient(135deg,#3b82f6,#22d3ee);font-size:.72rem;font-weight:950;box-shadow:0 10px 28px rgba(37,99,235,.25)}.brand strong{font-size:.93rem;white-space:nowrap}.brand em{color:#67e8f9;font-style:normal}.engine-label{padding-left:1rem;border-left:1px solid rgba(255,255,255,.1);color:#64748b;font-size:.55rem;font-weight:950;letter-spacing:.14em;text-transform:uppercase}.header-actions{display:flex;align-items:center;gap:.75rem}.header-login{color:#cbd5e1;font-size:.75rem;font-weight:900;text-decoration:none}.button{display:inline-flex;min-height:2.75rem;align-items:center;justify-content:center;gap:.45rem;border:0;border-radius:.75rem;padding:.65rem 1rem;font-size:.75rem;font-weight:950;text-decoration:none;transition:.2s ease}.button-primary{background:#3b82f6;color:#fff;box-shadow:0 12px 30px rgba(37,99,235,.22)}.button-primary:hover{transform:translateY(-2px);background:#60a5fa}.button-small{min-height:2.35rem;padding:.5rem .8rem;font-size:.68rem}.desktop-tabs{display:flex}.desktop-stepper{display:flex}.loading-message{margin:auto;color:#94a3b8;font-size:.8rem}.static-signal{position:absolute;left:50%;top:50%;width:.5rem;height:.5rem;border-radius:999px;background:#67e8f9;box-shadow:0 0 0 4px rgba(103,232,249,.12),0 0 22px rgba(34,211,238,.8);animation:signal-pulse 2.2s ease-out infinite}.static-signal--one{transform:translate(-50%,-50%) rotate(18deg) translateY(-5rem)}.static-signal--two{transform:translate(-50%,-50%) rotate(128deg) translateY(-6.3rem);animation-delay:.55s}.static-signal--three{transform:translate(-50%,-50%) rotate(242deg) translateY(-6.8rem);animation-delay:1.1s}.landing-bottom-nav__button b{font-size:.8rem}.workflow-detail__icon{font-size:1.2rem}.tool-stage__orb{font-size:2rem}.tool-stage__copy>a{color:#67e8f9;text-decoration:none}.plan-stage__summary .button{width:100%}
@@ -820,7 +820,7 @@ img, svg { max-width: 100%; }
 }
 
 /* --------------------------------------------------------------------------
- * Release 25.5.0 — correção de diagramação
+ * Release 25.6.0 — correção de diagramação
  * --------------------------------------------------------------------------
  * As cinco telas compartilham agora a mesma régua de composição: cabeçalho
  * compacto, área funcional dominante e densidade visual suficiente para não
@@ -1030,7 +1030,7 @@ img, svg { max-width: 100%; }
 }
 
 
-/* Ajustes finais 25.5.0: grade do fluxo e densidade do pricing mobile. */
+/* Ajustes finais 25.6.0: grade do fluxo e densidade do pricing mobile. */
 .workflow-detail { grid-template-columns: minmax(0,1fr); }
 @media (max-width:1023px) {
   .pricing-experience > header h2 { max-width: 18ch; margin-inline:auto; font-size:clamp(1.2rem,5.2vw,1.55rem); }
@@ -1053,7 +1053,7 @@ img, svg { max-width: 100%; }
 }
 
 /* --------------------------------------------------------------------------
- * V25.5.0 — fluxo editorial com radar operacional
+ * V25.6.0 — fluxo editorial com radar operacional
  * -------------------------------------------------------------------------- */
 .workflow-card {
   grid-template-columns: minmax(17rem, .72fr) minmax(0, 1.55fr);
@@ -1414,3 +1414,22 @@ img, svg { max-width: 100%; }
   .workflow-card .workflow-next { font-size: .35rem; }
 }
 
+
+
+/* V25.6.0 — estado ativo do seletor de fluxo.
+ * A regra fica depois do refinamento específico do card para impedir que o
+ * background branco sobrescreva o estado selecionado e torne o texto invisível.
+ */
+.workflow-card .workflow-selector__button[aria-selected="true"] {
+  border-color: #60a5fa;
+  background: linear-gradient(135deg, #0f172a, #0b1730);
+  color: #ffffff;
+  box-shadow: 0 16px 38px rgba(15, 23, 42, .18);
+}
+.workflow-card .workflow-selector__button[aria-selected="true"] > strong {
+  color: #ffffff;
+}
+.workflow-card .workflow-selector__button[aria-selected="true"] > i {
+  background: rgba(103, 232, 249, .1);
+  color: #67e8f9;
+}

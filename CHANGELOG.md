@@ -1,3 +1,11 @@
+## 25.6.0 — Correção de cache, landing e analytics publicados
+
+- corrige o estado ativo invisível na tela Fluxo da landing;
+- atualiza o versionamento dos assets do dashboard, Admin e recuperação de senha;
+- força revalidação de CSS e JavaScript após deploy;
+- garante que os componentes profissionais de pipeline e conversão substituam os gráficos legados;
+- mantém dados, regras comerciais e APIs sem alterações incompatíveis.
+
 ## 25.5.0 — Fluxo editorial e analytics executivo
 
 - Tela **Fluxo** redesenhada com título equilibrado, seletor compacto, radar operacional e conteúdo sem áreas vazias.

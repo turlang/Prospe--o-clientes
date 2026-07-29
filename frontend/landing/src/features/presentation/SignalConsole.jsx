@@ -23,7 +23,7 @@ export default function SignalConsole() {
       <header className="compact-console__bar">
         <span className="compact-console__lights" aria-hidden="true"><i /><i /><i /></span>
         <span><Radio size={11} className="text-emerald-400" /> Signal Engine ativo</span>
-        <strong>LH / 25.4</strong>
+        <strong>LH / 25.6</strong>
       </header>
 
       <div className="compact-console__body">
