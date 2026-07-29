@@ -53,12 +53,12 @@ const exportCsv = document.querySelector('#exportCsv');
 const welcome = document.querySelector('#welcome');
 const planInfo = document.querySelector('#planInfo');
 const usageBox = document.querySelector('#usageBox');
-const aiStatusBox = document.querySelector('#aiStatusBox');
 const plansGrid = document.querySelector('#plansGrid');
 const statsBox = document.querySelector('#stats');
 const executiveStats = document.querySelector('#executiveStats');
 const onboardingBox = document.querySelector('#onboardingBox');
 const historyList = document.querySelector('#historyList');
+const historyAlertsList = document.querySelector('#historyAlertsList');
 const activityTimeline = document.querySelector('#activityTimeline');
 const systemMetrics = document.querySelector('#systemMetrics');
 const followupList = document.querySelector('#followupList');
@@ -102,7 +102,6 @@ const v23Metrics = document.querySelector('#v23Metrics');
 const v23ActionRadar = document.querySelector('#v23ActionRadar');
 const v23DailyPlan = document.querySelector('#v23DailyPlan');
 const v23Pipeline = document.querySelector('#v23Pipeline');
-const v23Alerts = document.querySelector('#v23Alerts');
 const v23Timeline = document.querySelector('#v23Timeline');
 const v23LastUpdate = document.querySelector('#v23LastUpdate');
 const v23RefreshButton = document.querySelector('#v23RefreshButton');
@@ -356,7 +355,6 @@ async function showDashboard() {
 
   renderOnboarding();
   await refreshUsage();
-  await refreshAiStatus();
   await renderPlans();
   await refreshStats();
   await loadSavedLeads(false, { renderCards: false });
@@ -482,48 +480,107 @@ function getOverviewStage(funnel, status) {
 
 function renderProspectingPipeline(container, funnel = []) {
   if (!container) return;
-  const stages = OVERVIEW_PIPELINE_STAGES.map((stage) => ({ ...stage, ...getOverviewStage(funnel, stage.status) }));
-  const maxValue = Math.max(1, ...stages.map((stage) => stage.total));
-  const axisMax = Math.max(5, Math.ceil(maxValue / 5) * 5);
-  const ticks = [axisMax, Math.round(axisMax * .67), Math.round(axisMax * .33), 0];
 
-  const desktopBars = stages.map((stage) => {
-    const height = stage.total > 0 ? Math.max(8, Math.round((stage.total / axisMax) * 100)) : 0;
+  const stages = OVERVIEW_PIPELINE_STAGES.map((stage) => ({
+    ...stage,
+    ...getOverviewStage(funnel, stage.status)
+  }));
+  const activeStages = stages.filter((stage) => stage.status !== 'SEM_INTERESSE');
+  const rejectedStage = stages.find((stage) => stage.status === 'SEM_INTERESSE') || {
+    status: 'SEM_INTERESSE', label: 'Recusados', icon: 'close', total: 0, percentage: 0
+  };
+  const baseTotal = Math.max(1, activeStages.reduce((sum, stage) => sum + stage.total, 0) + rejectedStage.total);
+  const maxVolume = Math.max(1, ...activeStages.map((stage) => stage.total));
+  const visualFloors = [100, 82, 68, 54, 42, 30];
+
+  const layers = activeStages.map((stage, index) => {
+    const relativeVolume = Math.round((stage.total / maxVolume) * 100);
+    const visualWidth = Math.min(100, Math.max(visualFloors[index] || 30, 26 + Math.round(relativeVolume * .74)));
+    const mobileWidth = Math.max(72, visualWidth);
+    const isEmpty = stage.total === 0;
     return `
-      <article class="pipeline-column" data-status="${stage.status}">
-        <strong class="pipeline-column__value">${stage.total}</strong>
-        <div class="pipeline-column__track" aria-label="${escapeAttr(stage.label)}: ${stage.total}">
-          <span style="--pipeline-height:${height}%"></span>
-        </div>
-        <div class="pipeline-column__meta">
+      <article
+        class="funnel-layer${isEmpty ? ' is-empty' : ''}"
+        data-status="${stage.status}"
+        style="--funnel-width:${visualWidth}%;--funnel-mobile-width:${mobileWidth}%"
+        aria-label="${escapeAttr(stage.label)}: ${stage.total} oportunidade(s), ${stage.percentage}% da base"
+      >
+        <div class="funnel-layer__shape">
+          <span class="funnel-layer__index">${String(index + 1).padStart(2, '0')}</span>
           <i>${overviewStageIcon(stage.icon)}</i>
-          <div><b>${escapeHtml(stage.label)}</b><small>${stage.percentage}%</small></div>
+          <div class="funnel-layer__label">
+            <strong>${escapeHtml(stage.label)}</strong>
+            <small>${stage.percentage}% da base</small>
+          </div>
+          <div class="funnel-layer__value">
+            <strong>${stage.total}</strong>
+            <small>lead${stage.total === 1 ? '' : 's'}</small>
+          </div>
         </div>
       </article>`;
   }).join('');
 
-  const mobileRows = stages.map((stage) => {
-    const width = stage.total > 0 ? Math.max(4, Math.round((stage.total / maxValue) * 100)) : 0;
+  const progressed = activeStages.slice(1).reduce((sum, stage) => sum + stage.total, 0);
+  const openOpportunities = activeStages.filter((stage) => !['NOVO', 'FECHADO'].includes(stage.status)).reduce((sum, stage) => sum + stage.total, 0);
+  const closed = activeStages.find((stage) => stage.status === 'FECHADO')?.total || 0;
+  const dominantStage = [...activeStages].sort((a, b) => b.total - a.total)[0] || activeStages[0];
+
+  const distributionRows = stages.map((stage) => {
+    const width = stage.total > 0 ? Math.max(4, Math.round((stage.total / maxVolume) * 100)) : 0;
     return `
-      <article class="pipeline-mobile-row">
+      <li data-status="${stage.status}">
         <i>${overviewStageIcon(stage.icon)}</i>
-        <div class="pipeline-mobile-row__content">
-          <div><strong>${escapeHtml(stage.label)}</strong><span>${stage.total} · ${stage.percentage}%</span></div>
-          <div class="pipeline-mobile-row__track"><span style="width:${width}%"></span></div>
+        <div>
+          <span><strong>${escapeHtml(stage.label)}</strong><b>${stage.total}</b></span>
+          <div class="funnel-distribution__track"><span style="width:${width}%"></span></div>
         </div>
-      </article>`;
+        <small>${stage.percentage}%</small>
+      </li>`;
   }).join('');
 
   container.innerHTML = `
-    <div class="pipeline-analytics">
-      <div class="pipeline-chart-desktop">
-        <div class="pipeline-axis">${ticks.map((tick) => `<span>${tick}</span>`).join('')}</div>
-        <div class="pipeline-plot">
-          <div class="pipeline-gridlines" aria-hidden="true">${ticks.map(() => '<i></i>').join('')}</div>
-          <div class="pipeline-columns">${desktopBars}</div>
+    <div class="prospecting-funnel">
+      <section class="funnel-chart-card" aria-label="Funil atual de prospecção">
+        <header class="funnel-chart-card__header">
+          <div>
+            <span class="funnel-eyebrow">Pipeline atual</span>
+            <strong>Da descoberta ao fechamento</strong>
+            <small>A largura organiza as etapas; os números mostram o volume real.</small>
+          </div>
+          <div class="funnel-total"><strong>${baseTotal}</strong><span>oportunidades</span></div>
+        </header>
+
+        <div class="funnel-stack">${layers}</div>
+
+        <aside class="funnel-rejected" aria-label="Oportunidades recusadas">
+          <i>${overviewStageIcon(rejectedStage.icon)}</i>
+          <div><strong>${escapeHtml(rejectedStage.label)}</strong><span>Saíram do fluxo comercial</span></div>
+          <b>${rejectedStage.total}</b>
+          <small>${rejectedStage.percentage}% da base</small>
+        </aside>
+      </section>
+
+      <aside class="funnel-insights-card">
+        <header>
+          <span class="funnel-eyebrow">Leitura executiva</span>
+          <strong>Saúde do funil</strong>
+          <small>Distribuição das oportunidades em cada decisão comercial.</small>
+        </header>
+
+        <div class="funnel-kpis">
+          <article><span>Avançaram</span><strong>${progressed}</strong><small>${Math.round((progressed / baseTotal) * 100)}% da base</small></article>
+          <article><span>Em negociação</span><strong>${openOpportunities}</strong><small>entre contato e proposta</small></article>
+          <article><span>Fechados</span><strong>${closed}</strong><small>${Math.round((closed / baseTotal) * 100)}% da base</small></article>
         </div>
-      </div>
-      <div class="pipeline-chart-mobile">${mobileRows}</div>
+
+        <div class="funnel-highlight">
+          <span>Maior concentração</span>
+          <strong>${escapeHtml(dominantStage?.label || 'Sem dados')}</strong>
+          <small>${dominantStage?.total || 0} oportunidade(s) aguardando ação.</small>
+        </div>
+
+        <ul class="funnel-distribution">${distributionRows}</ul>
+      </aside>
     </div>`;
 }
 
@@ -724,27 +781,92 @@ async function refreshStats() {
 }
 
 
-async function refreshAiStatus() {
-  if (!aiStatusBox) return;
 
+const OPERATIONAL_HISTORY_STORAGE_KEY = 'leadhunter:operational-history';
+const OPERATIONAL_HISTORY_LIMIT = 80;
+
+/**
+ * Recupera o histórico operacional salvo no navegador atual.
+ * O armazenamento contém somente textos e identificadores já enviados pela API.
+ */
+function readOperationalHistory() {
   try {
-    const response = await apiFetch('/api/ai/status');
-    const data = await readJson(response);
-    if (!response.ok) throw new Error(data.error || 'Erro ao consultar IA.');
-
-    const isExternal = data.provider && data.provider !== 'local' && data.configured;
-    aiStatusBox.innerHTML = `
-      <small>IA Comercial</small>
-      <strong>${isExternal ? '🟢 ' : '🟡 '}${escapeHtml(data.providerLabel || 'Motor Local')}</strong>
-      <span>${escapeHtml(data.model || 'local')}</span>
-      <em>${escapeHtml(data.reason || '')}</em>
-    `;
+    const items = JSON.parse(localStorage.getItem(OPERATIONAL_HISTORY_STORAGE_KEY) || '[]');
+    return Array.isArray(items) ? items : [];
   } catch {
-    aiStatusBox.innerHTML = '<small>IA Comercial</small><strong>🟡 Motor Local</strong><span>Status indisponível</span>';
+    localStorage.removeItem(OPERATIONAL_HISTORY_STORAGE_KEY);
+    return [];
   }
 }
 
+/**
+ * Armazena novos alertas e orientações sem duplicar a mesma ocorrência.
+ * O registro é movido para a tela Histórico, mantendo o Plano de ação enxuto.
+ */
+function recordOperationalHistory(cockpitData) {
+  const generatedAt = cockpitData?.generatedAt || new Date().toISOString();
+  const alerts = Array.isArray(cockpitData?.alerts) ? cockpitData.alerts : [];
+  const advice = Array.isArray(cockpitData?.managerAdvice) ? cockpitData.managerAdvice : [];
+  const current = readOperationalHistory();
+  const nextEntries = [
+    ...alerts.map((item) => ({
+      type: 'alert',
+      leadId: item.leadId ? String(item.leadId) : '',
+      title: item.leadName || 'Oportunidade',
+      message: item.reason || item.action || 'Requer atenção',
+      createdAt: generatedAt
+    })),
+    ...advice.map((message) => ({
+      type: 'advice',
+      leadId: '',
+      title: 'Orientação',
+      message: String(message || ''),
+      createdAt: generatedAt
+    }))
+  ].filter((entry) => entry.message);
+
+  const known = new Set(current.map((entry) => `${entry.type}|${entry.leadId}|${entry.title}|${entry.message}`));
+  const additions = nextEntries.filter((entry) => {
+    const signature = `${entry.type}|${entry.leadId}|${entry.title}|${entry.message}`;
+    if (known.has(signature)) return false;
+    known.add(signature);
+    return true;
+  });
+
+  if (!additions.length) return;
+
+  try {
+    localStorage.setItem(
+      OPERATIONAL_HISTORY_STORAGE_KEY,
+      JSON.stringify([...additions, ...current].slice(0, OPERATIONAL_HISTORY_LIMIT))
+    );
+  } catch {
+    // Falha de storage não interfere na operação principal do cockpit.
+  }
+}
+
+/** Renderiza alertas e orientações dentro da tela Histórico. */
+function renderOperationalHistory() {
+  if (!historyAlertsList) return;
+  const entries = readOperationalHistory();
+  historyAlertsList.innerHTML = entries.length ? entries.map((entry) => `
+    <article class="history-item operational-history-item ${entry.type === 'advice' ? 'is-advice' : 'is-alert'}">
+      <div>
+        <span class="operational-history-type">${entry.type === 'advice' ? 'Orientação' : 'Alerta operacional'}</span>
+        <strong>${escapeHtml(entry.title || 'Registro comercial')}</strong>
+        <p>${escapeHtml(entry.message || '')}</p>
+        <small>${formatDate(entry.createdAt)}</small>
+      </div>
+      ${entry.leadId ? `<button type="button" class="secondary mini" data-history-alert-lead="${escapeAttr(entry.leadId)}">Abrir lead</button>` : ''}
+    </article>`).join('') : '<p class="meta">Nenhum alerta ou orientação foi registrado ainda.</p>';
+
+  historyAlertsList.querySelectorAll('[data-history-alert-lead]').forEach((button) => {
+    button.addEventListener('click', () => openLeadDetail(button.dataset.historyAlertLead));
+  });
+}
+
 async function loadHistory() {
+  renderOperationalHistory();
   if (!historyList || !authToken) return;
 
   try {
@@ -2955,13 +3077,8 @@ function renderV23Cockpit(data) {
       </article>`).join('') || '<p class="meta">O pipeline ainda não possui dados.</p>';
   }
 
-  const alerts = Array.isArray(data.alerts) ? data.alerts : [];
-  const advice = Array.isArray(data.managerAdvice) ? data.managerAdvice : [];
-  v23Alerts.innerHTML = [
-    ...alerts.slice(0, 5).map((item) => `<article class="history-item"><div><strong>⚠ ${escapeHtml(item.leadName || 'Oportunidade')}</strong><p>${escapeHtml(item.reason || item.action || 'Requer atenção')}</p></div>${item.leadId ? `<button type="button" class="secondary mini" data-alert-lead="${escapeAttr(item.leadId)}">Abrir</button>` : ''}</article>`),
-    ...advice.slice(0, 4).map((item) => `<article class="history-item manager-advice"><div><strong>Orientação</strong><p>${escapeHtml(item)}</p></div></article>`)
-  ].join('') || '<p class="meta">Nenhum alerta crítico no momento.</p>';
-  v23Alerts.querySelectorAll('[data-alert-lead]').forEach((button) => button.addEventListener('click', () => openLeadDetail(button.dataset.alertLead)));
+  recordOperationalHistory(data);
+  renderOperationalHistory();
 
   const timeline = Array.isArray(data.timeline) ? data.timeline : [];
   v23Timeline.innerHTML = timeline.length ? timeline.slice(0, 12).map((event) => `

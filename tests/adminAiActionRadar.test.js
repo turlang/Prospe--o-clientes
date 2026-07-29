@@ -1,5 +1,6 @@
 /**
- * @fileoverview Regressões da release 25.7.1: IA no Admin e radar no plano de ação.
+ * @fileoverview Regressões da release 25.8.0: limpeza da sidebar,
+ * histórico operacional e composição do resumo de planos.
  */
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -9,35 +10,54 @@ const path = require('node:path');
 const root = path.join(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
-test('painel administrativo inclui monitor seguro da IA Comercial', () => {
-  const html = read('public/pages/admin.html');
-  const js = read('public/assets/admin/admin.js');
-  assert.match(html, /id="visao-executiva"[\s\S]*id="adminAiStatus"/);
-  assert.doesNotMatch(html, /href="#ia-comercial"/);
-  assert.match(html, /id="adminAiStatus"/);
-  assert.match(js, /\/api\/ai\/status/);
-  assert.match(js, /nenhum token ou chave é enviado ao navegador/i);
-  assert.doesNotMatch(js, /process\.env\.GROQ_API_KEY/);
+test('sidebar remove cartões de IA Comercial e upgrade Pro', () => {
+  const html = read('public/pages/app.html');
+  const js = read('public/assets/dashboard/app.js');
+  assert.doesNotMatch(html, /id="aiStatusBox"/);
+  assert.doesNotMatch(html, /class="upgrade-box"/);
+  assert.doesNotMatch(html, /Preparado para Pro/);
+  assert.doesNotMatch(js, /const aiStatusBox/);
+  assert.doesNotMatch(js, /function refreshAiStatus/);
 });
 
-test('radar operacional está incorporado ao Plano de ação e não cria gráfico duplicado', () => {
+test('alertas saem do Plano de ação e são registrados no Histórico', () => {
   const html = read('public/pages/app.html');
   const js = read('public/assets/dashboard/app.js');
   const planHeading = html.indexOf('Plano de ação de hoje');
   const radar = html.indexOf('id="v23ActionRadar"');
   const dailyPlan = html.indexOf('id="v23DailyPlan"');
-  const alerts = html.indexOf('id="v23Alerts"');
-  assert.ok(planHeading >= 0 && radar > planHeading && dailyPlan > radar && alerts > dailyPlan);
+  const history = html.indexOf('id="historyAlertsList"');
+
+  assert.ok(planHeading >= 0 && radar > planHeading && dailyPlan > radar);
+  assert.ok(history > dailyPlan);
+  assert.doesNotMatch(html, /id="v23Alerts"/);
+  assert.doesNotMatch(html, /Alertas e orientação/);
+  assert.match(html, /Histórico de alertas e orientações/);
+  assert.match(js, /OPERATIONAL_HISTORY_STORAGE_KEY/);
+  assert.match(js, /function recordOperationalHistory/);
+  assert.match(js, /function renderOperationalHistory/);
+  assert.match(js, /recordOperationalHistory\(data\)/);
+});
+
+test('radar e saúde do pipeline continuam únicos', () => {
+  const html = read('public/pages/app.html');
+  const js = read('public/assets/dashboard/app.js');
   assert.match(js, /function renderV23ActionRadar/);
   assert.match(js, /pipelineHealth\?\.bottleneck/);
   assert.match(js, /Próxima ação recomendada/);
   assert.equal((html.match(/id="overviewProspectingChart"/g) || []).length, 1);
   assert.equal((html.match(/id="v23Pipeline"/g) || []).length, 1);
-  assert.equal((html.match(/id="v23Alerts"/g) || []).length, 1);
-  assert.doesNotMatch(html, /cockpit-secondary-grid[\s\S]*Alertas e orientação/);
 });
 
-test('assets críticos usam cache-busting da versão 25.7.1', () => {
-  assert.match(read('public/pages/app.html'), /app\.js\?v=25\.7\.1/);
-  assert.match(read('public/pages/admin.html'), /admin\.js\?v=25\.7\.1/);
+test('resumo de planos do Admin mantém total e planos na mesma linha', () => {
+  const js = read('public/assets/admin/admin.js');
+  const css = read('public/assets/admin/admin.css');
+  assert.match(js, /\{label:'Total',value:total/);
+  assert.match(js, /class="plan-summary-row"/);
+  assert.match(css, /\.plan-summary-row[\s\S]*grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
+});
+
+test('assets críticos usam cache-busting da versão 25.8.0', () => {
+  assert.match(read('public/pages/app.html'), /app\.js\?v=25\.8\.0/);
+  assert.match(read('public/pages/admin.html'), /admin\.js\?v=25\.8\.0/);
 });

@@ -98,7 +98,7 @@
 @media(max-width:700px){.admin-ai-heading{flex-direction:column}.admin-ai-heading button{width:100%}.admin-ai-status{grid-template-columns:1fr}.admin-ai-card-head{align-items:flex-start;flex-direction:column}}
 
 
-/* V25.7.1 — IA Comercial integrada à Visão executiva do Admin. */
+/* V25.8.0 — IA Comercial integrada à Visão executiva do Admin. */
 .admin-ai-overview {
   display:grid;
   grid-template-columns:minmax(260px,.72fr) minmax(320px,1.28fr);
@@ -119,3 +119,29 @@
 .admin-ai-overview .admin-ai-provider strong { font-size:1.3rem; }
 @media(max-width:900px){.admin-ai-overview{grid-template-columns:1fr}.admin-ai-overview .admin-ai-heading{display:flex}.admin-ai-overview .admin-ai-heading button{justify-self:auto}}
 @media(max-width:700px){.admin-ai-overview{padding:16px}.admin-ai-overview .admin-ai-heading{display:grid}.admin-ai-overview .admin-ai-heading button{width:100%}}
+
+
+/* V25.8.0 — resumo dos planos mantido integralmente na mesma linha. */
+#planChart .chart-svg { max-height:190px; }
+.plan-summary-row {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:8px;
+  width:100%;
+  margin-top:8px;
+}
+.plan-summary-row span {
+  display:grid;
+  grid-template-columns:9px minmax(0,1fr) auto;
+  align-items:center;
+  gap:7px;
+  min-width:0;
+  padding:9px 10px;
+  border:1px solid rgba(148,163,184,.15);
+  border-radius:12px;
+  background:rgba(15,23,42,.42);
+}
+.plan-summary-row i { width:9px; height:9px; border-radius:999px; }
+.plan-summary-row small { overflow:hidden; color:#94a3b8; font-weight:800; text-overflow:ellipsis; white-space:nowrap; }
+.plan-summary-row strong { color:#fff; }
+@media(max-width:700px){.plan-summary-row{display:flex;overflow-x:auto;padding-bottom:4px}.plan-summary-row span{flex:0 0 145px}}

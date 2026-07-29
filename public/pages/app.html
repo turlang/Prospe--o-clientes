@@ -10,7 +10,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>LeadHunter Pro — Dashboard</title>
   <link rel="icon" href="data:," />
-  <link rel="stylesheet" href="/assets/dashboard/styles.css?v=25.7.1" />
+  <link rel="stylesheet" href="/assets/dashboard/styles.css?v=25.8.0" />
 </head>
 <body>
   <main id="appRoot" class="container">
@@ -71,7 +71,6 @@
           </div>
         </div>
         <div id="usageBox" class="usage-box"></div>
-        <div id="aiStatusBox" class="ai-status-box"></div>
         <nav aria-label="Menu principal">
           <ul class="nav-list">
             <li><button class="nav-btn active" type="button" data-view="dashboard">Visão geral</button></li>
@@ -87,10 +86,6 @@
             <li><button class="nav-btn" type="button" data-view="planos">Planos</button></li>
           </ul>
         </nav>
-        <div class="upgrade-box">
-          <strong>Preparado para Pro</strong>
-          <p>Use seus 10 leads gratuitos e acompanhe conversões pelo funil comercial.</p>
-        </div>
       </aside>
 
       <!-- Views funcionais alternadas pelo controlador da interface. -->
@@ -127,7 +122,7 @@
                 <p class="meta">Ações ordenadas por prioridade, risco e estágio comercial.</p>
               </div>
               <div id="v23ActionRadar" class="cockpit-action-radar" aria-live="polite"></div>
-              <div class="cockpit-action-workspace">
+              <div class="cockpit-action-workspace cockpit-action-workspace--single">
                 <div class="cockpit-action-column">
                   <div class="cockpit-inline-heading">
                     <h4>Próximas ações</h4>
@@ -135,13 +130,6 @@
                   </div>
                   <div id="v23DailyPlan" class="cockpit-action-list"></div>
                 </div>
-                <aside class="cockpit-alerts-inline" aria-labelledby="v23AlertsTitle">
-                  <div class="cockpit-inline-heading">
-                    <h4 id="v23AlertsTitle">Alertas e orientação</h4>
-                    <span>Gargalos, riscos e recomendações</span>
-                  </div>
-                  <div id="v23Alerts" class="history-list compact-list"></div>
-                </aside>
               </div>
             </section>
 
@@ -266,10 +254,21 @@
         </section>
 
         <section id="view-historico" class="view">
-          <div class="card-panel">
-            <h2>Histórico de contatos</h2>
-            <p class="meta">Mostra somente leads que tiveram pelo menos uma tentativa real de contato ou mudança de status comercial.</p>
-            <div id="historyList" class="history-list"></div>
+          <div class="history-dashboard-grid">
+            <section class="card-panel">
+              <div class="section-title">
+                <h2>Histórico de contatos</h2>
+                <p class="meta">Leads com tentativa real de contato, mudança de status ou avanço comercial.</p>
+              </div>
+              <div id="historyList" class="history-list"></div>
+            </section>
+            <section class="card-panel operational-history-panel" aria-labelledby="operationalHistoryTitle">
+              <div class="section-title">
+                <h2 id="operationalHistoryTitle">Histórico de alertas e orientações</h2>
+                <p class="meta">Registros do cockpit comercial preservados para consulta, sem ocupar o plano de ação atual.</p>
+              </div>
+              <div id="historyAlertsList" class="history-list operational-history-list" aria-live="polite"></div>
+            </section>
           </div>
         </section>
 
@@ -440,6 +439,6 @@
       </section>
     </section>
   </main>
-  <script src="/assets/dashboard/app.js?v=25.7.1"></script>
+  <script src="/assets/dashboard/app.js?v=25.8.0"></script>
 </body>
 </html>

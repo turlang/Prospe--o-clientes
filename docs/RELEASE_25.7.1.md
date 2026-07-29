@@ -1,4 +1,4 @@
-# Release 25.7.1 — Correções reais de composição
+# Release 25.7.2 — Correções reais de composição
 
 ## Alterações
 
@@ -6,7 +6,7 @@
 - **Alertas e orientação** agora fazem parte do componente **Plano de ação de hoje**.
 - O card independente de alertas foi removido.
 - **Saúde do pipeline** permanece somente na Visão geral.
-- Assets receberam cache-busting `25.7.1`.
+- Assets receberam cache-busting `25.7.2`.
 
 ## Critério de aceite
 

@@ -122,8 +122,9 @@ function donutChart(items) {
   if (!total) return '<div class="chart-empty">Nenhum usuário cadastrado.</div>';
   const colors=['#38bdf8','#22c55e','#a78bfa']; let offset=0;
   const circles=data.map((item,index)=>{const portion=item.value/total;const dash=portion*251.2;const circle=`<circle cx="110" cy="110" r="40" fill="none" stroke="${colors[index%colors.length]}" stroke-width="24" stroke-dasharray="${dash} ${251.2-dash}" stroke-dashoffset="${-offset}" transform="rotate(-90 110 110)"><title>${escapeHtml(item.label)}: ${item.value}</title></circle>`;offset+=dash;return circle}).join('');
-  const legend=data.map((item,index)=>`<span><i style="background:${colors[index%colors.length]}"></i>${escapeHtml(item.label)}: <strong>${item.value}</strong></span>`).join('');
-  return `<svg class="chart-svg" viewBox="0 0 220 220" role="img">${circles}<text x="110" y="105" text-anchor="middle" fill="#94a3b8" font-size="12">Usuários</text><text x="110" y="128" text-anchor="middle" fill="#fff" font-size="24" font-weight="800">${total}</text></svg><div class="legend">${legend}</div>`;
+  const summary=[{label:'Total',value:total,color:'#e2e8f0'},...data.map((item,index)=>({...item,color:colors[index%colors.length]}))];
+  const summaryRow=summary.map((item)=>`<span><i style="background:${item.color}"></i><small>${escapeHtml(item.label)}</small><strong>${item.value}</strong></span>`).join('');
+  return `<svg class="chart-svg" viewBox="0 0 220 220" role="img">${circles}<text x="110" y="105" text-anchor="middle" fill="#94a3b8" font-size="12">Usuários</text><text x="110" y="128" text-anchor="middle" fill="#fff" font-size="24" font-weight="800">${total}</text></svg><div class="plan-summary-row">${summaryRow}</div>`;
 }
 
 function shortLabel(value) {

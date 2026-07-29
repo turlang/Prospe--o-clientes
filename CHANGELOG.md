@@ -1,4 +1,18 @@
-## 25.7.1 — Correção estrutural do Admin e Plano de Ação
+## 25.8.0 — Funil profissional de prospecção
+
+- substitui o gráfico de colunas de Níveis de prospecção por um funil visual responsivo;
+- separa oportunidades recusadas como saída lateral do fluxo comercial;
+- adiciona leitura executiva com avanço, negociação, fechamento e distribuição por etapa;
+- mantém contagens e percentuais alimentados pelos dados reais do relatório;
+- atualiza o cache-busting dos assets para 25.8.0.
+
+## 25.7.2 — Limpeza da interface e histórico operacional
+
+- Removidos os cards de IA e upgrade da sidebar.
+- Alertas e orientações movidos para Histórico.
+- Resumo de planos do Admin alinhado em uma única linha.
+
+## 25.7.2 — Correção estrutural do Admin e Plano de Ação
 
 - move IA Comercial para dentro da Visão executiva do painel administrativo;
 - remove a seção isolada de IA Comercial do menu;

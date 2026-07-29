@@ -16,13 +16,16 @@ const app = fs.readFileSync('public/assets/dashboard/app.js', 'utf8');
 const styles = fs.readFileSync('public/assets/dashboard/styles.css', 'utf8');
 const html = fs.readFileSync('public/pages/app.html', 'utf8');
 
-test('dashboard usa pipeline executivo profissional em vez do gráfico de cápsulas', () => {
+test('dashboard usa funil executivo profissional em vez do gráfico de colunas', () => {
   assert.match(app, /function renderProspectingPipeline\(/);
-  assert.match(app, /pipeline-chart-desktop/);
-  assert.match(app, /pipeline-chart-mobile/);
+  assert.match(app, /prospecting-funnel/);
+  assert.match(app, /funnel-layer__shape/);
+  assert.match(app, /funnel-rejected/);
   assert.match(app, /renderProspectingPipeline\(overviewProspectingChart, funnel\)/);
-  assert.match(styles, /\.pipeline-columns/);
-  assert.match(styles, /@container dashboard-chart \(max-width: 860px\)/);
+  assert.match(styles, /\.funnel-stack/);
+  assert.match(styles, /clip-path: polygon/);
+  assert.match(styles, /@container dashboard-chart \(max-width: 900px\)/);
+  assert.doesNotMatch(app, /pipeline-chart-desktop/);
 });
 
 test('indicadores combinam KPIs e conversão por etapa', () => {
