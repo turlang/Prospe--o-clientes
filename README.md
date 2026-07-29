@@ -1,4 +1,4 @@
-# LeadHunter Pro 25.0.0
+# LeadHunter Pro 25.1.0
 
 SaaS de prospecção comercial para desenvolvedores, freelancers e agências que vendem sites, sistemas, automações e agentes de IA.
 
@@ -112,3 +112,10 @@ Para teste com `onboarding@resend.dev`, o destinatário deve ser o e-mail propri
 ## Uso responsável
 
 A prospecção deve respeitar legislação, privacidade, termos dos provedores e mecanismos de descadastro. Dados públicos não autorizam coleta excessiva ou disparos abusivos.
+## Planos sincronizados com o Admin
+
+Os planos exibidos na landing são carregados de `GET /api/plans`. Em produção,
+as alterações do painel administrativo são persistidas no MongoDB e propagadas
+para abas abertas da landing sem depender de novo deploy. Consulte
+`docs/PLANOS_DINAMICOS.md` para o fluxo completo.
+

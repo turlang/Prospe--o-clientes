@@ -2,7 +2,9 @@
   "trial": {
     "id": "trial",
     "name": "Teste Gratuito",
+    "description": "Para conhecer o processo comercial antes de escalar.",
     "priceLabel": "R$ 0",
+    "billingPeriod": "sem cobrança",
     "durationDays": 0,
     "dailyLeadLimit": 10,
     "totalLeadLimit": 10,
@@ -13,16 +15,20 @@
       "Abordagens comerciais por templates",
       "Follow-ups manuais",
       "Uso único por usuário/dispositivo"
-    ]
+    ],
+    "featured": false
   },
   "pro": {
     "id": "pro",
     "name": "Pro",
+    "description": "Para profissionais com uma rotina comercial ativa.",
     "priceLabel": "R$ 59/mês",
+    "billingPeriod": "mês",
     "durationDays": 30,
     "dailyLeadLimit": 500,
     "totalLeadLimit": null,
     "isPaid": true,
+    "featured": true,
     "features": [
       "500 leads por dia",
       "Dashboard executivo",
@@ -33,7 +39,9 @@
   "agency": {
     "id": "agency",
     "name": "Agência",
+    "description": "Para operações com equipe e maior volume de oportunidades.",
     "priceLabel": "R$ 199/mês",
+    "billingPeriod": "mês",
     "durationDays": 30,
     "dailyLeadLimit": 5000,
     "totalLeadLimit": null,
@@ -43,6 +51,7 @@
       "Uso para times e agências",
       "Pipeline comercial avançado",
       "Preparado para white label"
-    ]
+    ],
+    "featured": false
   }
 }

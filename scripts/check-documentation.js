@@ -24,7 +24,7 @@ const REQUIRED_DOCUMENTS = [
   'docs/ESPECIFICACAO_REQUISITOS.md',
   'docs/MATRIZ_RASTREABILIDADE.md',
   'docs/PLANO_DE_TESTES.md',
-  'docs/RELEASE_25.0.0.md'
+  'docs/RELEASE_25.1.0.md'
 ];
 
 function collectModules(entry, output = []) {

@@ -17,7 +17,9 @@ const path = require('path');
 require('dotenv').config({ path: path.join(process.cwd(), '.env') });
 
 const { createApp } = require('./app');
-const { connectDatabase, mustRequireMongo } = require('./infrastructure/database/mongoConnection');
+const PlanConfiguration = require('./models/PlanConfiguration');
+const { initializePlanCatalog } = require('./domain/plans/planCatalog');
+const { connectDatabase, hasMongoUri, mustRequireMongo } = require('./infrastructure/database/mongoConnection');
 
 const DEFAULT_PORT = 3000;
 
@@ -29,7 +31,6 @@ const DEFAULT_PORT = 3000;
  * @returns {Promise<import('http').Server>} Servidor HTTP iniciado.
  */
 async function startServer({ port = process.env.PORT || DEFAULT_PORT } = {}) {
-  const app = createApp();
   let storageLabel = 'MongoDB';
 
   try {
@@ -43,6 +44,13 @@ async function startServer({ port = process.env.PORT || DEFAULT_PORT } = {}) {
 
     storageLabel = 'JSON local';
   }
+
+  await initializePlanCatalog({
+    mongoAvailable: hasMongoUri(),
+    PlanConfigurationModel: PlanConfiguration
+  });
+
+  const app = createApp();
 
   return new Promise((resolve, reject) => {
     const server = app.listen(port, () => {

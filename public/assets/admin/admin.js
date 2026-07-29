@@ -57,6 +57,7 @@ if (databaseResetForm) {
 
 function adminFetch(url, options = {}) {
   return fetch(url, {
+    cache: 'no-store',
     ...options,
     headers: {
       ...(options.headers || {}),
@@ -289,7 +290,9 @@ function renderPlanEditor(plan) {
       <h3>${escapeHtml(plan.name)}</h3>
       ${lockHint}
       <label>Nome<input id="plan-name-${plan.id}" value="${escapeHtml(plan.name)}" ${disabled} /></label>
-      <label>Preço<input id="plan-price-${plan.id}" value="${escapeHtml(plan.priceLabel || '')}" ${disabled} /></label>
+      <label>Descrição pública<textarea id="plan-description-${plan.id}" ${disabled}>${escapeHtml(plan.description || '')}</textarea></label>
+      <label>Preço público<input id="plan-price-${plan.id}" value="${escapeHtml(plan.priceLabel || '')}" placeholder="Ex.: R$ 59/mês" ${disabled} /></label>
+      <label>Período<input id="plan-period-${plan.id}" value="${escapeHtml(plan.billingPeriod || (plan.id === 'trial' ? 'sem cobrança' : 'mês'))}" ${disabled} /></label>
       <label>Limite diário<input id="plan-daily-${plan.id}" type="number" min="0" value="${Number(plan.dailyLeadLimit || 0)}" ${disabled} /></label>
       <label>Limite total<input id="plan-total-${plan.id}" type="number" min="0" placeholder="vazio = ilimitado" value="${plan.totalLeadLimit === null || plan.totalLeadLimit === undefined ? '' : Number(plan.totalLeadLimit)}" ${disabled} /></label>
       <label>Dias de validade<input id="plan-duration-${plan.id}" type="number" min="0" value="${Number(plan.durationDays || 0)}" ${disabled} /></label>
@@ -299,11 +302,34 @@ function renderPlanEditor(plan) {
   `;
 }
 
+function notifyPublicPlansUpdated(plan, revision) {
+  const message = {
+    type: 'plans-updated',
+    planId: plan?.id || null,
+    revision: revision || null,
+    updatedAt: new Date().toISOString()
+  };
+
+  try {
+    localStorage.setItem('leadhunter:plans-updated', JSON.stringify(message));
+  } catch {
+    // A atualização pela API já foi concluída; storage é apenas otimização entre abas.
+  }
+
+  if ('BroadcastChannel' in window) {
+    const channel = new BroadcastChannel('leadhunter:configuration');
+    channel.postMessage(message);
+    channel.close();
+  }
+}
+
 async function savePlan(id) {
   try {
     const payload = {
       name: document.querySelector(`#plan-name-${id}`).value,
+      description: document.querySelector(`#plan-description-${id}`).value,
       priceLabel: document.querySelector(`#plan-price-${id}`).value,
+      billingPeriod: document.querySelector(`#plan-period-${id}`).value,
       dailyLeadLimit: Number(document.querySelector(`#plan-daily-${id}`).value || 0),
       totalLeadLimit: document.querySelector(`#plan-total-${id}`).value,
       durationDays: Number(document.querySelector(`#plan-duration-${id}`).value || 0),
@@ -318,7 +344,8 @@ async function savePlan(id) {
     const data = await readJson(response);
     if (!response.ok) throw new Error(data.error || 'Erro ao salvar plano.');
 
-    showStatus('Plano atualizado.');
+    notifyPublicPlansUpdated(data.plan, data.revision);
+    showStatus(`Plano atualizado e publicado na landing (revisão ${data.revision || 'local'}).`);
     await loadPlans();
     await loadAuditLogs();
   } catch (error) {

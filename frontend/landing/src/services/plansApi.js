@@ -1,8 +1,9 @@
 /**
- * @fileoverview Cliente HTTP da API pública de planos.
+ * @fileoverview Cliente HTTP da configuração pública de planos.
  *
- * A camada de serviço isola detalhes de transporte dos componentes React.
- * Erros são propagados para que o hook decida quando usar dados de contingência.
+ * Requisições usam `no-store` e um identificador de tempo para impedir que
+ * navegador, CDN ou proxy reutilize uma resposta anterior após uma alteração
+ * feita no painel administrativo.
  *
  * @module landing/services/plansApi
  */
@@ -10,14 +11,20 @@
 /**
  * Carrega os planos comerciais publicados pelo backend.
  *
- * @param {AbortSignal} signal Sinal usado para cancelar a requisição ao desmontar o componente.
- * @returns {Promise<Array<object>>} Lista de planos normalizados pelo backend.
- * @throws {Error} Quando a API retorna erro HTTP ou formato inesperado.
+ * @param {AbortSignal} [signal] Sinal opcional para cancelamento.
+ * @returns {Promise<Array<object>>} Lista pública de planos.
  */
 export async function fetchPublicPlans(signal) {
-  const response = await fetch('/api/plans', {
+  const url = new URL('/api/plans', window.location.origin);
+  url.searchParams.set('_refresh', String(Date.now()));
+
+  const response = await fetch(url, {
     method: 'GET',
-    headers: { Accept: 'application/json' },
+    headers: {
+      Accept: 'application/json',
+      'Cache-Control': 'no-cache'
+    },
+    cache: 'no-store',
     signal
   });
 
@@ -26,9 +33,11 @@ export async function fetchPublicPlans(signal) {
   }
 
   const payload = await response.json();
-  if (!Array.isArray(payload) || payload.length === 0) {
+  const plans = Array.isArray(payload) ? payload : payload?.plans;
+
+  if (!Array.isArray(plans) || plans.length === 0) {
     throw new Error('A API de planos retornou uma coleção vazia ou inválida.');
   }
 
-  return payload;
+  return plans;
 }

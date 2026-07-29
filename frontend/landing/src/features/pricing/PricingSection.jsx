@@ -1,5 +1,5 @@
 /**
- * @fileoverview Planos comerciais carregados da API pública.
+ * @fileoverview Planos comerciais sincronizados com o painel administrativo.
  *
  * @module landing/features/pricing/PricingSection
  */
@@ -13,8 +13,15 @@ function formatPrice(value) {
   return Number(value || 0).toLocaleString('pt-BR', {
     style: 'currency',
     currency: 'BRL',
-    maximumFractionDigits: 0
+    maximumFractionDigits: 2
   });
+}
+
+function getPricePresentation(plan) {
+  return {
+    displayPrice: plan.displayPrice || plan.priceLabel || formatPrice(plan.price),
+    billingPeriod: plan.billingPeriod || (plan.isPaid ? 'mês' : 'sem cobrança')
+  };
 }
 
 function normalizeFeatures(plan) {
@@ -36,7 +43,7 @@ export default function PricingSection({ plans, isUsingFallback }) {
         <SectionHeading
           eyebrow="Planos"
           title="Comece gratuitamente. Escale quando o volume aumentar."
-          description="Escolha o plano adequado ao seu momento comercial. Limites e cobrança são sempre confirmados pelo backend antes da contratação."
+          description="Escolha o plano adequado ao seu momento comercial. Alterações publicadas no painel administrativo aparecem automaticamente nesta seção."
           align="center"
         />
 
@@ -44,13 +51,19 @@ export default function PricingSection({ plans, isUsingFallback }) {
           {plans.slice(0, 3).map((plan, index) => {
             const featured = Boolean(plan.featured || plan.id === 'pro' || index === 1);
             const features = normalizeFeatures(plan);
+            const price = getPricePresentation(plan);
+            const isFree = plan.isPaid === false || Number(plan.price || 0) === 0;
+
             return (
               <article key={plan.id || plan.name} className={`relative flex flex-col rounded-3xl border p-7 ${featured ? 'border-blue-500 bg-slate-950 text-white shadow-2xl shadow-blue-950/20 lg:-translate-y-3' : 'border-slate-200 bg-white text-slate-950 shadow-sm'}`}>
                 {featured ? <span className="absolute right-5 top-5 inline-flex items-center gap-1 rounded-full bg-blue-500 px-3 py-1 text-[10px] font-black uppercase tracking-[.12em] text-white"><Sparkles size={11} /> Mais escolhido</span> : null}
                 <p className={`text-xs font-black uppercase tracking-[.16em] ${featured ? 'text-cyan-300' : 'text-blue-600'}`}>{plan.name}</p>
                 <p className={`mt-3 min-h-12 text-sm leading-6 ${featured ? 'text-slate-400' : 'text-slate-600'}`}>{plan.description || 'Plano comercial do LeadHunter Pro.'}</p>
-                <div className="mt-6 flex items-end gap-2"><strong className="text-4xl font-black tracking-[-.05em]">{formatPrice(plan.price)}</strong><span className={`pb-1 text-xs ${featured ? 'text-slate-400' : 'text-slate-500'}`}>/{plan.billingPeriod || 'mês'}</span></div>
-                <ActionLink href="/app" variant={featured ? 'primary' : 'light'} className="mt-6 w-full">{Number(plan.price || 0) === 0 ? 'Começar grátis' : 'Escolher plano'}</ActionLink>
+                <div className="mt-6 flex items-end gap-2">
+                  <strong className="text-4xl font-black tracking-[-.05em]">{price.displayPrice}</strong>
+                  <span className={`pb-1 text-xs ${featured ? 'text-slate-400' : 'text-slate-500'}`}>/{price.billingPeriod}</span>
+                </div>
+                <ActionLink href="/app" variant={featured ? 'primary' : 'light'} className="mt-6 w-full">{isFree ? 'Começar grátis' : 'Escolher plano'}</ActionLink>
                 <ul className={`mt-7 space-y-3 border-t pt-6 text-sm ${featured ? 'border-white/10 text-slate-300' : 'border-slate-200 text-slate-600'}`}>
                   {features.slice(0, 5).map((feature) => <li key={feature} className="flex gap-2"><Check size={17} className="mt-0.5 shrink-0 text-emerald-400" />{feature}</li>)}
                 </ul>
@@ -59,7 +72,7 @@ export default function PricingSection({ plans, isUsingFallback }) {
           })}
         </div>
 
-        {isUsingFallback ? <p className="mt-5 text-center text-xs text-slate-500">Valores demonstrativos enquanto a configuração pública é carregada.</p> : null}
+        {isUsingFallback ? <p className="mt-5 text-center text-xs text-slate-500">Conectando à configuração comercial publicada…</p> : null}
       </div>
     </section>
   );

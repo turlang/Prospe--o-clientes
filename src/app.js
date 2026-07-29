@@ -37,7 +37,9 @@ const PasswordReset = require('./models/PasswordReset');
 const Lead = require('./models/Lead');
 const Task = require('./models/Task');
 const CopilotConversation = require('./models/CopilotConversation');
-const { getAllPlans, getPlan, normalizePlan, updatePlan } = require('./domain/plans/planCatalog');
+const PlanConfiguration = require('./models/PlanConfiguration');
+const { getAllPlans, getCatalogMetadata, getPlan, normalizePlan, updatePlan, updatePlanPersistent } = require('./domain/plans/planCatalog');
+const { getPublicPlans } = require('./services/publicPlanService');
 const { getDailyUsage, getTotalUsage, addDailyUsage } = require('./repositories/local/usageRepository');
 const { findUserById, updateLocalUserPlan } = require('./repositories/local/userRepository');
 const { buildCampaignSequence, nextFollowUpDate, buildAutomationPlan, getPriorityFromLead } = require('./domain/campaigns/campaignEngine');
@@ -240,9 +242,13 @@ function createApp() {
     TrialGuard,
     PasswordReset,
     getAllPlans,
+    getCatalogMetadata,
+    getPublicPlans,
     getPlan,
     normalizePlan,
     updatePlan,
+    updatePlanPersistent,
+    PlanConfiguration,
     getDailyUsage,
     getTotalUsage,
     addDailyUsage,

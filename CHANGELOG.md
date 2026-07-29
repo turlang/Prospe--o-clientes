@@ -1,5 +1,12 @@
 # Changelog
 
+## 25.1.0 — Planos dinâmicos e persistentes
+
+- Corrige preços zerados na landing por incompatibilidade entre `priceLabel` e `price`.
+- Publica alterações do Admin sem cache e com sincronização entre abas.
+- Persiste o catálogo de planos no MongoDB para sobreviver a deploys do Render.
+- Adiciona revisão pública da configuração e testes de regressão.
+
 ## 25.0.0 — Higienização arquitetural e landing resiliente
 
 - Corrigida a causa que mantinha a landing antiga em produção: o pacote não continha o artefato React e o servidor servia um fallback obsoleto.

@@ -29,9 +29,11 @@ function registerAdminRoutes(app, context) {
     TrialGuard,
     PasswordReset,
     getAllPlans,
+    getCatalogMetadata,
     getPlan,
     normalizePlan,
-    updatePlan,
+    updatePlanPersistent,
+    PlanConfiguration,
     getPlanExpirationDate,
     writeAdminAudit,
     getDatabaseResetPreview,
@@ -410,6 +412,9 @@ function registerAdminRoutes(app, context) {
   // Administração de planos, auditoria e pagamentos.
   app.get('/api/admin/plans', requireAuth, requireAdmin, async (_req, res) => {
     try {
+      const metadata = getCatalogMetadata();
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+      res.setHeader('X-Plans-Revision', String(metadata.revision));
       res.json(getAllPlans());
     } catch (error) {
       sendApiError(res, error);
@@ -419,21 +424,29 @@ function registerAdminRoutes(app, context) {
   app.patch('/api/admin/plans/:id', requireAuth, requireAdmin, async (req, res) => {
     try {
       const before = getPlan(req.params.id);
-      const updated = updatePlan(req.params.id, {
+      const result = await updatePlanPersistent(req.params.id, {
         name: req.body.name,
+        description: req.body.description,
         priceLabel: req.body.priceLabel,
+        billingPeriod: req.body.billingPeriod,
         durationDays: req.body.durationDays,
         dailyLeadLimit: req.body.dailyLeadLimit,
         totalLeadLimit: req.body.totalLeadLimit === '' ? null : req.body.totalLeadLimit,
         features: req.body.features
+      }, {
+        mongoAvailable: hasMongoUri(),
+        PlanConfigurationModel: PlanConfiguration,
+        updatedBy: req.user?.sub || null
       });
 
       await writeAdminAudit(req, 'ADMIN_PLAN_UPDATED', {
         before,
-        after: updated
+        after: result.plan,
+        revision: result.metadata.revision
       });
 
-      res.json({ ok: true, plan: updated });
+      res.setHeader('Cache-Control', 'no-store');
+      res.json({ ok: true, plan: result.plan, revision: result.metadata.revision });
     } catch (error) {
       res.status(400).json({ error: error.message });
     }

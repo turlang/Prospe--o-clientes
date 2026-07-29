@@ -11,7 +11,7 @@
 export const SITE_CONFIG = Object.freeze({
   name: 'LeadHunter Pro',
   shortName: 'LH',
-  version: '25.0.0',
+  version: '25.1.0',
   appUrl: '/app',
   navigation: [
     { label: 'Como funciona', href: '#como-funciona' },

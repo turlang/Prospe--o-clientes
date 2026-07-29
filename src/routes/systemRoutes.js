@@ -70,7 +70,8 @@ function registerSystemRoutes(app, context) {
     hasMongoUri,
     getMongoStatus,
     getPasswordResetEmailStatus,
-    getAllPlans,
+    getCatalogMetadata,
+    getPublicPlans,
     getDailyUsage,
     getTotalUsage,
     getCurrentUserPlan,
@@ -119,7 +120,8 @@ function registerSystemRoutes(app, context) {
         version: LANDING_VERSION,
         available: landing.available,
         source: landing.source
-      }
+      },
+      plans: getCatalogMetadata()
     });
   });
 
@@ -144,7 +146,13 @@ function registerSystemRoutes(app, context) {
   });
 
   app.get('/api/plans', (_req, res) => {
-    res.json(getAllPlans());
+    const metadata = getCatalogMetadata();
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.setHeader('X-Plans-Revision', String(metadata.revision));
+    if (metadata.updatedAt) res.setHeader('Last-Modified', new Date(metadata.updatedAt).toUTCString());
+    res.json(getPublicPlans());
   });
 
   app.get('/api/ai/status', requireAuth, (_req, res) => {
