@@ -61,3 +61,38 @@
     .danger-button:disabled { opacity:.45; cursor:not-allowed; }
     @media(max-width:1100px){.admin-grid{grid-template-columns:repeat(2,1fr)}.admin-charts{grid-template-columns:1fr}.plan-editor{grid-template-columns:1fr}.danger-form{grid-template-columns:1fr}.reset-preview{grid-template-columns:repeat(2,1fr)}}
     @media(max-width:700px){.admin-shell{width:min(100% - 18px,1580px);padding-top:10px}.admin-header{display:grid;padding:17px}.admin-grid{grid-template-columns:1fr}.admin-search{grid-template-columns:1fr}.admin-card{min-height:110px}.reset-preview{grid-template-columns:1fr}}
+
+
+/* V25.7 — monitor seguro da IA Comercial no painel administrativo. */
+.admin-ai-panel { overflow: visible; }
+.admin-ai-heading { display:flex; justify-content:space-between; align-items:flex-start; gap:20px; margin-bottom:16px; }
+.admin-ai-heading .tag { margin:0 0 5px; color:#7dd3fc; }
+.admin-ai-heading h2 { margin:0 0 6px; }
+.admin-ai-status { display:grid; grid-template-columns:minmax(280px,440px); }
+.admin-ai-card {
+  position:relative;
+  display:grid;
+  gap:7px;
+  min-height:190px;
+  padding:20px;
+  overflow:hidden;
+  border:1px solid rgba(148,163,184,.24);
+  border-radius:22px;
+  background:linear-gradient(145deg,rgba(21,41,66,.98),rgba(8,22,38,.98));
+  box-shadow:0 18px 44px rgba(0,0,0,.22);
+}
+.admin-ai-card::after { content:""; position:absolute; width:130px; height:130px; right:-42px; bottom:-55px; border-radius:50%; background:rgba(52,211,153,.09); filter:blur(2px); }
+.admin-ai-card-head { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.admin-ai-eyebrow { color:#8da2ba; font-size:.75rem; font-weight:900; letter-spacing:.14em; text-transform:uppercase; }
+.admin-ai-state { display:inline-flex; align-items:center; gap:7px; padding:6px 9px; border:1px solid rgba(148,163,184,.18); border-radius:999px; color:#b8c7d9; font-size:.73rem; font-weight:800; }
+.admin-ai-state i,.admin-ai-provider-dot { width:10px; height:10px; flex:0 0 auto; border-radius:999px; background:#f59e0b; box-shadow:0 0 0 4px rgba(245,158,11,.13); }
+.admin-ai-card.is-online .admin-ai-state i,.admin-ai-card.is-online .admin-ai-provider-dot { background:#34d399; box-shadow:0 0 0 4px rgba(52,211,153,.14),0 0 16px rgba(52,211,153,.28); }
+.admin-ai-card.is-disabled .admin-ai-state i,.admin-ai-card.is-error .admin-ai-state i { background:#f87171; box-shadow:0 0 0 4px rgba(248,113,113,.14); }
+.admin-ai-provider { display:flex; align-items:center; gap:10px; margin-top:6px; }
+.admin-ai-provider strong { color:#fff; font-size:1.55rem; letter-spacing:-.03em; }
+.admin-ai-model { color:#a9bad0; font-size:.95rem; font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; overflow-wrap:anywhere; }
+.admin-ai-card p { max-width:60ch; margin:2px 0 5px; color:#b8c7d9; line-height:1.5; }
+.admin-ai-security-note { display:flex; align-items:flex-start; gap:8px; padding-top:11px; border-top:1px solid rgba(148,163,184,.14); color:#7f95ad; font-size:.78rem; }
+.admin-ai-card.is-loading { opacity:.72; }
+.admin-ai-card.is-error { border-color:rgba(248,113,113,.45); }
+@media(max-width:700px){.admin-ai-heading{flex-direction:column}.admin-ai-heading button{width:100%}.admin-ai-status{grid-template-columns:1fr}.admin-ai-card-head{align-items:flex-start;flex-direction:column}}

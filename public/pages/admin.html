@@ -9,8 +9,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Admin Executivo — LeadHunter Pro</title>
-  <link rel="stylesheet" href="/assets/dashboard/styles.css?v=25.6.0" />
-  <link rel="stylesheet" href="/assets/admin/admin.css?v=25.6.0" />
+  <link rel="stylesheet" href="/assets/dashboard/styles.css?v=25.7.0" />
+  <link rel="stylesheet" href="/assets/admin/admin.css?v=25.7.0" />
 </head>
 <body>
   <!-- Conteúdo administrativo protegido por autenticação e papel admin. -->
@@ -21,10 +21,28 @@
     </header>
 
     <nav class="admin-nav" aria-label="Seções administrativas">
-      <a href="#visao-executiva">Visão executiva</a><a href="#economia">Economia</a><a href="#usuarios">Usuários</a><a href="#planos">Planos</a><a href="#pagamentos">Pagamentos</a><a href="#seguranca">Segurança</a><a href="#manutencao">Manutenção</a><a href="#auditoria">Auditoria</a>
+      <a href="#visao-executiva">Visão executiva</a><a href="#ia-comercial">IA Comercial</a><a href="#economia">Economia</a><a href="#usuarios">Usuários</a><a href="#planos">Planos</a><a href="#pagamentos">Pagamentos</a><a href="#seguranca">Segurança</a><a href="#manutencao">Manutenção</a><a href="#auditoria">Auditoria</a>
     </nav>
 
     <section id="visao-executiva"><div id="adminStats" class="admin-grid"></div></section>
+
+    <section id="ia-comercial" class="admin-panel admin-ai-panel">
+      <div class="admin-ai-heading">
+        <div>
+          <p class="tag">Integração operacional</p>
+          <h2>IA Comercial</h2>
+          <p class="meta">Status seguro do provedor usado para abordagem, copiloto e inteligência comercial. A chave nunca é exibida.</p>
+        </div>
+        <button id="adminAiReloadBtn" class="secondary" type="button">Atualizar status</button>
+      </div>
+      <div id="adminAiStatus" class="admin-ai-status" aria-live="polite">
+        <article class="admin-ai-card is-loading">
+          <span class="admin-ai-eyebrow">IA Comercial</span>
+          <strong>Consultando configuração...</strong>
+          <span>O provedor ativo será exibido aqui.</span>
+        </article>
+      </div>
+    </section>
 
     <section id="economia" class="admin-panel">
       <h2>Desempenho econômico e uso</h2><p class="meta">Indicadores consolidados dos últimos 30 dias e evolução dos últimos seis meses.</p>
@@ -57,6 +75,6 @@
     <section id="auditoria" class="admin-panel"><h2>Auditoria administrativa</h2><div id="adminAudit"></div></section>
     <section id="adminStatus" aria-live="polite"></section>
   </main>
-  <script src="/assets/admin/admin.js?v=25.6.0"></script>
+  <script src="/assets/admin/admin.js?v=25.7.0"></script>
 </body>
 </html>

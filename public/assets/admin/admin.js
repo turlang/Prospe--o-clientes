@@ -31,6 +31,8 @@ const revenueChart = document.querySelector('#revenueChart');
 const planChart = document.querySelector('#planChart');
 const usageChart = document.querySelector('#usageChart');
 const growthChart = document.querySelector('#growthChart');
+const adminAiStatus = document.querySelector('#adminAiStatus');
+const adminAiReloadBtn = document.querySelector('#adminAiReloadBtn');
 
 if (!adminToken) {
   window.location.replace('/app');
@@ -43,6 +45,7 @@ document.querySelector('#adminLogout').addEventListener('click', () => {
 });
 
 document.querySelector('#adminReloadBtn').addEventListener('click', loadAdmin);
+if (adminAiReloadBtn) adminAiReloadBtn.addEventListener('click', loadAdminAiStatus);
 document.querySelector('#adminSearchBtn').addEventListener('click', () => loadUsers(adminSearch.value));
 document.querySelector('#adminClearSearchBtn').addEventListener('click', () => { adminSearch.value = ''; loadUsers(); });
 adminSearch.addEventListener('keydown', (event) => {
@@ -154,6 +157,59 @@ function showStatus(message, isError = false) {
   adminStatus.innerHTML = `<p class="${isError ? 'error' : ''}">${escapeHtml(message)}</p>`;
 }
 
+/**
+ * Renderiza o estado da IA sem expor credenciais ou valores de ambiente.
+ * O endpoint retorna apenas metadados operacionais seguros.
+ */
+async function loadAdminAiStatus() {
+  if (!adminAiStatus) return;
+
+  if (adminAiReloadBtn) {
+    adminAiReloadBtn.disabled = true;
+    adminAiReloadBtn.textContent = 'Atualizando...';
+  }
+
+  try {
+    const response = await adminFetch('/api/ai/status');
+    const data = await readJson(response);
+    if (!response.ok) throw new Error(data.error || 'Erro ao consultar a IA Comercial.');
+
+    const externalProvider = Boolean(data.configured && data.provider && data.provider !== 'local');
+    const stateClass = externalProvider ? 'is-online' : data.enabled === false ? 'is-disabled' : 'is-local';
+    const stateLabel = externalProvider ? 'Provedor externo ativo' : data.enabled === false ? 'IA externa desativada' : 'Fallback local ativo';
+
+    adminAiStatus.innerHTML = `
+      <article class="admin-ai-card ${stateClass}">
+        <div class="admin-ai-card-head">
+          <span class="admin-ai-eyebrow">IA Comercial</span>
+          <span class="admin-ai-state"><i aria-hidden="true"></i>${escapeHtml(stateLabel)}</span>
+        </div>
+        <div class="admin-ai-provider">
+          <span class="admin-ai-provider-dot" aria-hidden="true"></span>
+          <strong>${escapeHtml(data.providerLabel || 'Motor Local')}</strong>
+        </div>
+        <span class="admin-ai-model">${escapeHtml(data.model || 'local')}</span>
+        <p>${escapeHtml(data.reason || 'Status operacional disponível.')}</p>
+        <div class="admin-ai-security-note">
+          <span aria-hidden="true">◆</span>
+          <span>Credencial protegida: nenhum token ou chave é enviado ao navegador.</span>
+        </div>
+      </article>`;
+  } catch (error) {
+    adminAiStatus.innerHTML = `
+      <article class="admin-ai-card is-error">
+        <span class="admin-ai-eyebrow">IA Comercial</span>
+        <strong>Status indisponível</strong>
+        <p>${escapeHtml(error.message)}</p>
+      </article>`;
+  } finally {
+    if (adminAiReloadBtn) {
+      adminAiReloadBtn.disabled = false;
+      adminAiReloadBtn.textContent = 'Atualizar status';
+    }
+  }
+}
+
 async function loadAdmin() {
   try {
     const response = await adminFetch('/api/admin/overview');
@@ -174,6 +230,7 @@ async function loadAdmin() {
     renderAdminCharts(data.charts || {});
     renderUsers(data.recentUsers || []);
     renderPayments(data.recentPayments || []);
+    await loadAdminAiStatus();
     await loadSecurity();
     await loadPlans();
     await loadAuditLogs();

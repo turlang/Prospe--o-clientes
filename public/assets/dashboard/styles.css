@@ -2936,3 +2936,41 @@ body.is-authenticated .overview-pipeline-card { min-width: 0; }
 .conversion-chart .conversion-analytics .pipeline-mobile-row__track > span {
   display: block;
 }
+
+
+/* V25.7 — radar operacional incorporado ao Plano de Ação de hoje. */
+.cockpit-action-radar { margin:14px 0 16px; }
+.action-radar-card {
+  position:relative;
+  overflow:hidden;
+  padding:17px;
+  border:1px solid rgba(56,189,248,.23);
+  border-radius:20px;
+  color:#e5edf8;
+  background:
+    linear-gradient(rgba(30,64,175,.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(30,64,175,.055) 1px, transparent 1px),
+    radial-gradient(circle at 90% 10%, rgba(8,145,178,.16), transparent 30%),
+    linear-gradient(145deg,#071626,#091b2f 55%,#071522);
+  background-size:24px 24px,24px 24px,auto,auto;
+  box-shadow:0 18px 42px rgba(15,23,42,.18);
+}
+.action-radar-card::after { content:""; position:absolute; right:-55px; bottom:-65px; width:180px; height:180px; border:1px solid rgba(34,211,238,.13); border-radius:50%; box-shadow:0 0 0 34px rgba(34,211,238,.035),0 0 0 68px rgba(34,211,238,.018); pointer-events:none; }
+.action-radar-header { position:relative; z-index:1; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.action-radar-kicker { display:inline-flex; align-items:center; gap:8px; color:#67e8f9; font-size:.76rem; font-weight:900; letter-spacing:.09em; text-transform:uppercase; }
+.action-radar-kicker i { width:8px; height:8px; border-radius:50%; background:#34d399; box-shadow:0 0 0 5px rgba(52,211,153,.1),0 0 16px rgba(52,211,153,.38); }
+.action-radar-count { padding:7px 10px; border:1px solid rgba(103,232,249,.18); border-radius:999px; color:#c4f6ff; background:rgba(8,47,73,.42); font-size:.75rem; font-weight:800; }
+.action-radar-alert { position:relative; z-index:1; display:grid; grid-template-columns:38px minmax(0,1fr); gap:12px; align-items:start; margin-top:14px; padding:14px; border:1px solid rgba(250,204,21,.23); border-radius:16px; background:rgba(66,47,8,.26); }
+.action-radar-card.is-stable .action-radar-alert { border-color:rgba(52,211,153,.22); background:rgba(6,78,59,.2); }
+.action-radar-icon { width:36px; height:36px; display:grid; place-items:center; border-radius:12px; color:#fde68a; background:rgba(250,204,21,.11); font-size:1.1rem; }
+.action-radar-card.is-stable .action-radar-icon { color:#6ee7b7; background:rgba(52,211,153,.1); }
+.action-radar-alert small,.action-radar-recommendation small { display:block; margin-bottom:4px; color:#fcd34d; font-size:.68rem; font-weight:900; letter-spacing:.1em; text-transform:uppercase; }
+.action-radar-card.is-stable .action-radar-alert small { color:#6ee7b7; }
+.action-radar-alert strong { display:block; color:#fff; font-size:.97rem; line-height:1.43; }
+.action-radar-recommendation { position:relative; z-index:1; margin-top:12px; padding:12px 14px; border:1px solid rgba(148,163,184,.14); border-radius:15px; background:rgba(15,23,42,.43); }
+.action-radar-recommendation small { color:#8da2ba; }
+.action-radar-recommendation p { margin:0; color:#e2e8f0; line-height:1.48; }
+.action-radar-button { position:relative; z-index:1; width:100%; display:flex; align-items:center; justify-content:space-between; margin-top:12px; padding:12px 14px; border:1px solid rgba(56,189,248,.42); border-radius:14px; color:#eafaff; background:linear-gradient(90deg,rgba(3,105,161,.78),rgba(8,145,178,.72)); font-weight:900; }
+.action-radar-button:hover { transform:translateY(-1px); border-color:#67e8f9; box-shadow:0 10px 24px rgba(8,145,178,.18); }
+.action-radar-button span { font-size:1.25rem; }
+@media(max-width:620px){.action-radar-header{align-items:flex-start;flex-direction:column}.action-radar-count{align-self:flex-start}.action-radar-alert{grid-template-columns:1fr}.action-radar-button{white-space:normal;text-align:left}}

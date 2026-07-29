@@ -1,5 +1,5 @@
 /**
- * @fileoverview Regressões de entrega dos assets e estados visuais da release 25.6.0.
+ * @fileoverview Regressões de entrega dos assets e estados visuais da release 25.7.0.
  *
  * Estes testes impedem que um deploy volte a servir JavaScript/CSS antigos e
  * também protegem o estado ativo do seletor da tela Fluxo da landing.
@@ -19,7 +19,7 @@ const reactCss = fs.readFileSync('frontend/landing/src/styles/index.css', 'utf8'
 const staticCss = fs.readFileSync('frontend/landing/static/landing.css', 'utf8');
 const appSource = fs.readFileSync('src/app.js', 'utf8');
 
-const VERSION = '25.6.0';
+const VERSION = '25.7.0';
 
 test('documentos públicos apontam para assets da release atual', () => {
   assert.match(appHtml, new RegExp(`/assets/dashboard/styles\\.css\\?v=${VERSION.replaceAll('.', '\\.')}`));

@@ -1,3 +1,10 @@
+## 25.7.0 — IA Comercial no Admin e radar no plano de ação
+
+- adiciona ao painel administrativo um card seguro de status do provedor de IA, modelo e configuração, sem expor chaves;
+- incorpora o radar operacional ao Plano de ação de hoje, com gargalo, prioridade e recomendação;
+- mantém os gráficos existentes exclusivamente na Visão geral, evitando duplicação;
+- atualiza o cache-busting dos assets para 25.7.0.
+
 ## 25.6.0 — Correção de cache, landing e analytics publicados
 
 - corrige o estado ativo invisível na tela Fluxo da landing;

@@ -99,6 +99,7 @@ const v23Greeting = document.querySelector('#v23Greeting');
 const v23FocusText = document.querySelector('#v23FocusText');
 const v23FocusButton = document.querySelector('#v23FocusButton');
 const v23Metrics = document.querySelector('#v23Metrics');
+const v23ActionRadar = document.querySelector('#v23ActionRadar');
 const v23DailyPlan = document.querySelector('#v23DailyPlan');
 const v23Pipeline = document.querySelector('#v23Pipeline');
 const v23Alerts = document.querySelector('#v23Alerts');
@@ -2836,6 +2837,77 @@ async function loadV23Cockpit() {
   }
 }
 
+function cockpitStageLabel(status = '') {
+  const labels = {
+    NOVO: 'Novos',
+    CONTATADO: 'Contatados',
+    INTERESSADO: 'Interessados',
+    REUNIAO: 'Reuniões',
+    PROPOSTA: 'Propostas',
+    FECHADO: 'Fechados',
+    SEM_INTERESSE: 'Recusados'
+  };
+  return labels[String(status || '').toUpperCase()] || String(status || 'pipeline').toLowerCase();
+}
+
+/**
+ * Incorpora o radar operacional no plano de ação sem duplicar os gráficos da
+ * Visão Geral. O componente resume gargalo, prioridade e próxima ação.
+ */
+function renderV23ActionRadar(data = {}) {
+  if (!v23ActionRadar) return;
+
+  const plan = Array.isArray(data.dailyPlan) ? data.dailyPlan : [];
+  const firstAction = plan[0] || data.focus || null;
+  const bottleneck = data.pipelineHealth?.bottleneck || null;
+  const stalled = Math.max(0, Number(bottleneck?.stalled || 0));
+  const averageAge = Math.max(0, Number(bottleneck?.averageAge || 0));
+  const priorityCount = stalled || Number(data.metrics?.atRisk || data.metrics?.highPriority || plan.length || 0);
+  const stageLabel = cockpitStageLabel(bottleneck?.status);
+  const hasAttention = priorityCount > 0;
+
+  const headline = stalled > 0
+    ? `Você tem ${stalled} lead${stalled === 1 ? '' : 's'} parado${stalled === 1 ? '' : 's'} em ${stageLabel}${averageAge ? ` há, em média, ${averageAge} dias` : ''}.`
+    : hasAttention
+      ? `Existem ${priorityCount} oportunidade${priorityCount === 1 ? '' : 's'} que merecem atenção comercial hoje.`
+      : 'Nenhum gargalo crítico foi identificado no pipeline neste momento.';
+
+  const recommendation = firstAction?.action
+    || (hasAttention ? 'Revise os leads de maior prioridade e registre uma próxima ação objetiva.' : 'Mantenha a cadência de prospecção e acompanhe os retornos agendados.');
+
+  v23ActionRadar.innerHTML = `
+    <article class="action-radar-card ${hasAttention ? 'is-attention' : 'is-stable'}">
+      <header class="action-radar-header">
+        <span class="action-radar-kicker"><i aria-hidden="true"></i>Radar operacional</span>
+        <span class="action-radar-count">${priorityCount} oportunidade${priorityCount === 1 ? '' : 's'}</span>
+      </header>
+      <div class="action-radar-alert">
+        <span class="action-radar-icon" aria-hidden="true">${hasAttention ? '⚠' : '✓'}</span>
+        <div>
+          <small>${hasAttention ? 'Atenção prioritária' : 'Operação estável'}</small>
+          <strong>${escapeHtml(headline)}</strong>
+        </div>
+      </div>
+      <div class="action-radar-recommendation">
+        <small>Próxima ação recomendada</small>
+        <p>${escapeHtml(recommendation)}</p>
+      </div>
+      <button type="button" class="action-radar-button" ${firstAction?.leadId ? `data-open-radar-lead="${escapeAttr(firstAction.leadId)}"` : 'data-focus-action-list="true"'}>
+        ${firstAction?.leadId ? 'Abrir lead prioritário' : 'Ver plano de ação'} <span aria-hidden="true">›</span>
+      </button>
+    </article>`;
+
+  const leadButton = v23ActionRadar.querySelector('[data-open-radar-lead]');
+  if (leadButton) leadButton.addEventListener('click', () => openLeadDetail(leadButton.dataset.openRadarLead));
+
+  const focusButton = v23ActionRadar.querySelector('[data-focus-action-list]');
+  if (focusButton) focusButton.addEventListener('click', () => {
+    const firstPlanButton = v23DailyPlan?.querySelector('button');
+    if (firstPlanButton) firstPlanButton.focus();
+    else v23DailyPlan?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
+}
+
 function renderV23Cockpit(data) {
   const metrics = data.metrics || {};
   const focus = data.focus || null;
@@ -2857,6 +2929,8 @@ function renderV23Cockpit(data) {
     <article><small>Follow-ups de hoje</small><strong>${Number(metrics.dueToday || 0)}</strong><span>${Number(metrics.overdueTasks || 0)} atrasados</span></article>
     <article><small>Propostas abertas</small><strong>${Number(metrics.proposals || 0)}</strong><span>${Number(metrics.atRisk || 0)} oportunidades em risco</span></article>
     <article><small>Receita prevista</small><strong>${formatMoney(metrics.weightedRevenue || 0)}</strong><span>${formatMoney(metrics.closedRevenue || 0)} já fechados</span></article>`;
+
+  renderV23ActionRadar(data);
 
   const plan = Array.isArray(data.dailyPlan) ? data.dailyPlan : [];
   v23DailyPlan.innerHTML = plan.length ? plan.map((item, index) => `

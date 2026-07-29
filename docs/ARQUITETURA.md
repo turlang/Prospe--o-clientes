@@ -1,4 +1,4 @@
-# Arquitetura — LeadHunter Pro 25.6.0
+# Arquitetura — LeadHunter Pro 25.7.0
 
 ## 1. Objetivos
 
@@ -54,7 +54,7 @@ A página pública tem duas saídas da mesma release:
 1. bundle React/Tailwind produzido pelo Vite;
 2. contingência estática interativa e visualmente equivalente.
 
-O script `verify-landing-build.js` exige a versão `25.6.0`, os cinco painéis, os controles de navegação e as regras de viewport. Assim, a aplicação não volta silenciosamente para a landing antiga.
+O script `verify-landing-build.js` exige a versão `25.7.0`, os cinco painéis, os controles de navegação e as regras de viewport. Assim, a aplicação não volta silenciosamente para a landing antiga.
 
 ## 4. Planos dinâmicos
 
