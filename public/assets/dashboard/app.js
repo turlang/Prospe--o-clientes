@@ -490,36 +490,9 @@ function renderProspectingPipeline(container, funnel = []) {
   const rejectedStage = stages.find((stage) => stage.status === 'SEM_INTERESSE') || {
     status: 'SEM_INTERESSE', label: 'Recusados', icon: 'close', total: 0, percentage: 0
   };
-  const baseTotal = Math.max(1, stages.reduce((sum, stage) => sum + stage.total, 0));
+  const totalOpportunities = activeStages.reduce((sum, stage) => sum + stage.total, 0);
+  const baseTotal = Math.max(1, totalOpportunities);
   const maxVolume = Math.max(1, ...activeStages.map((stage) => stage.total));
-  const visualFloors = [100, 82, 68, 54, 42, 30];
-
-  const layers = activeStages.map((stage, index) => {
-    const relativeVolume = Math.round((stage.total / maxVolume) * 100);
-    const visualWidth = Math.min(100, Math.max(visualFloors[index] || 30, 26 + Math.round(relativeVolume * .74)));
-    const mobileWidth = Math.max(72, visualWidth);
-    const isEmpty = stage.total === 0;
-    return `
-      <article
-        class="funnel-layer${isEmpty ? ' is-empty' : ''}"
-        data-status="${stage.status}"
-        style="--funnel-width:${visualWidth}%;--funnel-mobile-width:${mobileWidth}%"
-        aria-label="${escapeAttr(stage.label)}: ${stage.total} oportunidade(s), ${stage.percentage}% da base"
-      >
-        <div class="funnel-layer__shape">
-          <span class="funnel-layer__index">${String(index + 1).padStart(2, '0')}</span>
-          <i>${overviewStageIcon(stage.icon)}</i>
-          <div class="funnel-layer__label">
-            <strong>${escapeHtml(stage.label)}</strong>
-            <small>${stage.percentage}% da base</small>
-          </div>
-          <div class="funnel-layer__value">
-            <strong>${stage.total}</strong>
-            <small>lead${stage.total === 1 ? '' : 's'}</small>
-          </div>
-        </div>
-      </article>`;
-  }).join('');
 
   const openOpportunities = activeStages
     .filter((stage) => !['NOVO', 'FECHADO'].includes(stage.status))
@@ -528,6 +501,31 @@ function renderProspectingPipeline(container, funnel = []) {
   const dominantStage = [...activeStages].sort((a, b) => b.total - a.total)[0] || activeStages[0];
   const conversionRate = Math.round((closed / baseTotal) * 100);
 
+  const layers = activeStages.map((stage, index) => {
+    const proportionalWidth = Math.round((stage.total / maxVolume) * 100);
+    const visualWidth = stage.total > 0 ? Math.max(12, proportionalWidth) : 8;
+    const isEmpty = stage.total === 0;
+    const tooltip = `${stage.label}: ${stage.total} oportunidade(s), ${stage.percentage}% da base`;
+
+    return `
+      <article
+        class="funnel-stage-row${isEmpty ? ' is-empty' : ''}"
+        data-status="${stage.status}"
+        data-tooltip="${escapeAttr(tooltip)}"
+        aria-label="${escapeAttr(tooltip)}"
+      >
+        <div class="funnel-stage-label">
+          <span class="funnel-stage-index">${String(index + 1).padStart(2, '0')}</span>
+          <i>${overviewStageIcon(stage.icon)}</i>
+          <span><strong>${escapeHtml(stage.label)}</strong><small>${stage.percentage}% da base</small></span>
+        </div>
+        <div class="funnel-stage-visual" aria-hidden="true">
+          <span class="funnel-layer__shape" style="--stage-width:${visualWidth}%"></span>
+        </div>
+        <div class="funnel-stage-value"><strong>${stage.total}</strong><small>lead${stage.total === 1 ? '' : 's'}</small></div>
+      </article>`;
+  }).join('');
+
   container.innerHTML = `
     <div class="prospecting-funnel prospecting-funnel--compact">
       <section class="funnel-chart-card" aria-label="Funil atual de prospecção">
@@ -535,10 +533,16 @@ function renderProspectingPipeline(container, funnel = []) {
           <div>
             <span class="funnel-eyebrow">Pipeline atual</span>
             <strong>Da descoberta ao fechamento</strong>
-            <small>Volume real por etapa, sem indicadores repetidos.</small>
+            <small>As larguras representam o volume real de cada etapa.</small>
           </div>
-          <div class="funnel-total"><strong>${baseTotal}</strong><span>oportunidades</span></div>
+          <div class="funnel-total"><strong>${totalOpportunities}</strong><span>oportunidades</span></div>
         </header>
+
+        <div class="funnel-kpi-strip" aria-label="Resumo do funil">
+          <article><span>Maior concentração</span><strong>${escapeHtml(dominantStage?.label || 'Sem dados')}</strong><small>${dominantStage?.total || 0} oportunidade(s)</small></article>
+          <article><span>Em negociação</span><strong>${openOpportunities}</strong><small>entre contato e proposta</small></article>
+          <article><span>Conversão geral</span><strong>${conversionRate}%</strong><small>${closed} fechamento(s)</small></article>
+        </div>
 
         <div class="funnel-stack">${layers}</div>
 
@@ -549,32 +553,6 @@ function renderProspectingPipeline(container, funnel = []) {
           <small>${rejectedStage.percentage}% da base</small>
         </aside>
       </section>
-
-      <aside class="funnel-insights-card funnel-insights-card--compact">
-        <header>
-          <span class="funnel-eyebrow">Leitura rápida</span>
-          <strong>Saúde do funil</strong>
-          <small>Três respostas para orientar a próxima decisão.</small>
-        </header>
-
-        <div class="funnel-executive-list">
-          <article>
-            <span>Maior concentração</span>
-            <strong>${escapeHtml(dominantStage?.label || 'Sem dados')}</strong>
-            <small>${dominantStage?.total || 0} oportunidade(s) nesta etapa.</small>
-          </article>
-          <article>
-            <span>Em negociação</span>
-            <strong>${openOpportunities}</strong>
-            <small>Entre primeiro contato e proposta.</small>
-          </article>
-          <article>
-            <span>Conversão geral</span>
-            <strong>${conversionRate}%</strong>
-            <small>${closed} fechamento(s) registrados.</small>
-          </article>
-        </div>
-      </aside>
     </div>`;
 }
 
@@ -3071,12 +3049,17 @@ function renderV23Cockpit(data) {
   const pipeline = Array.isArray(data.pipeline) ? data.pipeline : [];
   if (v23Pipeline) {
     const maxCount = Math.max(1, ...pipeline.map((item) => Number(item.count || 0)));
-    v23Pipeline.innerHTML = pipeline.map((stage) => `
-      <article class="pipeline-stage-row">
-        <div class="pipeline-stage-label"><strong>${escapeHtml(stage.status)}</strong><span>${Number(stage.count || 0)} lead(s)</span></div>
-        <div class="pipeline-stage-track"><span style="width:${Math.max(4, Math.round((Number(stage.count || 0) / maxCount) * 100))}%"></span></div>
-        <div class="pipeline-stage-value"><strong>${formatMoney(stage.value || 0)}</strong><small>${Number(stage.conversion || 0)}% avanço</small></div>
-      </article>`).join('') || '<p class="meta">O pipeline ainda não possui dados.</p>';
+    v23Pipeline.innerHTML = pipeline.map((stage) => {
+      const canonical = OVERVIEW_PIPELINE_STAGES.find((item) => item.status === String(stage.status || '').toUpperCase());
+      const count = Number(stage.count || 0);
+      const conversion = Number(stage.conversion || 0);
+      return `
+        <article class="pipeline-stage-row">
+          <div class="pipeline-stage-label"><strong>${escapeHtml(canonical?.label || stage.status)}</strong><span>${count} lead(s)</span></div>
+          <div class="pipeline-stage-track"><span style="width:${count > 0 ? Math.max(4, Math.round((count / maxCount) * 100)) : 0}%"></span></div>
+          <div class="pipeline-stage-value"><strong>${count}</strong><small>${conversion}% avanço</small></div>
+        </article>`;
+    }).join('') || '<p class="meta">O pipeline ainda não possui dados.</p>';
   }
 
   recordOperationalHistory(data);

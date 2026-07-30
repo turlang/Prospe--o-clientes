@@ -1,5 +1,14 @@
 # Changelog
 
+## 26.1.0
+
+- Corrige o funil comercial com larguras proporcionais aos volumes reais.
+- Move rótulos e valores para fora das áreas inclinadas, eliminando cortes.
+- Substitui a coluna redundante de leitura rápida por KPIs compactos.
+- Simplifica a Saúde do pipeline no Cockpit para volume e avanço, sem repetir receita.
+- Corrige contraste, altura e responsividade do Copiloto Comercial IA.
+- Adiciona módulo CSS dedicado e testes de regressão operacional.
+
 ## 26.0.0
 
 - Reorganiza o CSS em módulos por responsabilidade.

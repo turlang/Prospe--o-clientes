@@ -1,5 +1,5 @@
 /**
- * @fileoverview Regressões de entrega dos assets e do design system 26.0.0.
+ * @fileoverview Regressões de entrega dos assets e do design system 26.1.0.
  * @module tests/releaseDeliveryRegression.test
  */
 const test = require('node:test');
@@ -15,7 +15,7 @@ const staticCss = fs.readFileSync('frontend/landing/static/landing.css', 'utf8')
 const appSource = fs.readFileSync('src/app.js', 'utf8');
 const dashboardEntry = fs.readFileSync('public/assets/dashboard/styles.css', 'utf8');
 
-const VERSION = '26.0.0';
+const VERSION = '26.1.0';
 
 test('documentos públicos apontam para assets da release atual', () => {
   assert.match(appHtml, new RegExp(`/assets/dashboard/styles\\.css\\?v=${VERSION.replaceAll('.', '\\.')}`));
@@ -33,7 +33,7 @@ test('servidor obriga revalidação de JavaScript e CSS após deploy', () => {
 });
 
 test('design system está modularizado e landing mantém profundidade acessível', () => {
-  for (const marker of ['00-tokens.css', '10-base.css', '20-layout.css', '30-components.css', '40-views.css', '50-depth.css', '90-responsive.css']) {
+  for (const marker of ['00-tokens.css', '10-base.css', '20-layout.css', '30-components.css', '40-views.css', '45-operational-polish.css', '50-depth.css', '90-responsive.css']) {
     assert.match(dashboardEntry, new RegExp(marker.replace('.', '\\.')));
   }
   for (const css of [reactCss, staticCss]) {

@@ -36,7 +36,7 @@ test('landing pública usa React/Tailwind e mantém artefato pré-compilado vers
   assert.match(styles, /@import "tailwindcss"/);
   assert.match(systemRoutes, /LANDING_BUILD_PATH/);
   assert.match(systemRoutes, /X-Landing-Version/);
-  assert.match(staticLanding, /data-landing-version="26\.0\.0"/);
+  assert.match(staticLanding, /data-landing-version="26\.1\.0"/);
 });
 
 test('landing troca informações por botões e não empilha seções verticais', () => {

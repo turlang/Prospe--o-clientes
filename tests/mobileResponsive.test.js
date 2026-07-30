@@ -16,6 +16,7 @@ const css = [
   'css/20-layout.css',
   'css/30-components.css',
   'css/40-views.css',
+  'css/45-operational-polish.css',
   'css/50-depth.css',
   'css/90-responsive.css'
 ].map((file) => fs.readFileSync(path.join(cssRoot, file), 'utf8')).join('\n');
@@ -43,7 +44,7 @@ test('kanban preserva rolagem interna sem estourar o documento', () => {
 
 test('estado hidden, cache e efeitos 3D estão protegidos', () => {
   assert.match(css, /\[hidden\]\s*\{\s*display:\s*none\s*!important;/);
-  assert.match(html, /\/assets\/dashboard\/styles\.css\?v=26\.0\.0/);
+  assert.match(html, /\/assets\/dashboard\/styles\.css\?v=26\.1\.0/);
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
   assert.match(css, /pointer:\s*coarse/);
 });

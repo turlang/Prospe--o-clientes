@@ -17,6 +17,7 @@ const styles = [
   'public/assets/dashboard/css/99-legacy.css',
   'public/assets/dashboard/css/30-components.css',
   'public/assets/dashboard/css/40-views.css',
+  'public/assets/dashboard/css/45-operational-polish.css',
   'public/assets/dashboard/css/90-responsive.css'
 ].map((file) => fs.readFileSync(file, 'utf8')).join('\n');
 const html = fs.readFileSync('public/pages/app.html', 'utf8');
@@ -36,11 +37,14 @@ test('visão executiva remove gráficos redundantes e mantém quatro dimensões 
 test('dashboard usa funil executivo profissional em vez do gráfico de colunas', () => {
   assert.match(app, /function renderProspectingPipeline\(/);
   assert.match(app, /prospecting-funnel--compact/);
+  assert.match(app, /funnel-stage-row/);
   assert.match(app, /funnel-layer__shape/);
   assert.match(app, /funnel-rejected/);
   assert.match(app, /renderProspectingPipeline\(overviewProspectingChart, funnel\)/);
   assert.match(styles, /\.funnel-stack/);
+  assert.match(styles, /--stage-width/);
   assert.match(styles, /clip-path: polygon/);
+  assert.doesNotMatch(app, /funnel-insights-card funnel-insights-card--compact/);
   assert.doesNotMatch(app, /pipeline-chart-desktop/);
 });
 
