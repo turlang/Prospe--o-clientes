@@ -45,6 +45,20 @@ if (!/html, body, #root \{[^}]*overflow: hidden;/.test(styles)) failures.push('L
 if (!styles.includes('height: 100dvh')) failures.push('Landing React não usa altura dinâmica da viewport.');
 
 const publicApp = fs.readFileSync(path.join(ROOT, 'public', 'pages', 'app.html'), 'utf8');
+
+const dashboardStyles = fs.readFileSync(path.join(ROOT, 'public', 'assets', 'dashboard', 'styles.css'), 'utf8');
+for (const moduleName of ['00-tokens.css', '10-base.css', '20-layout.css', '30-components.css', '40-views.css', '50-depth.css', '90-responsive.css']) {
+  if (!dashboardStyles.includes(moduleName)) failures.push(`Entry CSS sem módulo ${moduleName}`);
+}
+
+const adminHtml = fs.readFileSync(path.join(ROOT, 'public', 'pages', 'admin.html'), 'utf8');
+if (adminHtml.includes('adminAiStatus') || adminHtml.includes('IA Comercial')) {
+  failures.push('Admin ainda renderiza o bloco visual redundante de IA Comercial.');
+}
+
+const historyIndex = publicApp.indexOf('id="view-historico"');
+const timelineIndex = publicApp.indexOf('id="v23Timeline"');
+if (!(historyIndex >= 0 && timelineIndex > historyIndex)) failures.push('Timeline global não está centralizada no Histórico.');
 if (!publicApp.includes('id="authCard"') || !publicApp.includes('id="sessionBar" hidden')) {
   failures.push('A interface autenticada perdeu os contratos de login/sessão.');
 }

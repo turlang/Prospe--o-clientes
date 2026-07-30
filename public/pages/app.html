@@ -10,7 +10,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>LeadHunter Pro — Dashboard</title>
   <link rel="icon" href="data:," />
-  <link rel="stylesheet" href="/assets/dashboard/styles.css?v=25.9.2" />
+  <link rel="stylesheet" href="/assets/dashboard/styles.css?v=26.0.0" />
 </head>
 <body>
   <main id="appRoot" class="container">
@@ -141,14 +141,6 @@
             </section>
           </div>
 
-          <section class="card-panel cockpit-timeline-panel">
-            <div class="section-title">
-              <h3>Timeline global</h3>
-              <p class="meta">Últimas atividades realizadas em toda a operação.</p>
-            </div>
-            <div id="v23Timeline" class="global-timeline"></div>
-          </section>
-
           <section class="card-panel copilot-panel">
             <div class="section-title copilot-title-row">
               <div>
@@ -277,6 +269,14 @@
                 <p class="meta">Registros do cockpit comercial preservados para consulta, sem ocupar o plano de ação atual.</p>
               </div>
               <div id="historyAlertsList" class="history-list operational-history-list" aria-live="polite"></div>
+            </section>
+
+            <section class="card-panel operational-history-panel" aria-labelledby="globalTimelineTitle">
+              <div class="section-title">
+                <h2 id="globalTimelineTitle">Timeline global</h2>
+                <p class="meta">Atividades realizadas em toda a operação, centralizadas no Histórico.</p>
+              </div>
+              <div id="v23Timeline" class="global-timeline"></div>
             </section>
           </div>
         </section>
@@ -448,6 +448,7 @@
       </section>
     </section>
   </main>
-  <script src="/assets/dashboard/app.js?v=25.9.2"></script>
+  <script src="/assets/shared/depth-effects.js?v=26.0.0" defer></script>
+  <script src="/assets/dashboard/app.js?v=26.0.0"></script>
 </body>
 </html>

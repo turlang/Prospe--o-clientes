@@ -1,5 +1,14 @@
 # Changelog
 
+## 26.0.0
+
+- Reorganiza o CSS em módulos por responsabilidade.
+- Introduz tokens visuais e profundidade 3D acessível.
+- Revisa tipografia, cores, espaçamento e responsividade.
+- Remove o bloco visual redundante de IA do Admin.
+- Move a Timeline global para a área de Histórico.
+- Adiciona validação automatizada da arquitetura visual.
+
 ## 25.9.2
 
 - Corrige a quebra do valor de previsão de receita.

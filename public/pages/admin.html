@@ -9,8 +9,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Admin Executivo — LeadHunter Pro</title>
-  <link rel="stylesheet" href="/assets/dashboard/styles.css?v=25.9.2" />
-  <link rel="stylesheet" href="/assets/admin/admin.css?v=25.9.2" />
+  <link rel="stylesheet" href="/assets/dashboard/styles.css?v=26.0.0" />
+  <link rel="stylesheet" href="/assets/admin/admin.css?v=26.0.0" />
 </head>
 <body>
   <!-- Conteúdo administrativo protegido por autenticação e papel admin. -->
@@ -26,23 +26,6 @@
 
     <section id="visao-executiva">
       <div id="adminStats" class="admin-grid"></div>
-      <section class="admin-ai-overview" aria-labelledby="adminAiTitle">
-        <div class="admin-ai-heading">
-          <div>
-            <p class="tag">Integração operacional</p>
-            <h2 id="adminAiTitle">IA Comercial</h2>
-            <p class="meta">Provedor, modelo e disponibilidade da inteligência comercial. Nenhuma credencial é exibida.</p>
-          </div>
-          <button id="adminAiReloadBtn" class="secondary mini" type="button">Atualizar status</button>
-        </div>
-        <div id="adminAiStatus" class="admin-ai-status" aria-live="polite">
-          <article class="admin-ai-card is-loading">
-            <span class="admin-ai-eyebrow">IA Comercial</span>
-            <strong>Consultando configuração...</strong>
-            <span>O provedor ativo será exibido aqui.</span>
-          </article>
-        </div>
-      </section>
     </section>
 
     <section id="economia" class="admin-panel">
@@ -76,6 +59,7 @@
     <section id="auditoria" class="admin-panel"><h2>Auditoria administrativa</h2><div id="adminAudit"></div></section>
     <section id="adminStatus" aria-live="polite"></section>
   </main>
-  <script src="/assets/admin/admin.js?v=25.9.2"></script>
+  <script src="/assets/shared/depth-effects.js?v=26.0.0" defer></script>
+  <script src="/assets/admin/admin.js?v=26.0.0"></script>
 </body>
 </html>

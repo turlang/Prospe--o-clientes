@@ -12,7 +12,13 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 
 const app = fs.readFileSync('public/assets/dashboard/app.js', 'utf8');
-const styles = fs.readFileSync('public/assets/dashboard/styles.css', 'utf8');
+const styles = [
+  'public/assets/dashboard/styles.css',
+  'public/assets/dashboard/css/99-legacy.css',
+  'public/assets/dashboard/css/30-components.css',
+  'public/assets/dashboard/css/40-views.css',
+  'public/assets/dashboard/css/90-responsive.css'
+].map((file) => fs.readFileSync(file, 'utf8')).join('\n');
 const html = fs.readFileSync('public/pages/app.html', 'utf8');
 
 test('visão executiva remove gráficos redundantes e mantém quatro dimensões essenciais', () => {

@@ -1,10 +1,10 @@
-# LeadHunter Pro 25.7.0
+# LeadHunter Pro 26.0.0
 
 SaaS de prospecção comercial para desenvolvedores, freelancers e agências que vendem sites, sistemas, automações e agentes de IA.
 
 ## Experiência pública em tela única
 
-A versão 25.7.0 mantém a landing em uma interface sem rolagem de página. O documento ocupa `100dvh`, mantém `overflow: hidden` e apresenta o conteúdo em cinco painéis alternáveis:
+A versão 26.0.0 mantém a landing em uma interface sem rolagem de página. O documento ocupa `100dvh`, mantém `overflow: hidden` e apresenta o conteúdo em cinco painéis alternáveis:
 
 - **Início** — proposta de valor e central de sinais;
 - **Como funciona** — etapas da prospecção comercial;
@@ -16,7 +16,11 @@ No desktop, os painéis são acionados por abas no cabeçalho e por controles an
 
 ## Administração e plano de ação
 
-A Central Executiva exibe o estado da **IA Comercial** — provedor, modelo e disponibilidade — sem serializar segredos. No Cockpit, o **Radar operacional** usa a saúde do pipeline e o plano diário para destacar gargalos e abrir diretamente o lead prioritário. Os gráficos permanecem na Visão geral e não são duplicados no plano de ação.
+A Central Executiva concentra usuários, planos, receita, uso, pagamentos e segurança sem cards operacionais redundantes. No Cockpit, o **Radar operacional** usa a saúde do pipeline e o plano diário para destacar gargalos e abrir diretamente o lead prioritário. Alertas, orientações e a Timeline global ficam centralizados no Histórico.
+
+## Design system e profundidade
+
+A release 26.0.0 reorganiza o CSS do painel em módulos de tokens, base, layout, componentes, views, profundidade e responsividade. Cards executivos recebem um efeito 3D discreto em desktop; touch e usuários com movimento reduzido recebem a versão estática. O arquivo [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) documenta cores, tipografia, espaçamento e regras de uso.
 
 ## Analytics executivo
 

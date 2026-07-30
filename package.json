@@ -1,7 +1,7 @@
 {
   "name": "agente-prospeccao-real",
-  "version": "25.9.2",
-  "description": "SaaS de prospecção tech com landing sem scroll, analytics executivo e cockpit comercial organizado",
+  "version": "26.0.0",
+  "description": "SaaS de prospecção tech com design system modular, analytics executivo e profundidade 3D acessível",
   "main": "src/server.js",
   "type": "commonjs",
   "scripts": {
@@ -17,8 +17,9 @@
     "check:architecture": "node scripts/check-architecture.js",
     "check:frontend": "node scripts/check-frontend.js",
     "test": "node --test tests/*.test.js",
-    "quality": "npm run check:syntax && npm run check:docs && npm run check:architecture && npm run check:frontend && npm run verify:landing && npm test",
-    "check": "npm run quality"
+    "quality": "npm run check:syntax && npm run check:docs && npm run check:architecture && npm run check:frontend && npm run check:styles && npm run verify:landing && npm test",
+    "check": "npm run quality",
+    "check:styles": "node scripts/check-style-architecture.js"
   },
   "dependencies": {
     "@fast-csv/format": "^5.0.5",

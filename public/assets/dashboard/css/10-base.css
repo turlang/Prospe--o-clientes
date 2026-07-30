@@ -1,0 +1,62 @@
+/**
+ * @fileoverview Reset, tipografia e acessibilidade do produto autenticado.
+ * @module public/assets/dashboard/css/base
+ */
+html {
+  font-family: var(--font-sans);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  background: var(--page-bg);
+}
+
+body {
+  color: var(--text-body);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(37, 99, 235, .10), transparent 28rem),
+    radial-gradient(circle at 92% 12%, rgba(6, 182, 212, .08), transparent 26rem),
+    var(--page-bg);
+  font-size: var(--type-base);
+  line-height: 1.55;
+}
+
+body.is-authenticated { background: var(--page-bg); }
+
+h1, h2, h3, h4, h5, h6 {
+  margin-block: 0;
+  color: var(--text-strong);
+  font-weight: 760;
+  line-height: 1.14;
+  letter-spacing: -.025em;
+  text-wrap: balance;
+}
+
+h1 { font-size: var(--type-3xl); }
+h2 { font-size: var(--type-2xl); }
+h3 { font-size: var(--type-xl); }
+h4 { font-size: var(--type-lg); }
+
+p { margin-block: 0; }
+small, .meta { color: var(--text-muted); font-size: var(--type-sm); line-height: 1.5; }
+strong { color: inherit; }
+
+button, input, select, textarea { font: inherit; }
+button, a { transition: color var(--duration-fast) ease, background var(--duration-fast) ease, border-color var(--duration-fast) ease, transform var(--duration-fast) var(--ease-standard), box-shadow var(--duration-fast) ease; }
+
+:where(button, a, input, select, textarea):focus-visible {
+  outline: 3px solid rgba(59, 130, 246, .34);
+  outline-offset: 2px;
+}
+
+::selection { color: #fff; background: var(--color-primary-600); }
+
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}

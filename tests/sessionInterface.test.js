@@ -7,7 +7,11 @@ const fs = require('node:fs');
 
 const html = fs.readFileSync('public/pages/app.html', 'utf8');
 const app = fs.readFileSync('public/assets/dashboard/app.js', 'utf8');
-const css = fs.readFileSync('public/assets/dashboard/styles.css', 'utf8');
+const css = [
+  'public/assets/dashboard/styles.css',
+  'public/assets/dashboard/css/99-legacy.css',
+  'public/assets/dashboard/css/20-layout.css'
+].map((file) => fs.readFileSync(file, 'utf8')).join('\n');
 
 test('sessão autenticada usa barra compacta com único botão de logout', () => {
   assert.match(html, /id="sessionBar"/);
