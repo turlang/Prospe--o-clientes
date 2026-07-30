@@ -1,3 +1,12 @@
+# Changelog
+
+## 25.9.2
+
+- Corrige a quebra do valor de previsão de receita.
+- Remove o recorte da ação recomendada na Leitura executiva.
+- Neutraliza regras antigas do gráfico de receita.
+- Ajusta a coluna executiva em desktop, tablet e mobile.
+
 ## 25.9.1 — Sidebar de conta simplificada
 
 - remove o cartão de plano duplicado da barra lateral;

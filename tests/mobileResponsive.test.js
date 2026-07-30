@@ -33,5 +33,5 @@ test('kanban preserva rolagem interna sem estourar o documento', () => {
 
 test('estado hidden e cache da folha comercial estão protegidos', () => {
   assert.match(css, /\[hidden\]\s*\{\s*display:\s*none\s*!important;/);
-  assert.match(html, /\/assets\/dashboard\/styles\.css\?v=25\.9\.1/);
+  assert.match(html, /\/assets\/dashboard\/styles\.css\?v=25\.9\.2/);
 });

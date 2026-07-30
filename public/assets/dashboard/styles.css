@@ -3779,3 +3779,124 @@ body.is-authenticated .sidebar-account__content .usage-box strong {
     display: none;
   }
 }
+
+/* --------------------------------------------------------------------------
+ * V25.9.2 — Correção estrutural da coluna executiva
+ *
+ * Neutraliza regras legadas aplicadas pelo id #overviewRevenueChart. A regra
+ * antiga forçava três colunas e estreitava o KPI de receita, quebrando valores
+ * como "R$ 1.408" em várias linhas. A leitura executiva também era recortada
+ * porque os dois cards laterais usavam linhas rígidas e overflow oculto.
+ * -------------------------------------------------------------------------- */
+#overviewRevenueChart.overview-forecast {
+  display: grid;
+  grid-template-columns: minmax(10.5rem, .72fr) minmax(0, 1.28fr);
+  gap: .9rem;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.overview-side-stack {
+  grid-template-rows: auto auto;
+  align-content: start;
+}
+
+.overview-forecast-card,
+.overview-decision-card {
+  overflow: visible;
+}
+
+.overview-forecast-total {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.overview-forecast-total strong {
+  max-width: 100%;
+  white-space: nowrap;
+  word-break: normal;
+  overflow-wrap: normal;
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(1.55rem, 2.25vw, 2.05rem);
+  line-height: 1.05;
+}
+
+.overview-forecast-list {
+  align-content: center;
+  min-width: 0;
+  margin-top: 0;
+}
+
+.overview-forecast-list article {
+  grid-template-columns: minmax(6.9rem, .95fr) minmax(5.6rem, 1.1fr) auto;
+  gap: .55rem;
+}
+
+.overview-decision-card {
+  min-height: 0;
+}
+
+.overview-decision-summary {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+}
+
+.overview-decision-item--action {
+  grid-column: 1 / -1;
+}
+
+.overview-decision-item--action strong {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.38;
+}
+
+@media (max-width: 1280px) {
+  #overviewRevenueChart.overview-forecast {
+    grid-template-columns: minmax(9.5rem, .68fr) minmax(0, 1.32fr);
+  }
+
+  .overview-forecast-list article {
+    grid-template-columns: minmax(6.3rem, .9fr) minmax(4.8rem, 1fr) auto;
+  }
+}
+
+@media (max-width: 1120px) {
+  #overviewRevenueChart.overview-forecast {
+    grid-template-columns: minmax(12rem, .7fr) minmax(0, 1.3fr);
+  }
+}
+
+@media (max-width: 760px) {
+  #overviewRevenueChart.overview-forecast {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .overview-forecast-list {
+    margin-top: .1rem;
+  }
+
+  .overview-decision-summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .overview-decision-item--action {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 560px) {
+  #overviewRevenueChart.overview-forecast {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .overview-forecast-list article {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .overview-forecast-meter {
+    grid-column: 1 / -1;
+  }
+}

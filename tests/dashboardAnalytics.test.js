@@ -62,3 +62,10 @@ test('visualizações preservam sete etapas canônicas do funil', () => {
     assert.match(app, new RegExp(`status: '${status}'`));
   }
 });
+
+test('coluna executiva não quebra o valor de receita nem recorta a ação recomendada', () => {
+  assert.match(styles, /#overviewRevenueChart\.overview-forecast\s*\{[\s\S]*?grid-template-columns:/);
+  assert.match(styles, /\.overview-forecast-total strong\s*\{[\s\S]*?white-space:\s*nowrap/);
+  assert.match(styles, /\.overview-decision-card\s*\{[\s\S]*?overflow:\s*visible/);
+  assert.match(styles, /\.overview-decision-item--action\s*\{[\s\S]*?grid-column:\s*1\s*\/\s*-1/);
+});
