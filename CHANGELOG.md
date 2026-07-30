@@ -1,10 +1,17 @@
-## 25.9.0 — Visão executiva comercial simplificada
+## 25.9.1 — Sidebar de conta simplificada
+
+- remove o cartão de plano duplicado da barra lateral;
+- posiciona o uso diário imediatamente abaixo da saudação do usuário;
+- mantém o plano visível apenas na barra superior da sessão;
+- atualiza cache-busting e testes de regressão.
+
+## 25.9.1 — Visão executiva comercial simplificada
 
 - remove donuts e cartões duplicados da Visão geral;
 - consolida volume, receita ponderada, conversão e gargalo em uma única leitura;
 - adiciona KPIs essenciais, previsão de receita e ação recomendada;
 - mantém o funil profissional e reduz ruído visual;
-- atualiza cache-busting dos assets para 25.9.0.
+- atualiza cache-busting dos assets para 25.9.1.
 
 ## 25.8.0 — Funil profissional de prospecção
 

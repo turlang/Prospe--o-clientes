@@ -10,7 +10,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>LeadHunter Pro — Dashboard</title>
   <link rel="icon" href="data:," />
-  <link rel="stylesheet" href="/assets/dashboard/styles.css?v=25.9.0" />
+  <link rel="stylesheet" href="/assets/dashboard/styles.css?v=25.9.1" />
 </head>
 <body>
   <main id="appRoot" class="container">
@@ -64,13 +64,12 @@
       <!-- Navegação persistente e contexto da assinatura. -->
       <aside class="sidebar card-panel">
         <div class="sidebar-account">
-          <div>
+          <div class="sidebar-account__content">
             <p class="tag">Dashboard</p>
             <h2 id="welcome">Sua central</h2>
-            <p id="planInfo" class="plan-pill"></p>
+            <div id="usageBox" class="usage-box" aria-live="polite"></div>
           </div>
         </div>
-        <div id="usageBox" class="usage-box"></div>
         <nav aria-label="Menu principal">
           <ul class="nav-list">
             <li><button class="nav-btn active" type="button" data-view="dashboard">Visão geral</button></li>
@@ -449,6 +448,6 @@
       </section>
     </section>
   </main>
-  <script src="/assets/dashboard/app.js?v=25.9.0"></script>
+  <script src="/assets/dashboard/app.js?v=25.9.1"></script>
 </body>
 </html>

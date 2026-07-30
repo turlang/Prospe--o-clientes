@@ -3390,7 +3390,7 @@ body.is-authenticated .overview-pipeline-card { min-width: 0; }
 
 
 /* --------------------------------------------------------------------------
- * V25.9.0 — Visão executiva enxuta e orientada à decisão
+ * V25.9.1 — Visão executiva enxuta e orientada à decisão
  *
  * Reduz redundâncias do dashboard e mantém somente quatro dimensões:
  * volume ativo, receita ponderada, conversão e gargalo operacional.
@@ -3733,5 +3733,49 @@ body.is-authenticated .overview-pipeline-card { min-width: 0; }
   }
   .overview-forecast-meter {
     grid-column: 1 / -1;
+  }
+}
+
+
+/* --------------------------------------------------------------------------
+ * V25.9.1 — Contexto da conta simplificado na barra lateral
+ * O plano permanece disponível na barra de sessão; a lateral destaca apenas
+ * o usuário e o consumo diário, evitando informação duplicada.
+ * -------------------------------------------------------------------------- */
+.sidebar-account__content {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  gap: 0;
+}
+
+.sidebar-account__content .usage-box {
+  margin-top: 8px;
+}
+
+body.is-authenticated .sidebar-account {
+  padding-bottom: 12px;
+}
+
+body.is-authenticated .sidebar-account h2 {
+  margin-bottom: 0;
+}
+
+body.is-authenticated .sidebar-account__content .usage-box {
+  width: 100%;
+  padding: 10px 11px;
+  border: 1px solid #d8e1ed;
+  border-radius: 13px;
+  background: #f4f7fb;
+  box-shadow: none;
+}
+
+body.is-authenticated .sidebar-account__content .usage-box strong {
+  margin-bottom: 4px;
+}
+
+@media (max-width: 760px) {
+  body.is-authenticated .sidebar-account__content .usage-box {
+    display: none;
   }
 }

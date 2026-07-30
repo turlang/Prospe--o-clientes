@@ -1,6 +1,6 @@
 {
   "name": "agente-prospeccao-real",
-  "version": "25.9.0",
+  "version": "25.9.1",
   "description": "SaaS de prospecção tech com landing sem scroll, analytics executivo e cockpit comercial organizado",
   "main": "src/server.js",
   "type": "commonjs",

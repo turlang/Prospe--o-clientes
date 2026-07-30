@@ -1,5 +1,5 @@
 /**
- * @fileoverview Regressões da release 25.9.0: limpeza da sidebar,
+ * @fileoverview Regressões da release 25.9.1: limpeza da sidebar,
  * histórico operacional e composição do resumo de planos.
  */
 const test = require('node:test');
@@ -10,12 +10,14 @@ const path = require('node:path');
 const root = path.join(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
-test('sidebar remove cartões de IA Comercial e upgrade Pro', () => {
+test('sidebar remove cartões de IA Comercial, upgrade Pro e plano duplicado', () => {
   const html = read('public/pages/app.html');
   const js = read('public/assets/dashboard/app.js');
   assert.doesNotMatch(html, /id="aiStatusBox"/);
   assert.doesNotMatch(html, /class="upgrade-box"/);
   assert.doesNotMatch(html, /Preparado para Pro/);
+  assert.doesNotMatch(html, /id="planInfo"/);
+  assert.match(html, /<h2 id="welcome">Sua central<\/h2>[\s\S]*?<div id="usageBox"/);
   assert.doesNotMatch(js, /const aiStatusBox/);
   assert.doesNotMatch(js, /function refreshAiStatus/);
 });
@@ -57,7 +59,7 @@ test('resumo de planos do Admin mantém total e planos na mesma linha', () => {
   assert.match(css, /\.plan-summary-row[\s\S]*grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
 });
 
-test('assets críticos usam cache-busting da versão 25.9.0', () => {
-  assert.match(read('public/pages/app.html'), /app\.js\?v=25\.9\.0/);
-  assert.match(read('public/pages/admin.html'), /admin\.js\?v=25\.9\.0/);
+test('assets críticos usam cache-busting da versão 25.9.1', () => {
+  assert.match(read('public/pages/app.html'), /app\.js\?v=25\.9\.1/);
+  assert.match(read('public/pages/admin.html'), /admin\.js\?v=25\.9\.1/);
 });

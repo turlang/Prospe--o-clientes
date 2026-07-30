@@ -349,7 +349,9 @@ async function showDashboard() {
   if (sessionPlanName) sessionPlanName.textContent = `Plano ${String(currentUser?.planName || currentUser?.plan || 'Teste gratuito')}`;
   if (statusBox) statusBox.innerHTML = '';
   welcome.textContent = `Olá, ${currentUser?.name || 'usuário'}`;
-  planInfo.innerHTML = `<strong>Plano ${String(currentUser?.planName || currentUser?.plan || 'TESTE GRATUITO').toUpperCase()}</strong><span>${currentUser?.plan === 'trial' ? '10 leads totais' : `${currentUser?.dailyLeadLimit || 10} leads/dia`}</span>`;
+  if (planInfo) {
+    planInfo.innerHTML = `<strong>Plano ${String(currentUser?.planName || currentUser?.plan || 'TESTE GRATUITO').toUpperCase()}</strong><span>${currentUser?.plan === 'trial' ? '10 leads totais' : `${currentUser?.dailyLeadLimit || 10} leads/dia`}</span>`;
+  }
   if (currentUser?.role === 'admin') addAdminShortcut();
 
   renderOnboarding();
