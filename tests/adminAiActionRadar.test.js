@@ -1,5 +1,5 @@
 /**
- * @fileoverview Regressões da release 25.8.0: limpeza da sidebar,
+ * @fileoverview Regressões da release 25.9.0: limpeza da sidebar,
  * histórico operacional e composição do resumo de planos.
  */
 const test = require('node:test');
@@ -57,7 +57,7 @@ test('resumo de planos do Admin mantém total e planos na mesma linha', () => {
   assert.match(css, /\.plan-summary-row[\s\S]*grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
 });
 
-test('assets críticos usam cache-busting da versão 25.8.0', () => {
-  assert.match(read('public/pages/app.html'), /app\.js\?v=25\.8\.0/);
-  assert.match(read('public/pages/admin.html'), /admin\.js\?v=25\.8\.0/);
+test('assets críticos usam cache-busting da versão 25.9.0', () => {
+  assert.match(read('public/pages/app.html'), /app\.js\?v=25\.9\.0/);
+  assert.match(read('public/pages/admin.html'), /admin\.js\?v=25\.9\.0/);
 });

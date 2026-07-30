@@ -19,10 +19,11 @@ test('painel limita a largura do documento em telas pequenas', () => {
   assert.match(css, /@container dashboard-chart \(max-width:\s*720px\)/);
 });
 
-test('gráficos executivos viram listas compactas no mobile', () => {
-  assert.match(css, /body\.is-authenticated \.column-chart-item[\s\S]*?grid-template-areas:/);
-  assert.match(css, /body\.is-authenticated \.overview-pipeline-cards[\s\S]*?grid-template-columns:\s*repeat\(2,/);
-  assert.match(app, /--mobile-bar:\$\{height\}%/);
+test('visão executiva reorganiza KPIs, funil e conversão no mobile', () => {
+  assert.match(css, /@media \(max-width: 900px\)[\s\S]*?\.overview-kpi-strip[\s\S]*?grid-template-columns:\s*repeat\(2,/);
+  assert.match(css, /@media \(max-width: 900px\)[\s\S]*?\.overview-side-stack,[\s\S]*?\.conversion-analytics--compact[\s\S]*?grid-template-columns:\s*minmax\(0, 1fr\)/);
+  assert.match(css, /@media \(max-width: 900px\)[\s\S]*?\.prospecting-funnel--compact[\s\S]*?grid-template-columns:\s*minmax\(0, 1fr\)/);
+  assert.match(app, /conversion-compact-kpis/);
 });
 
 test('kanban preserva rolagem interna sem estourar o documento', () => {
@@ -32,5 +33,5 @@ test('kanban preserva rolagem interna sem estourar o documento', () => {
 
 test('estado hidden e cache da folha comercial estão protegidos', () => {
   assert.match(css, /\[hidden\]\s*\{\s*display:\s*none\s*!important;/);
-  assert.match(html, /\/assets\/dashboard\/styles\.css\?v=25\.8\.0/);
+  assert.match(html, /\/assets\/dashboard\/styles\.css\?v=25\.9\.0/);
 });

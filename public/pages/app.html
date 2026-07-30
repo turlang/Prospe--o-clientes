@@ -10,7 +10,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>LeadHunter Pro — Dashboard</title>
   <link rel="icon" href="data:," />
-  <link rel="stylesheet" href="/assets/dashboard/styles.css?v=25.8.0" />
+  <link rel="stylesheet" href="/assets/dashboard/styles.css?v=25.9.0" />
 </head>
 <body>
   <main id="appRoot" class="container">
@@ -179,39 +179,49 @@
         <section id="view-dashboard" class="view active-view">
           <div class="dashboard-header card-panel overview-heading">
             <div>
-              <p class="tag dark">Visão geral</p>
-              <h2>Painel de desempenho e potencial comercial</h2>
-              <p class="meta">Gráficos objetivos para acompanhar prospecção, contatos, propostas, conversão e possibilidades de ganho.</p>
+              <p class="tag dark">Visão executiva</p>
+              <h2>Desempenho comercial em uma leitura</h2>
+              <p class="meta">Acompanhe apenas os indicadores que mudam sua próxima decisão: volume, receita, conversão e gargalos.</p>
             </div>
-            <button id="overviewRefreshButton" type="button" class="secondary">Atualizar gráficos</button>
+            <button id="overviewRefreshButton" type="button" class="secondary">Atualizar visão</button>
           </div>
 
-          <div class="overview-chart-grid">
-            <section class="card-panel chart-panel chart-panel-wide">
-              <div class="section-title"><h3>Potencial de ganhos por etapa</h3><p class="meta">Estimativa ponderada conforme o avanço das oportunidades.</p></div>
-              <div id="overviewRevenueChart" class="executive-chart"></div>
-            </section>
-            <section class="card-panel chart-panel">
-              <div class="section-title"><h3>Contatos realizados</h3><p class="meta">Comparação entre leads contatados e ainda não trabalhados.</p></div>
-              <div id="overviewContactChart" class="donut-chart-wrap"></div>
-            </section>
-            <section class="card-panel chart-panel">
-              <div class="section-title"><h3>Situação das propostas</h3><p class="meta">Em negociação, aceitas e recusadas.</p></div>
-              <div id="overviewProposalChart" class="donut-chart-wrap"></div>
-            </section>
-            <section class="card-panel chart-panel chart-panel-wide analytics-card analytics-card--pipeline">
-              <div class="section-title"><h3>Níveis de prospecção</h3><p class="meta">Distribuição atual das oportunidades no pipeline.</p></div>
+          <section id="overviewKpis" class="overview-kpi-strip" aria-label="Indicadores essenciais da operação comercial"></section>
+
+          <div class="overview-executive-grid">
+            <section class="card-panel chart-panel analytics-card analytics-card--pipeline overview-funnel-panel">
+              <div class="section-title">
+                <h3>Funil comercial</h3>
+                <p class="meta">Onde as oportunidades estão concentradas e quanto já avançaram.</p>
+              </div>
               <div id="overviewProspectingChart" class="executive-chart"></div>
             </section>
-            <section class="card-panel chart-panel chart-panel-wide analytics-card analytics-card--conversion">
-              <div class="section-title"><h3>Indicadores de conversão</h3><p class="meta">Percentuais que mostram a saúde da operação comercial.</p></div>
-              <div id="overviewConversionChart" class="conversion-chart"></div>
-            </section>
+
+            <div class="overview-side-stack">
+              <section class="card-panel overview-forecast-card">
+                <div class="section-title">
+                  <h3>Previsão de receita</h3>
+                  <p class="meta">Valor ponderado pela maturidade de cada oportunidade.</p>
+                </div>
+                <div id="overviewRevenueChart" class="overview-forecast"></div>
+              </section>
+
+              <section class="card-panel overview-decision-card">
+                <div class="section-title">
+                  <h3>Leitura executiva</h3>
+                  <p class="meta">Gargalo atual, risco operacional e ação mais importante.</p>
+                </div>
+                <div id="overviewDecisionSummary" class="overview-decision-summary"></div>
+              </section>
+            </div>
           </div>
 
-          <section class="card-panel overview-pipeline-panel">
-            <div class="section-title"><h3>Pipeline executivo</h3><p class="meta">Volume, potencial de receita e participação de cada etapa comercial.</p></div>
-            <div id="overviewPipelineExecutive" class="overview-pipeline-cards"></div>
+          <section class="card-panel chart-panel analytics-card analytics-card--conversion overview-conversion-panel">
+            <div class="section-title">
+              <h3>Conversão por etapa</h3>
+              <p class="meta">Eficiência entre cada decisão do processo comercial, sem métricas duplicadas.</p>
+            </div>
+            <div id="overviewConversionChart" class="conversion-chart"></div>
           </section>
         </section>
 
@@ -439,6 +449,6 @@
       </section>
     </section>
   </main>
-  <script src="/assets/dashboard/app.js?v=25.8.0"></script>
+  <script src="/assets/dashboard/app.js?v=25.9.0"></script>
 </body>
 </html>

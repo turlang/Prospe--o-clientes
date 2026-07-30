@@ -3387,3 +3387,351 @@ body.is-authenticated .overview-pipeline-card { min-width: 0; }
   .funnel-kpis { grid-template-columns: 1fr; }
   .funnel-distribution { max-height: 15rem; overflow-y: auto; padding-right: .2rem; }
 }
+
+
+/* --------------------------------------------------------------------------
+ * V25.9.0 — Visão executiva enxuta e orientada à decisão
+ *
+ * Reduz redundâncias do dashboard e mantém somente quatro dimensões:
+ * volume ativo, receita ponderada, conversão e gargalo operacional.
+ * -------------------------------------------------------------------------- */
+.overview-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.overview-heading h2 {
+  max-width: 46rem;
+  margin-bottom: .35rem;
+}
+
+.overview-kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: .8rem;
+  margin: .9rem 0;
+}
+
+.overview-kpi-card {
+  min-width: 0;
+  padding: 1rem 1.05rem;
+  border: 1px solid #dbe5f1;
+  border-radius: 1rem;
+  background: linear-gradient(155deg, #ffffff, #f7faff);
+  box-shadow: 0 10px 26px rgba(15, 23, 42, .055);
+}
+
+.overview-kpi-card span,
+.overview-kpi-card small {
+  display: block;
+  color: #64748b;
+}
+
+.overview-kpi-card span {
+  font-size: .72rem;
+  font-weight: 900;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+}
+
+.overview-kpi-card strong {
+  display: block;
+  margin: .4rem 0 .28rem;
+  color: #0f172a;
+  font-size: clamp(1.35rem, 2.5vw, 2rem);
+  letter-spacing: -.035em;
+}
+
+.overview-kpi-card small {
+  font-size: .76rem;
+  line-height: 1.4;
+}
+
+.overview-executive-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.62fr) minmax(19rem, .78fr);
+  gap: .9rem;
+  align-items: stretch;
+}
+
+.overview-funnel-panel,
+.overview-side-stack,
+.overview-side-stack > section {
+  min-width: 0;
+}
+
+.overview-side-stack {
+  display: grid;
+  grid-template-rows: minmax(0, 1.08fr) minmax(0, .92fr);
+  gap: .9rem;
+}
+
+.overview-forecast-card,
+.overview-decision-card {
+  overflow: hidden;
+}
+
+.overview-forecast-total {
+  padding: .95rem 1rem;
+  border: 1px solid #bfdbfe;
+  border-radius: 1rem;
+  background: linear-gradient(135deg, #eff6ff, #ecfeff);
+}
+
+.overview-forecast-total span,
+.overview-forecast-total small {
+  display: block;
+  color: #64748b;
+}
+
+.overview-forecast-total span {
+  font-size: .72rem;
+  font-weight: 900;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.overview-forecast-total strong {
+  display: block;
+  margin: .4rem 0;
+  color: #0f172a;
+  font-size: clamp(1.5rem, 2.7vw, 2.25rem);
+  letter-spacing: -.04em;
+}
+
+.overview-forecast-total small {
+  font-size: .73rem;
+  line-height: 1.45;
+}
+
+.overview-forecast-list {
+  display: grid;
+  gap: .72rem;
+  margin-top: .85rem;
+}
+
+.overview-forecast-list article {
+  display: grid;
+  grid-template-columns: minmax(7.5rem, 1fr) minmax(7rem, 1.15fr) auto;
+  gap: .7rem;
+  align-items: center;
+}
+
+.overview-forecast-list article > div:first-child strong,
+.overview-forecast-list article > div:first-child span {
+  display: block;
+}
+
+.overview-forecast-list article > div:first-child strong {
+  color: #0f172a;
+  font-size: .78rem;
+}
+
+.overview-forecast-list article > div:first-child span {
+  margin-top: .12rem;
+  color: #64748b;
+  font-size: .66rem;
+}
+
+.overview-forecast-list article > b {
+  color: #0f172a;
+  font-size: .76rem;
+  white-space: nowrap;
+}
+
+.overview-forecast-meter {
+  height: .55rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e2e8f0;
+}
+
+.overview-forecast-meter span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #2563eb, #06b6d4);
+}
+
+.overview-decision-summary {
+  display: grid;
+  gap: .7rem;
+}
+
+.overview-decision-item {
+  padding: .82rem .9rem;
+  border: 1px solid #e2e8f0;
+  border-radius: .9rem;
+  background: #f8fafc;
+}
+
+.overview-decision-item span,
+.overview-decision-item small {
+  display: block;
+  color: #64748b;
+}
+
+.overview-decision-item span {
+  font-size: .67rem;
+  font-weight: 900;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.overview-decision-item strong {
+  display: block;
+  margin: .28rem 0 .2rem;
+  color: #0f172a;
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+.overview-decision-item small {
+  font-size: .72rem;
+  line-height: 1.4;
+}
+
+.overview-decision-item--action {
+  border-color: #a7f3d0;
+  background: linear-gradient(145deg, #ecfdf5, #f0fdfa);
+}
+
+.overview-decision-item--action strong {
+  color: #065f46;
+  font-size: .82rem;
+}
+
+.prospecting-funnel--compact {
+  grid-template-columns: minmax(0, 1.55fr) minmax(15rem, .65fr);
+}
+
+.funnel-insights-card--compact {
+  align-content: start;
+}
+
+.funnel-executive-list {
+  display: grid;
+  gap: .7rem;
+  margin-top: .85rem;
+}
+
+.funnel-executive-list article {
+  padding: .85rem;
+  border: 1px solid #dbe5f1;
+  border-radius: .9rem;
+  background: #f8fafc;
+}
+
+.funnel-executive-list span,
+.funnel-executive-list small {
+  display: block;
+  color: #64748b;
+}
+
+.funnel-executive-list span {
+  font-size: .67rem;
+  font-weight: 900;
+  letter-spacing: .045em;
+  text-transform: uppercase;
+}
+
+.funnel-executive-list strong {
+  display: block;
+  margin: .25rem 0 .18rem;
+  color: #0f172a;
+  font-size: 1.18rem;
+}
+
+.funnel-executive-list small {
+  font-size: .7rem;
+  line-height: 1.4;
+}
+
+.overview-conversion-panel {
+  margin-top: .9rem;
+}
+
+.conversion-analytics--compact {
+  display: grid;
+  grid-template-columns: minmax(15rem, .58fr) minmax(0, 1.42fr);
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.conversion-compact-kpis {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: .65rem;
+}
+
+.conversion-compact-kpis article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: .15rem .75rem;
+  align-items: center;
+  padding: .88rem .95rem;
+  border: 1px solid #dbe5f1;
+  border-radius: .9rem;
+  background: #f8fafc;
+}
+
+.conversion-compact-kpis span,
+.conversion-compact-kpis small {
+  color: #64748b;
+}
+
+.conversion-compact-kpis span {
+  font-size: .72rem;
+  font-weight: 900;
+}
+
+.conversion-compact-kpis strong {
+  grid-row: span 2;
+  color: #0f172a;
+  font-size: 1.35rem;
+}
+
+.conversion-compact-kpis small {
+  font-size: .68rem;
+}
+
+@media (max-width: 1120px) {
+  .overview-executive-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .overview-side-stack {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: auto;
+  }
+}
+
+@media (max-width: 900px) {
+  .overview-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .overview-kpi-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .overview-side-stack,
+  .conversion-analytics--compact {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .prospecting-funnel--compact {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 560px) {
+  .overview-kpi-strip {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .overview-forecast-list article {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .overview-forecast-meter {
+    grid-column: 1 / -1;
+  }
+}

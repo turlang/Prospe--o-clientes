@@ -80,12 +80,11 @@ const reportFunnel = document.querySelector('#reportFunnel');
 const reportRecommendations = document.querySelector('#reportRecommendations');
 const reportSegments = document.querySelector('#reportSegments');
 const reportStalled = document.querySelector('#reportStalled');
+const overviewKpis = document.querySelector('#overviewKpis');
 const overviewRevenueChart = document.querySelector('#overviewRevenueChart');
-const overviewContactChart = document.querySelector('#overviewContactChart');
-const overviewProposalChart = document.querySelector('#overviewProposalChart');
 const overviewProspectingChart = document.querySelector('#overviewProspectingChart');
 const overviewConversionChart = document.querySelector('#overviewConversionChart');
-const overviewPipelineExecutive = document.querySelector('#overviewPipelineExecutive');
+const overviewDecisionSummary = document.querySelector('#overviewDecisionSummary');
 const overviewRefreshButton = document.querySelector('#overviewRefreshButton');
 const proposalSummary = document.querySelector('#proposalSummary');
 const proposalList = document.querySelector('#proposalList');
@@ -489,7 +488,7 @@ function renderProspectingPipeline(container, funnel = []) {
   const rejectedStage = stages.find((stage) => stage.status === 'SEM_INTERESSE') || {
     status: 'SEM_INTERESSE', label: 'Recusados', icon: 'close', total: 0, percentage: 0
   };
-  const baseTotal = Math.max(1, activeStages.reduce((sum, stage) => sum + stage.total, 0) + rejectedStage.total);
+  const baseTotal = Math.max(1, stages.reduce((sum, stage) => sum + stage.total, 0));
   const maxVolume = Math.max(1, ...activeStages.map((stage) => stage.total));
   const visualFloors = [100, 82, 68, 54, 42, 30];
 
@@ -520,32 +519,21 @@ function renderProspectingPipeline(container, funnel = []) {
       </article>`;
   }).join('');
 
-  const progressed = activeStages.slice(1).reduce((sum, stage) => sum + stage.total, 0);
-  const openOpportunities = activeStages.filter((stage) => !['NOVO', 'FECHADO'].includes(stage.status)).reduce((sum, stage) => sum + stage.total, 0);
+  const openOpportunities = activeStages
+    .filter((stage) => !['NOVO', 'FECHADO'].includes(stage.status))
+    .reduce((sum, stage) => sum + stage.total, 0);
   const closed = activeStages.find((stage) => stage.status === 'FECHADO')?.total || 0;
   const dominantStage = [...activeStages].sort((a, b) => b.total - a.total)[0] || activeStages[0];
-
-  const distributionRows = stages.map((stage) => {
-    const width = stage.total > 0 ? Math.max(4, Math.round((stage.total / maxVolume) * 100)) : 0;
-    return `
-      <li data-status="${stage.status}">
-        <i>${overviewStageIcon(stage.icon)}</i>
-        <div>
-          <span><strong>${escapeHtml(stage.label)}</strong><b>${stage.total}</b></span>
-          <div class="funnel-distribution__track"><span style="width:${width}%"></span></div>
-        </div>
-        <small>${stage.percentage}%</small>
-      </li>`;
-  }).join('');
+  const conversionRate = Math.round((closed / baseTotal) * 100);
 
   container.innerHTML = `
-    <div class="prospecting-funnel">
+    <div class="prospecting-funnel prospecting-funnel--compact">
       <section class="funnel-chart-card" aria-label="Funil atual de prospecção">
         <header class="funnel-chart-card__header">
           <div>
             <span class="funnel-eyebrow">Pipeline atual</span>
             <strong>Da descoberta ao fechamento</strong>
-            <small>A largura organiza as etapas; os números mostram o volume real.</small>
+            <small>Volume real por etapa, sem indicadores repetidos.</small>
           </div>
           <div class="funnel-total"><strong>${baseTotal}</strong><span>oportunidades</span></div>
         </header>
@@ -560,26 +548,30 @@ function renderProspectingPipeline(container, funnel = []) {
         </aside>
       </section>
 
-      <aside class="funnel-insights-card">
+      <aside class="funnel-insights-card funnel-insights-card--compact">
         <header>
-          <span class="funnel-eyebrow">Leitura executiva</span>
+          <span class="funnel-eyebrow">Leitura rápida</span>
           <strong>Saúde do funil</strong>
-          <small>Distribuição das oportunidades em cada decisão comercial.</small>
+          <small>Três respostas para orientar a próxima decisão.</small>
         </header>
 
-        <div class="funnel-kpis">
-          <article><span>Avançaram</span><strong>${progressed}</strong><small>${Math.round((progressed / baseTotal) * 100)}% da base</small></article>
-          <article><span>Em negociação</span><strong>${openOpportunities}</strong><small>entre contato e proposta</small></article>
-          <article><span>Fechados</span><strong>${closed}</strong><small>${Math.round((closed / baseTotal) * 100)}% da base</small></article>
+        <div class="funnel-executive-list">
+          <article>
+            <span>Maior concentração</span>
+            <strong>${escapeHtml(dominantStage?.label || 'Sem dados')}</strong>
+            <small>${dominantStage?.total || 0} oportunidade(s) nesta etapa.</small>
+          </article>
+          <article>
+            <span>Em negociação</span>
+            <strong>${openOpportunities}</strong>
+            <small>Entre primeiro contato e proposta.</small>
+          </article>
+          <article>
+            <span>Conversão geral</span>
+            <strong>${conversionRate}%</strong>
+            <small>${closed} fechamento(s) registrados.</small>
+          </article>
         </div>
-
-        <div class="funnel-highlight">
-          <span>Maior concentração</span>
-          <strong>${escapeHtml(dominantStage?.label || 'Sem dados')}</strong>
-          <small>${dominantStage?.total || 0} oportunidade(s) aguardando ação.</small>
-        </div>
-
-        <ul class="funnel-distribution">${distributionRows}</ul>
       </aside>
     </div>`;
 }
@@ -610,25 +602,13 @@ function renderConversionAnalytics(container, summary = {}, funnel = []) {
   const proposals = Math.max(0, Number(summary.proposals || 0));
   const closed = Math.max(0, Number(summary.closed || 0));
   const proposalReach = proposals + closed;
-  const ticketAverage = closed > 0 ? Number(summary.closedRevenue || 0) / closed : 0;
   const percent = (value, base) => base > 0 ? Math.min(100, Math.round((value / base) * 100)) : 0;
 
-  const kpis = [
-    { icon: 'users', label: 'Taxa de contato', value: `${Number(summary.contactRate || 0)}%`, detail: `${contacted} de ${total} leads`, note: 'Primeira abordagem realizada' },
-    { icon: 'document', label: 'Taxa de propostas', value: `${percent(proposalReach, contacted)}%`, detail: `${proposalReach} de ${contacted} contatos`, note: 'Chegaram à proposta' },
-    { icon: 'check', label: 'Taxa de fechamento', value: `${percent(closed, proposalReach)}%`, detail: `${closed} de ${proposalReach} propostas`, note: 'Conversão em cliente' },
-    { icon: 'chart', label: 'Ticket médio', value: formatMoney(ticketAverage), detail: 'Receita média por negócio', note: closed ? `${closed} fechamento(s)` : 'Sem fechamento registrado' }
+  const compactRates = [
+    { label: 'Contato', value: Number(summary.contactRate || 0), detail: `${contacted} de ${total}` },
+    { label: 'Proposta', value: percent(proposalReach, contacted), detail: `${proposalReach} de ${contacted}` },
+    { label: 'Fechamento', value: percent(closed, proposalReach), detail: `${closed} de ${proposalReach}` }
   ];
-
-  const chartIcon = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V9M10 19V5M16 19v-8M22 19V2"/></svg>';
-  const kpiMarkup = kpis.map((item) => `
-    <article class="conversion-kpi">
-      <i>${item.icon === 'chart' ? chartIcon : overviewStageIcon(item.icon)}</i>
-      <span>${escapeHtml(item.label)}</span>
-      <strong>${escapeHtml(item.value)}</strong>
-      <small>${escapeHtml(item.detail)}</small>
-      <em>${escapeHtml(item.note)}</em>
-    </article>`).join('');
 
   const stageMarkup = stages.map((stage) => `
     <article class="conversion-stage-row">
@@ -637,74 +617,107 @@ function renderConversionAnalytics(container, summary = {}, funnel = []) {
     </article>`).join('');
 
   container.innerHTML = `
-    <div class="conversion-analytics">
-      <div class="conversion-kpi-grid">${kpiMarkup}</div>
+    <div class="conversion-analytics conversion-analytics--compact">
+      <div class="conversion-compact-kpis">
+        ${compactRates.map((item) => `
+          <article>
+            <span>${escapeHtml(item.label)}</span>
+            <strong>${item.value}%</strong>
+            <small>${escapeHtml(item.detail)}</small>
+          </article>`).join('')}
+      </div>
       <section class="conversion-stage-panel">
         <div class="conversion-stage-panel__heading">
-          <div><strong>Conversão por etapa do pipeline</strong><span>Eficiência entre cada decisão comercial.</span></div>
+          <div><strong>Eficiência entre etapas</strong><span>Onde o processo perde mais oportunidades.</span></div>
           <div class="conversion-legend"><i></i> conversão <i></i> perda</div>
         </div>
         <div class="conversion-stage-list">${stageMarkup}</div>
       </section>
-      <footer class="conversion-summary-strip">
-        <div><i>${overviewStageIcon('users')}</i><span>Total de oportunidades</span><strong>${total}</strong></div>
-        <div><i>${chartIcon}</i><span>Receita potencial</span><strong>${escapeHtml(formatMoney(summary.estimatedPipelineRevenue || 0))}</strong></div>
-        <div><i>${overviewStageIcon('calendar')}</i><span>Atualização</span><strong>Dados atuais</strong></div>
-      </footer>
     </div>`;
 }
 
-function renderHorizontalBars(container, rows, { valueFormatter = (value) => String(value), empty = 'Sem dados suficientes.' } = {}) {
+function renderOverviewKpis(container, summary = {}, weightedRevenue = 0) {
   if (!container) return;
-  const safeRows = Array.isArray(rows) ? rows : [];
-  const max = Math.max(...safeRows.map((row) => Number(row.value || 0)), 1);
-  container.innerHTML = safeRows.some((row) => Number(row.value || 0) > 0) ? safeRows.map((row) => {
-    const value = Number(row.value || 0);
-    const width = value ? Math.max(4, Math.round((value / max) * 100)) : 0;
-    return `<article class="executive-bar-row"><div><strong>${escapeHtml(row.label)}</strong><small>${escapeHtml(row.detail || '')}</small></div><div class="executive-bar-track"><span style="width:${width}%"></span></div><b>${escapeHtml(valueFormatter(value))}</b></article>`;
-  }).join('') : `<p class="meta">${escapeHtml(empty)}</p>`;
+  const items = [
+    { label: 'Oportunidades ativas', value: Number(summary.activeLeads || 0), detail: 'Leads ainda em andamento' },
+    { label: 'Receita ponderada', value: formatMoney(weightedRevenue), detail: 'Previsão ajustada pelo estágio' },
+    { label: 'Taxa de contato', value: `${Number(summary.contactRate || 0)}%`, detail: `${Number(summary.contacted || 0)} contato(s) iniciado(s)` },
+    { label: 'Taxa de fechamento', value: `${Number(summary.closeRate || 0)}%`, detail: `${Number(summary.closed || 0)} cliente(s) fechado(s)` }
+  ];
+  container.innerHTML = items.map((item) => `
+    <article class="overview-kpi-card">
+      <span>${escapeHtml(item.label)}</span>
+      <strong>${escapeHtml(String(item.value))}</strong>
+      <small>${escapeHtml(item.detail)}</small>
+    </article>`).join('');
 }
 
-function renderColumnChart(container, rows, { valueFormatter = (value) => String(value), empty = 'Sem dados para exibir.' } = {}) {
+function renderRevenueForecast(container, rows = []) {
   if (!container) return;
-  const safeRows = Array.isArray(rows) ? rows : [];
-  const max = Math.max(...safeRows.map((row) => Number(row.value || 0)), 1);
-  if (!safeRows.some((row) => Number(row.value || 0) > 0)) {
-    container.innerHTML = `<p class="meta">${escapeHtml(empty)}</p>`;
-    return;
-  }
-  container.innerHTML = `<div class="column-chart">${safeRows.map((row) => {
-    const value = Number(row.value || 0);
-    const height = value ? Math.max(8, Math.round((value / max) * 100)) : 3;
-    return `<article class="column-chart-item" title="${escapeAttr(row.label)}: ${escapeAttr(valueFormatter(value))}"><div class="column-chart-value">${escapeHtml(valueFormatter(value))}</div><div class="column-chart-track"><span style="height:${height}%;--mobile-bar:${height}%"></span></div><strong>${escapeHtml(row.label)}</strong><small>${escapeHtml(row.detail || '')}</small></article>`;
-  }).join('')}</div>`;
+  const safeRows = (Array.isArray(rows) ? rows : [])
+    .filter((row) => row.label !== 'Recusados' && Number(row.value || 0) > 0);
+  const total = safeRows.reduce((sum, row) => sum + Number(row.value || 0), 0);
+  const max = Math.max(1, ...safeRows.map((row) => Number(row.value || 0)));
+
+  container.innerHTML = `
+    <div class="overview-forecast-total">
+      <span>Receita ponderada atual</span>
+      <strong>${escapeHtml(formatMoney(total))}</strong>
+      <small>Não é faturamento realizado; considera a maturidade do pipeline.</small>
+    </div>
+    <div class="overview-forecast-list">
+      ${safeRows.length ? safeRows.map((row) => {
+        const width = Math.max(4, Math.round((Number(row.value || 0) / max) * 100));
+        return `
+          <article>
+            <div><strong>${escapeHtml(row.label)}</strong><span>${escapeHtml(row.detail || '')}</span></div>
+            <div class="overview-forecast-meter"><span style="width:${width}%"></span></div>
+            <b>${escapeHtml(formatMoney(row.value || 0))}</b>
+          </article>`;
+      }).join('') : '<p class="meta">Ainda não há receita ponderada no pipeline.</p>'}
+    </div>`;
 }
 
-function renderRevenueStageCards(container, rows) {
+function renderDecisionSummary(container, { summary = {}, funnel = [], leads = [] } = {}) {
   if (!container) return;
-  const safeRows = Array.isArray(rows) ? rows : [];
-  container.innerHTML = safeRows.length ? safeRows.map((row) => `
-    <article class="revenue-stage-card">
-      <small>${escapeHtml(row.label)}</small>
-      <strong>${escapeHtml(formatMoney(row.value || 0))}</strong>
-      <span>${escapeHtml(row.detail || '')}</span>
+  const counts = Object.fromEntries(OVERVIEW_PIPELINE_STAGES.map((stage) => [stage.status, getOverviewStage(funnel, stage.status).total]));
+  const activeStatuses = new Set(['NOVO', 'CONTATADO', 'INTERESSADO', 'REUNIAO', 'PROPOSTA']);
+  const stalled = (Array.isArray(leads) ? leads : []).filter((lead) => {
+    const status = normalizeStatus(lead.status);
+    const age = daysSince(getLastInteraction(lead)?.data || lead.coletadoEm || lead.createdAt);
+    return activeStatuses.has(status) && age !== null && age >= 7;
+  }).length;
+
+  const candidates = [
+    { status: 'NOVO', label: 'Primeiro contato', value: counts.NOVO },
+    { status: 'CONTATADO', label: 'Qualificação', value: counts.CONTATADO },
+    { status: 'INTERESSADO', label: 'Agendamento', value: counts.INTERESSADO },
+    { status: 'REUNIAO', label: 'Envio de proposta', value: counts.REUNIAO },
+    { status: 'PROPOSTA', label: 'Fechamento', value: counts.PROPOSTA }
+  ];
+  const bottleneck = [...candidates].sort((a, b) => b.value - a.value)[0] || candidates[0];
+
+  let action = 'Manter a cadência atual e revisar o funil diariamente.';
+  if (Number(summary.contactRate || 0) < 35 && counts.NOVO > 0) action = `Contatar os ${counts.NOVO} lead(s) novos antes de ampliar a prospecção.`;
+  else if (counts.CONTATADO > counts.INTERESSADO) action = 'Qualificar os contatos já iniciados e registrar a resposta no CRM.';
+  else if ((counts.INTERESSADO + counts.REUNIAO) > counts.PROPOSTA) action = 'Converter interessados e reuniões em propostas com próxima data definida.';
+  else if (counts.PROPOSTA > counts.FECHADO) action = 'Fazer retorno das propostas abertas e registrar objeções.';
+
+  container.innerHTML = `
+    <article class="overview-decision-item">
+      <span>Gargalo atual</span>
+      <strong>${escapeHtml(bottleneck.label)}</strong>
+      <small>${bottleneck.value} oportunidade(s) aguardando avanço.</small>
     </article>
-  `).join('') : '<p class="meta">Sem dados suficientes para calcular ganhos.</p>';
-}
-
-function renderDonut(container, segments, centerLabel, centerValue) {
-  if (!container) return;
-  const safe = (Array.isArray(segments) ? segments : []).map((item) => ({ ...item, value: Math.max(0, Number(item.value || 0)) }));
-  const total = safe.reduce((sum, item) => sum + item.value, 0);
-  let cursor = 0;
-  const palette = ['#2563eb', '#06b6d4', '#22c55e', '#f59e0b', '#ef4444'];
-  const stops = safe.map((item, index) => {
-    const start = total ? (cursor / total) * 360 : 0;
-    cursor += item.value;
-    const end = total ? (cursor / total) * 360 : 360;
-    return `${palette[index % palette.length]} ${start}deg ${end}deg`;
-  });
-  container.innerHTML = `<div class="donut-chart" style="background:conic-gradient(${stops.join(',') || '#e2e8f0 0deg 360deg'})"><div><strong>${escapeHtml(centerValue)}</strong><span>${escapeHtml(centerLabel)}</span></div></div><div class="donut-legend">${safe.map((item,index)=>`<span><i style="background:${palette[index%palette.length]}"></i><b>${escapeHtml(item.label)}</b><em>${item.value}</em></span>`).join('')}</div>`;
+    <article class="overview-decision-item">
+      <span>Leads sem avanço</span>
+      <strong>${stalled}</strong>
+      <small>Sem interação registrada há pelo menos 7 dias.</small>
+    </article>
+    <article class="overview-decision-item overview-decision-item--action">
+      <span>Ação recomendada</span>
+      <strong>${escapeHtml(action)}</strong>
+    </article>`;
 }
 
 // -----------------------------------------------------------------------------
@@ -737,26 +750,13 @@ function renderExecutiveOverview(report = {}, leads = []) {
     const value = matching.reduce((sum, lead) => sum + estimateTicket(lead.ticketEstimado) * (weights[item.status] || 0), 0);
     return { label: overviewStatusLabel(item.status), value: Math.round(value), detail: `${Number(item.total || 0)} oportunidade(s)` };
   });
-  renderRevenueStageCards(overviewRevenueChart, revenueByStage);
+  const weightedRevenue = revenueByStage.reduce((sum, row) => sum + Number(row.value || 0), 0);
+
+  renderOverviewKpis(overviewKpis, summary, weightedRevenue);
   renderProspectingPipeline(overviewProspectingChart, funnel);
-
-  const contacted = Number(summary.contacted || 0);
-  const notContacted = Math.max(0, Number(summary.totalLeads || 0) - contacted);
-  renderDonut(overviewContactChart, [{ label: 'Contatados', value: contacted }, { label: 'Não contatados', value: notContacted }], 'taxa de contato', `${Number(summary.contactRate || 0)}%`);
-
-  const accepted = Number(summary.closed || 0);
-  const rejected = leads.filter((lead) => normalizeStatus(lead.status) === 'SEM_INTERESSE').length;
-  const negotiating = Number(summary.proposals || 0);
-  renderDonut(overviewProposalChart, [{ label: 'Em negociação', value: negotiating }, { label: 'Aceitas', value: accepted }, { label: 'Recusadas', value: rejected }], 'propostas', `${negotiating + accepted + rejected}`);
-
+  renderRevenueForecast(overviewRevenueChart, revenueByStage);
+  renderDecisionSummary(overviewDecisionSummary, { summary, funnel, leads });
   renderConversionAnalytics(overviewConversionChart, summary, funnel);
-
-  if (overviewPipelineExecutive) {
-    overviewPipelineExecutive.innerHTML = funnel.map((item) => {
-      const stage = revenueByStage.find((row) => row.label === overviewStatusLabel(item.status));
-      return `<article class="overview-pipeline-card"><small>${escapeHtml(overviewStatusLabel(item.status))}</small><strong>${Number(item.total || 0)}</strong><span>${Number(item.percentage || 0)}% da base</span><b>${formatMoney(stage?.value || 0)}</b></article>`;
-    }).join('') || '<p class="meta">Sem dados no pipeline.</p>';
-  }
 }
 
 if (overviewRefreshButton) overviewRefreshButton.addEventListener('click', loadExecutiveOverview);

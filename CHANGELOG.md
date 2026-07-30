@@ -1,3 +1,11 @@
+## 25.9.0 — Visão executiva comercial simplificada
+
+- remove donuts e cartões duplicados da Visão geral;
+- consolida volume, receita ponderada, conversão e gargalo em uma única leitura;
+- adiciona KPIs essenciais, previsão de receita e ação recomendada;
+- mantém o funil profissional e reduz ruído visual;
+- atualiza cache-busting dos assets para 25.9.0.
+
 ## 25.8.0 — Funil profissional de prospecção
 
 - substitui o gráfico de colunas de Níveis de prospecção por um funil visual responsivo;
