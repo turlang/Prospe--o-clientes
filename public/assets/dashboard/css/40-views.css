@@ -1,0 +1,89 @@
+/**
+ * @fileoverview Refinamentos das views executivas, cockpit, CRM e relatórios.
+ * @module public/assets/dashboard/css/views
+ */
+.overview-executive-grid {
+  grid-template-columns: minmax(0, 1.55fr) minmax(19rem, .72fr);
+  gap: 14px;
+}
+
+.overview-side-stack { gap: 14px; }
+
+.overview-funnel-panel {
+  background:
+    radial-gradient(circle at 80% 0%, rgba(37,99,235,.06), transparent 22rem),
+    var(--gradient-surface);
+}
+
+.overview-forecast-card,
+.overview-decision-card,
+.overview-conversion-panel { background: var(--gradient-surface); }
+
+.overview-forecast-total {
+  border-color: #bcd7ff;
+  background: linear-gradient(145deg, #f3f8ff, #ecfeff);
+  box-shadow: inset 0 1px 0 #fff;
+}
+
+.overview-forecast-total strong {
+  font-size: clamp(1.45rem, 2vw, 1.95rem);
+  font-weight: 760;
+}
+
+.overview-forecast-meter { height: 8px; background: #e5ebf3; }
+.overview-forecast-meter span { background: var(--gradient-primary); box-shadow: 0 0 12px rgba(6,182,212,.22); }
+
+.overview-decision-summary { gap: 9px; }
+.overview-decision-item { padding: 12px 13px; }
+.overview-decision-item strong { font-size: .93rem; font-weight: 720; }
+.overview-decision-item--action {
+  border-color: #9fe5cf;
+  background: linear-gradient(145deg, #f0fdf8, #ecfeff);
+}
+
+.prospecting-funnel--compact { gap: 13px; }
+.funnel-chart-card {
+  border: 1px solid rgba(94, 234, 212, .16);
+  border-radius: 19px;
+  background:
+    linear-gradient(rgba(148,163,184,.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148,163,184,.055) 1px, transparent 1px),
+    var(--gradient-dark);
+  background-size: 38px 38px, 38px 38px, auto;
+  box-shadow: 0 24px 54px rgba(7,17,31,.20), inset 0 1px 0 rgba(255,255,255,.06);
+}
+
+.funnel-layer__shape { box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 10px 22px rgba(2,8,23,.18); }
+.funnel-insights-card { border-radius: 18px; background: linear-gradient(155deg, #fff, #f5f9ff); }
+
+.conversion-analytics--compact { gap: 14px; }
+.conversion-compact-kpis article { padding: 12px 13px; }
+
+.cockpit-header,
+.cockpit-focus-card,
+.cockpit-actions-panel,
+.cockpit-timeline-panel,
+.copilot-panel { background: var(--gradient-surface); }
+
+.cockpit-metrics { gap: 12px; }
+.cockpit-metric,
+.cockpit-metrics > article {
+  border: 1px solid #d9e4f0;
+  border-radius: 16px;
+  background: linear-gradient(150deg, #fff, #f6faff);
+  box-shadow: var(--shadow-sm);
+}
+
+.cockpit-action-radar { border-radius: 16px; }
+.global-timeline { scrollbar-width: thin; scrollbar-color: #9aa9bb transparent; }
+
+.kanban-column {
+  border-color: #dce7f5;
+  border-radius: 16px;
+  background: linear-gradient(165deg, #f9fbff, #eff5fc);
+}
+
+.report-card-grid,
+.plans-grid,
+.customer-grid,
+.campaign-grid { gap: 14px; }

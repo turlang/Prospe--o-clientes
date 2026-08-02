@@ -1,0 +1,54 @@
+services:
+  - type: web
+    name: prospeccao-leads
+    env: node
+    plan: free
+    buildCommand: npm ci --omit=dev --no-audit --no-fund && npm --prefix frontend/landing install --include=dev --no-audit --no-fund && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 20.20.2
+      - key: NODE_ENV
+        value: production
+      - key: STRICT_REACT_BUILD
+        value: true
+      - key: REQUIRE_MONGODB
+        value: true
+      - key: DNS_SERVERS
+        value: 8.8.8.8,1.1.1.1
+      - key: JWT_SECRET
+        generateValue: true
+      - key: MONGODB_URI
+        sync: false
+      - key: GOOGLE_PLACES_API_KEY
+        sync: false
+      - key: PLACES_PROVIDER
+        value: new
+      - key: ALLOW_INCOMPLETE_CONTACTS
+        value: false
+      - key: AUDIT_WEBSITES
+        value: true
+      - key: PUBLIC_APP_URL
+        sync: false
+      - key: APP_NAME
+        value: LeadHunter Pro
+      - key: RESEND_API_KEY
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+      - key: REGISTER_IP_DAILY_LIMIT
+        value: 3
+      - key: MERCADO_PAGO_PUBLIC_KEY
+        sync: false
+      - key: MERCADO_PAGO_ACCESS_TOKEN
+        sync: false
+      - key: MERCADO_PAGO_SUCCESS_URL
+        sync: false
+      - key: MERCADO_PAGO_FAILURE_URL
+        sync: false
+      - key: MERCADO_PAGO_PENDING_URL
+        sync: false
+      - key: MERCADO_PAGO_WEBHOOK_URL
+        sync: false
