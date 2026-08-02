@@ -87,6 +87,7 @@ const { registerBillingRoutes } = require('./routes/billingRoutes');
 const { registerLeadRoutes } = require('./routes/leadRoutes');
 const { registerAdminRoutes } = require('./routes/adminRoutes');
 const { registerCommercialRoutes } = require('./routes/commercialRoutes');
+const { createOmnichannelRoutes } = require('./routes/omnichannelRoutes');
 
 
 /**
@@ -326,6 +327,7 @@ function createApp() {
   registerLeadRoutes(app, routeContext);
   registerAdminRoutes(app, routeContext);
   registerCommercialRoutes(app, routeContext);
+  app.use('/api/omnichannel', createOmnichannelRoutes({ requireAuth, simpleRateLimit }));
 
   app.use('/api', (_req, res) => {
     res.status(404).json({ error: 'Rota da API não encontrada.' });
