@@ -1,0 +1,51 @@
+name: Apply Q7 Omnichannel Phase 1
+
+on:
+  push:
+    branches:
+      - feature/q7-omnichannel-sdr
+    paths:
+      - .release/q7-phase1/READY
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/q7-omnichannel-sdr
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: Rebuild and apply patch
+        shell: bash
+        run: |
+          cat .release/q7-phase1/chunk-*.b64 | base64 --decode > /tmp/q7-phase1.tar.gz
+          echo "753009858ce9b9007c14eb00cf7ab822ba3fce2bb1ef8c27fa4653c8ec8b8a60  /tmp/q7-phase1.tar.gz" | sha256sum -c -
+          tar -xzf /tmp/q7-phase1.tar.gz
+          node scripts/apply-omnichannel-foundation.js
+          rm -rf .release .github/workflows/apply-q7-phase1.yml
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate foundation and regression suite
+        run: |
+          node --test tests/omnichannel-domain.test.js
+          npm run quality
+
+      - name: Commit validated phase
+        shell: bash
+        run: |
+          git config user.name "LeadHunter Release Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git commit -m "feat: foundation for omnichannel and SDR agent"
+          git push origin HEAD:feature/q7-omnichannel-sdr
