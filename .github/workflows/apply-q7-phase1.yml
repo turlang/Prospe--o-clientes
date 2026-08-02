@@ -32,7 +32,20 @@ jobs:
       - name: Rebuild and apply patch
         shell: bash
         run: |
-          cat .release/q7-phase1/chunk-*.b64 | base64 --decode > /tmp/q7-phase1.tar.gz
+          sha256sum .release/q7-phase1/chunk-*.b64
+          python - <<'PY'
+          from pathlib import Path
+          import base64
+          import hashlib
+
+          chunks = sorted(Path('.release/q7-phase1').glob('chunk-*.b64'))
+          encoded = ''.join(path.read_text(encoding='utf-8-sig') for path in chunks)
+          encoded = ''.join(encoded.split())
+          archive = base64.b64decode(encoded, validate=True)
+          output = Path('/tmp/q7-phase1.tar.gz')
+          output.write_bytes(archive)
+          print('archive', len(archive), hashlib.sha256(archive).hexdigest())
+          PY
           echo "753009858ce9b9007c14eb00cf7ab822ba3fce2bb1ef8c27fa4653c8ec8b8a60  /tmp/q7-phase1.tar.gz" | sha256sum -c -
           tar -xzf /tmp/q7-phase1.tar.gz
           node scripts/apply-omnichannel-foundation.js
