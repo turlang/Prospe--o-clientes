@@ -1,86 +1,151 @@
-# LeadHunter Pro 26.2.0
+# LeadHunter Pro
 
-SaaS de prospecção comercial para desenvolvedores, freelancers e agências que vendem sites, sistemas, automações e agentes de IA.
+**Versão atual:** 26.2.0  
+**Estado:** aplicação publicada, conectada ao MongoDB e pronta para uso operacional  
+**Público:** desenvolvedores, freelancers e agências que vendem sites, sistemas, automações e soluções com IA
 
-## Experiência pública em tela única
+O LeadHunter Pro é um SaaS de prospecção comercial que reúne descoberta de oportunidades, organização de leads, CRM, plano de ação, automações, relatórios, administração de planos e assistência comercial por inteligência artificial.
 
-A versão 26.2.0 preserva a landing em uma interface sem rolagem de página. O documento ocupa `100dvh`, mantém `overflow: hidden` e apresenta o conteúdo em cinco painéis alternáveis:
+## Estado da release 26.2.0
 
-- **Início** — proposta de valor e central de sinais;
-- **Como funciona** — etapas da prospecção comercial;
-- **Ferramentas** — demonstrações dos recursos do produto;
-- **Para quem é** — conteúdo adaptado ao público escolhido;
-- **Planos** — catálogo dinâmico publicado pelo painel administrativo.
+A versão 26.2.0 conclui a higienização estrutural do repositório e consolida a aplicação em produção.
 
-No desktop, os painéis são acionados por abas no cabeçalho e por controles anterior/próximo. No mobile, a navegação principal fica em uma barra inferior fixa. A troca acontece sem recarregar a página e sem mover o documento.
+| Área | Estado |
+|---|---|
+| Landing comercial | Operacional |
+| Cadastro, login e sessão | Operacional |
+| Recuperação de senha | Implementada |
+| CRM e gestão de leads | Operacional |
+| Tarefas e follow-ups | Operacional |
+| Plano de ação diário | Operacional |
+| Histórico e auditoria | Operacional |
+| Relatórios comerciais | Operacional |
+| Painel administrativo | Operacional |
+| Planos dinâmicos | Persistidos no MongoDB |
+| Copiloto comercial | Implementado com fallback local |
+| MongoDB Atlas | Conectado em produção |
+| Render | Deploy da v26.2.0 validado |
+| Qualidade automatizada | 172 testes aprovados na validação da release |
 
-## Administração e plano de ação
+Os logs de produção confirmaram respostas válidas para a landing, aplicação, painel administrativo, planos, leads, relatórios, uso, segurança e auditoria. Assets públicos e administrativos estão versionados com `26.2.0`.
 
-A Central Executiva concentra usuários, planos, receita, uso, pagamentos e segurança sem cards operacionais redundantes. No Cockpit, o **Radar operacional** usa a saúde do pipeline e o plano diário para destacar gargalos e abrir diretamente o lead prioritário. Alertas, orientações e a Timeline global ficam centralizados no Histórico.
+## Funcionalidades principais
 
-## Design system e profundidade
+### Prospecção e CRM
 
-A release 26.2.0 mantém o CSS do painel organizado em módulos de tokens, base, layout, componentes, views, profundidade e responsividade. Cards executivos recebem um efeito 3D discreto em desktop; touch e usuários com movimento reduzido recebem a versão estática. O arquivo [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) documenta cores, tipografia, espaçamento e regras de uso.
+- cadastro, edição, classificação e movimentação de leads;
+- funil comercial com sete etapas canônicas;
+- histórico de pesquisas e oportunidades;
+- tarefas, lembretes e follow-ups;
+- priorização de oportunidades;
+- plano de ação diário;
+- visão executiva com conversão e receita potencial.
 
-## Analytics executivo
+### Inteligência comercial
 
-A visão geral do sistema apresenta um pipeline profissional com as sete etapas canônicas, KPIs de contato, proposta e fechamento, conversão entre etapas e resumo de receita potencial. As visualizações são construídas com HTML/CSS sem dependência adicional e mudam para barras horizontais compactas em componentes estreitos.
+- geração de abordagens comerciais personalizadas;
+- sugestões de próximos passos;
+- leitura de gargalos do pipeline;
+- recomendações de follow-up;
+- suporte a Groq, Gemini ou OpenAI por variável de ambiente;
+- motor local de contingência quando um provedor externo não estiver disponível.
 
-## Higiene do repositório
+### Administração
 
-O pacote 26.2.0 remove módulos de outro projeto, duplicatas antigas do backend, páginas públicas obsoletas e implementações React inacessíveis. O gate `check:architecture` bloqueia a reintrodução desses artefatos.
+- visão geral de usuários, uso, planos e segurança;
+- configuração dinâmica dos planos Trial, Pro e Agência;
+- persistência das configurações no MongoDB;
+- registros de auditoria administrativa;
+- indicadores de uso e limites;
+- acesso protegido por autenticação e autorização administrativa.
 
-## Resiliência da landing
+### Experiência pública
 
-O projeto:
+A landing ocupa uma única viewport e troca o conteúdo sem rolagem da página. Os painéis disponíveis são:
 
-- gera o bundle React/Tailwind quando o Vite está disponível;
-- inclui uma versão estática equivalente e interativa como contingência;
-- impede o retorno silencioso à landing antiga;
-- envia `X-Landing-Version` e `X-Landing-Source` para diagnóstico;
-- valida versão, painéis, navegação e ausência de scroll antes da release;
-- preserva login, recuperação de senha, CRM, planos e painel administrativo.
+- **Início**;
+- **Como funciona**;
+- **Ferramentas**;
+- **Para quem é**;
+- **Planos**.
+
+No desktop, a navegação ocorre pelo cabeçalho e pelos controles sequenciais. No mobile, a navegação principal utiliza uma barra inferior fixa.
+
+## Interface e design system
+
+A aplicação utiliza um design system modular com:
+
+- tokens de cor, tipografia, espaçamento e elevação;
+- módulos CSS separados por responsabilidade;
+- componentes responsivos para desktop, tablet e celular;
+- profundidade 3D discreta em dispositivos compatíveis;
+- versão estática para touch e preferência por movimento reduzido;
+- gráficos construídos com HTML e CSS, sem biblioteca adicional obrigatória.
+
+A documentação visual está em [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md).
 
 ## Arquitetura
 
 ```text
 frontend/landing/
-  src/app/                 composição da aplicação React
-  src/features/            painéis comerciais por funcionalidade
-  src/shared/              layout, navegação e UI reutilizável
-  src/hooks/               navegação e estado assíncrono
-  src/services/            acesso à API pública
-  src/data/                conteúdo estático estruturado
+  src/app/                 composição da landing React
+  src/features/            painéis comerciais
+  src/shared/              layout, navegação e componentes reutilizáveis
+  src/hooks/               estado e navegação
+  src/services/            comunicação com a API pública
+  src/data/                conteúdo estruturado
   static/                  contingência equivalente ao bundle React
 
 src/
   app.js                   Application Factory do Express
-  server.js                bootstrap de processo e banco
-  config/                  configuração e catálogo de caminhos
+  server.js                bootstrap, configuração e conexão com o banco
+  config/                  variáveis, caminhos e configuração
   domain/                  regras de negócio puras
-  repositories/            persistência MongoDB/JSON
-  integrations/            provedores externos
+  repositories/            persistência MongoDB e contingência local
+  integrations/            IA, e-mail, pagamento e provedores externos
   services/                casos de uso
   routes/                  adaptadores HTTP
   middleware/              autenticação, autorização e limites
   infrastructure/          conexões e detalhes técnicos
 
 public/
-  pages/                   páginas HTML do painel
+  pages/                   páginas HTML da aplicação
   assets/                  CSS e JavaScript por contexto
-  landing-react/           artefato público versionado da landing
+  landing-react/           build público versionado
+
+tests/                     testes de unidade, integração e regressão
+scripts/                   build, validação e gates de qualidade
 ```
 
-Detalhes em [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md) e [`docs/CODING_STANDARDS.md`](docs/CODING_STANDARDS.md).
+Consulte também:
+
+- [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md)
+- [`docs/CODING_STANDARDS.md`](docs/CODING_STANDARDS.md)
+- [`docs/PLANOS_DINAMICOS.md`](docs/PLANOS_DINAMICOS.md)
+- [`ROADMAP.md`](ROADMAP.md)
+- [`CHANGELOG.md`](CHANGELOG.md)
+
+## Tecnologias
+
+- Node.js 20;
+- Express;
+- MongoDB Atlas e Mongoose;
+- React e Vite na landing;
+- JavaScript CommonJS no backend;
+- JWT e bcryptjs;
+- Helmet e CORS;
+- Resend para e-mail transacional;
+- Mercado Pago para cobrança;
+- Groq, Gemini ou OpenAI para inteligência comercial.
 
 ## Requisitos
 
-- Node.js 20.20.2 ou versão compatível com `package.json`;
+- Node.js `>=20.19 <23`;
 - npm 10 ou superior;
 - MongoDB obrigatório em produção;
-- chaves externas somente por variáveis de ambiente.
+- variáveis externas configuradas fora do repositório.
 
-## Instalação
+## Instalação local
 
 ```bash
 npm ci
@@ -91,56 +156,201 @@ npm run quality
 npm start
 ```
 
-No PowerShell, copie `.env.example` manualmente quando o comando `cp` não estiver disponível.
+No PowerShell:
 
-## Comandos
+```powershell
+Copy-Item .env.example .env
+npm ci
+npm --prefix frontend/landing install --include=dev
+npm run build
+npm run quality
+npm start
+```
+
+A aplicação usa `http://localhost:3000` por padrão.
+
+## Comandos disponíveis
 
 | Comando | Finalidade |
 |---|---|
+| `npm start` | inicia a aplicação |
 | `npm run dev` | inicia o backend em modo watch |
-| `npm run dev:landing` | inicia a landing React pelo Vite |
-| `npm run build` | sincroniza contingência, tenta o bundle React e valida a release |
-| `npm run build:react` | gera exclusivamente o bundle React/Tailwind |
-| `npm run build:static` | sincroniza a landing estática equivalente |
-| `npm run verify:landing` | bloqueia artefatos antigos ou incompletos |
-| `npm run quality` | executa estrutura, documentação, frontend e testes |
+| `npm run dev:landing` | inicia a landing pelo Vite |
+| `npm run build` | gera e valida os artefatos de produção |
+| `npm run build:react` | gera exclusivamente o bundle React |
+| `npm run build:static` | sincroniza a landing estática |
+| `npm run verify:landing` | valida versão, origem e estrutura da landing |
+| `npm run check:syntax` | verifica a sintaxe dos arquivos JavaScript |
+| `npm run check:architecture` | valida a organização arquitetural |
+| `npm run check:frontend` | valida a estrutura do frontend |
+| `npm run check:styles` | valida a arquitetura dos estilos |
+| `npm run check:docs` | valida a documentação obrigatória |
+| `npm test` | executa os testes automatizados |
+| `npm run quality` | executa todos os gates e testes |
 
 ## Rotas principais
 
-- `/` — landing comercial em tela única;
-- `/app` — autenticação e aplicação;
-- `/admin` — painel administrativo;
-- `/api/plans` — planos publicados pelo Admin;
-- `/api/health` — saúde, versão da aplicação e origem da landing.
+| Rota | Finalidade |
+|---|---|
+| `/` | landing comercial |
+| `/app` | autenticação e aplicação principal |
+| `/admin` | painel administrativo |
+| `/api/health` | saúde, versão e origem da landing |
+| `/api/plans` | catálogo público de planos |
+| `/api/leads` | gestão de leads autenticada |
+| `/api/reports/commercial` | relatório comercial |
+| `/api/billing/usage` | consumo e limites do plano |
 
-## Variáveis de produção essenciais
+## Configuração de ambiente
+
+Copie `.env.example` para `.env` e configure somente os serviços utilizados.
+
+### Produção essencial
 
 ```env
 NODE_ENV=production
 REQUIRE_MONGODB=true
-MONGODB_URI=mongodb+srv://...
-JWT_SECRET=segredo-longo-e-aleatorio
+MONGODB_URI=mongodb+srv://usuario:senha@cluster/banco
+JWT_SECRET=uma-chave-longa-aleatoria-e-exclusiva
+JWT_EXPIRES_IN=7d
+JWT_ISSUER=leadhunter-pro
+JWT_AUDIENCE=leadhunter-web
 PUBLIC_APP_URL=https://seu-servico.onrender.com
-RESEND_API_KEY=re_...
-MAIL_FROM=LeadHunter Pro <noreply@dominio-verificado.com>
+CORS_ORIGINS=https://seu-servico.onrender.com
 ```
 
-Nunca publique `.env`, tokens, senhas ou dados pessoais no repositório.
+### E-mail de recuperação
 
-## Planos sincronizados com o Admin
+```env
+RESEND_API_KEY=re_...
+MAIL_FROM=LeadHunter Pro <noreply@seu-dominio-verificado.com>
+EXPOSE_PASSWORD_RESET_LINK=false
+```
 
-Os planos exibidos no painel **Planos** são carregados de `GET /api/plans`. Em produção, as alterações administrativas são persistidas no MongoDB e propagadas para abas abertas sem novo deploy. Consulte [`docs/PLANOS_DINAMICOS.md`](docs/PLANOS_DINAMICOS.md).
+Para enviar a usuários reais, o domínio usado em `MAIL_FROM` deve estar verificado no Resend.
 
-## Qualidade e comentários
+### Inteligência artificial
 
-Todos os módulos mantidos possuem `@fileoverview`. Funções públicas e decisões não óbvias recebem JSDoc ou comentários de intenção. O projeto evita comentários que apenas repetem o código, pois eles aumentam ruído e ficam desatualizados.
+```env
+AI_PROVIDER=groq
+GROQ_API_KEY=
+GROQ_MODEL=llama-3.3-70b-versatile
+AI_APPROACHES_ENABLED=true
+AI_APPROACH_TIMEOUT_MS=25000
+AI_APPROACH_TEMPERATURE=0.9
+AI_MAX_TOKENS=1400
+```
 
-As regras de nomenclatura, pureza, acessibilidade, segurança, erros, testes e revisão estão em [`docs/CODING_STANDARDS.md`](docs/CODING_STANDARDS.md).
+Também podem ser configurados Gemini ou OpenAI pelas variáveis disponíveis em `.env.example`.
 
-## Recuperação de senha
+### Pagamentos
 
-Para teste com `onboarding@resend.dev`, o destinatário deve ser o e-mail proprietário da conta Resend. Para usuários reais, utilize domínio verificado e configure `MAIL_FROM` no Render.
+```env
+ALLOW_SIMULATED_BILLING=false
+MERCADO_PAGO_PUBLIC_KEY=
+MERCADO_PAGO_ACCESS_TOKEN=
+MERCADO_PAGO_SUCCESS_URL=https://seu-servico.onrender.com/app?pagamento=sucesso
+MERCADO_PAGO_FAILURE_URL=https://seu-servico.onrender.com/app?pagamento=falha
+MERCADO_PAGO_PENDING_URL=https://seu-servico.onrender.com/app?pagamento=pendente
+MERCADO_PAGO_WEBHOOK_URL=https://seu-servico.onrender.com/api/billing/webhook
+```
+
+Nunca publique `.env`, tokens, senhas, chaves de API, dados de usuários ou arquivos reais da pasta `data`.
+
+## Banco de dados
+
+Em produção, `REQUIRE_MONGODB=true` impede que a aplicação inicie usando persistência local acidentalmente.
+
+As principais coleções incluem:
+
+- `users`;
+- `leads`;
+- `tasks`;
+- `searchhistories`;
+- `usages`;
+- `plan_configurations`;
+- `payments`;
+- `passwordresets`;
+- `adminauditlogs`;
+- `copilotconversations`;
+- `trialguards`.
+
+Índices e regras de persistência são inicializados pela camada de repositórios e infraestrutura.
+
+## Deploy no Render
+
+Configuração recomendada:
+
+```text
+Runtime: Node
+Build Command: npm ci && npm run build
+Start Command: npm start
+Health Check Path: /api/health
+```
+
+Depois de uma mudança estrutural ou troca completa de versão, utilize **Clear build cache & deploy** para evitar a reutilização de artefatos antigos.
+
+## Validação de produção
+
+A release 26.2.0 já teve os seguintes fluxos básicos confirmados:
+
+- carregamento da landing;
+- carregamento da aplicação autenticada;
+- carregamento do painel administrativo;
+- leitura de usuários, planos, segurança e auditoria;
+- leitura de leads e relatório comercial;
+- leitura de uso e limites;
+- persistência no MongoDB Atlas.
+
+Antes de uma operação comercial com cobrança real, execute também:
+
+1. recuperação de senha com destinatário real e domínio verificado;
+2. pagamento de teste completo no Mercado Pago;
+3. confirmação do webhook e da atualização do plano;
+4. geração de uma abordagem pelo provedor de IA configurado;
+5. reinicialização do serviço para confirmar a persistência dos dados.
+
+Esses itens são validações operacionais do ambiente, não bloqueios de código da v26.2.0.
+
+## Segurança
+
+O projeto inclui:
+
+- senhas protegidas com bcrypt;
+- autenticação JWT com issuer e audience;
+- autorização administrativa;
+- Helmet e política de segurança de conteúdo;
+- CORS configurável;
+- limites contra abuso;
+- proteção de URLs públicas;
+- auditoria administrativa;
+- exclusão de segredos e dados locais pelo `.gitignore`;
+- testes de regressão de autenticação e segurança.
+
+## Higiene do repositório
+
+A versão 26.2.0 removeu:
+
+- arquivos pertencentes a outros projetos;
+- módulos antigos duplicados;
+- páginas públicas obsoletas;
+- componentes React inacessíveis;
+- artefatos legados que poderiam retornar ao deploy.
+
+Os gates arquiteturais e os testes de higiene impedem a reintrodução desses arquivos.
+
+## Roadmap
+
+O escopo funcional planejado até a IA comercial foi entregue. As próximas etapas estão direcionadas a:
+
+- validação comercial ponta a ponta;
+- observabilidade e desempenho;
+- white label;
+- equipes e multiempresa;
+- permissões avançadas.
+
+O planejamento atualizado está em [`ROADMAP.md`](ROADMAP.md).
 
 ## Uso responsável
 
-A prospecção deve respeitar legislação, privacidade, termos dos provedores e mecanismos de descadastro. Dados públicos não autorizam coleta excessiva ou disparos abusivos.
+A prospecção deve respeitar a legislação aplicável, a privacidade, os termos dos provedores, a finalidade dos dados e os mecanismos de descadastro. A existência de informações públicas não autoriza coleta excessiva, enriquecimento indevido ou disparos abusivos.
