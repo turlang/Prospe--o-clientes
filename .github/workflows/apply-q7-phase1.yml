@@ -6,6 +6,11 @@ on:
       - feature/q7-omnichannel-sdr
     paths:
       - .release/q7-phase1/READY
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .release/q7-phase1/READY
 
 permissions:
   contents: write
