@@ -1,165 +1,50 @@
 # Roadmap — LeadHunter Pro
 
-**Versão de referência:** 26.2.0  
-**Última atualização:** 02/08/2026  
-**Estado do produto:** núcleo funcional concluído e publicado
+**Versão atual:** 26.2.0  
+**Estado:** núcleo funcional concluído, publicado e conectado ao MongoDB Atlas
 
-## Legenda
+Este documento apresenta o produto como uma única entrega consolidada. O histórico interno de etapas foi removido para manter o planejamento objetivo e alinhado ao estado real da aplicação.
 
-- ✅ concluído e incorporado ao produto;
-- 🟡 implementação concluída, aguardando validação operacional do ambiente;
-- 🔵 planejado para evolução futura;
-- ⏸️ fora do escopo da release atual.
+## Entrega atual
 
-## Marco atual — v26.2.0 ✅
-
-A versão 26.2.0 encerra o ciclo de estabilização, reorganização visual e higienização do repositório.
-
-Entregas consolidadas:
+O LeadHunter Pro já reúne:
 
 - landing comercial responsiva em tela única;
-- autenticação, cadastro e gerenciamento de sessão;
+- cadastro, login e gerenciamento de sessão;
 - recuperação de senha;
 - CRM de leads e funil comercial;
 - tarefas, follow-ups e plano de ação diário;
-- histórico operacional e auditoria administrativa;
-- relatórios, conversão e receita potencial;
+- histórico operacional;
+- relatórios de conversão e receita potencial;
 - painel administrativo;
 - planos Trial, Pro e Agência configuráveis;
-- persistência MongoDB em produção;
+- persistência no MongoDB Atlas;
+- auditoria administrativa;
 - Copiloto Comercial com IA e fallback local;
+- integração preparada para Resend e Mercado Pago;
 - design system modular com profundidade 3D acessível;
-- build resiliente da landing React com contingência estática;
+- landing React com contingência estática;
 - gates de arquitetura, frontend, estilos, documentação e segurança;
-- higienização de arquivos estrangeiros e implementações legadas;
-- 172 testes aprovados na validação da release;
-- deploy da v26.2.0 validado no Render.
+- 172 testes aprovados;
+- deploy validado no Render.
 
----
+## Fechamento operacional
 
-## Fase 15 — Recuperação de senha ✅
+As funcionalidades centrais estão concluídas. Restam apenas validações dos serviços externos usados em produção.
 
-### Concluído
+### Prioridade imediata
 
-- tokens temporários de redefinição;
-- expiração e invalidação dos tokens;
-- armazenamento protegido no MongoDB;
-- páginas de solicitação e redefinição;
-- integração com Resend;
-- proteção contra exposição do link em produção;
-- testes de regressão do fluxo e da configuração pública.
+- enviar uma recuperação de senha para um destinatário real usando domínio verificado no Resend;
+- realizar um pagamento completo de teste no Mercado Pago;
+- confirmar a idempotência do webhook;
+- confirmar a atualização automática do plano após o pagamento;
+- gerar uma abordagem usando o provedor definitivo de IA;
+- confirmar a persistência das conversas do Copiloto quando esse recurso estiver habilitado;
+- reiniciar o serviço e verificar a permanência dos dados.
 
-### Validação operacional restante 🟡
+### Critério de encerramento operacional
 
-- confirmar entrega para um destinatário real usando domínio verificado no Resend;
-- revisar SPF, DKIM e reputação quando o domínio comercial estiver definido.
-
----
-
-## Fase 16 — Automações comerciais ✅
-
-### Concluído
-
-- tarefas e sequências de follow-up;
-- próximas ações sugeridas;
-- priorização automática;
-- plano de ação diário;
-- radar operacional;
-- abertura direta do lead prioritário;
-- histórico de atividades;
-- prevenção de duplicidade em rotinas críticas.
-
----
-
-## Fase 17 — IA comercial ✅
-
-### Concluído
-
-- geração automática de abordagem;
-- recomendações comerciais por contexto;
-- sugestões de follow-up;
-- identificação de gargalos;
-- estratégias por segmento;
-- suporte a Groq, Gemini e OpenAI;
-- troca de provedor por configuração;
-- timeout e limites de geração;
-- fallback local quando a IA externa estiver indisponível;
-- proteção contra exposição de chaves no painel administrativo.
-
-### Validação operacional restante 🟡
-
-- executar uma geração em produção com o provedor definitivo;
-- confirmar persistência das conversas quando esse recurso for habilitado para uso contínuo;
-- acompanhar custo, latência e taxa de falha do provedor escolhido.
-
----
-
-## Fase 17.1 — Analytics e operação executiva ✅
-
-### Concluído
-
-- funil comercial com sete etapas;
-- larguras proporcionais aos volumes reais;
-- indicadores de contato, proposta e fechamento;
-- receita potencial e leitura executiva;
-- saúde do pipeline sem repetição de métricas;
-- plano de ação integrado ao Cockpit;
-- histórico consolidado;
-- gráficos responsivos sem biblioteca externa obrigatória;
-- tratamento específico para componentes estreitos e dispositivos móveis.
-
----
-
-## Fase 17.2 — Design system e higienização ✅
-
-### Concluído
-
-- reorganização do CSS por responsabilidade;
-- tokens visuais e regras documentadas;
-- profundidade 3D discreta e acessível;
-- revisão de tipografia, cores e espaçamento;
-- remoção de cards e blocos redundantes;
-- remoção de arquivos do DevBurger misturados ao repositório;
-- eliminação de módulos antigos duplicados;
-- remoção de páginas e componentes inacessíveis;
-- testes para impedir a reintrodução de artefatos estrangeiros;
-- atualização do cache-busting para 26.2.0.
-
----
-
-## Fase 17.3 — Publicação e estabilidade ✅
-
-### Concluído
-
-- deploy da v26.2.0 no Render;
-- assets públicos e administrativos versionados;
-- MongoDB Atlas conectado;
-- leitura de leads, tarefas, usuários, planos e auditoria;
-- endpoints administrativos validados;
-- relatório comercial validado;
-- uso e limites dos planos validados;
-- política para impedir fallback local acidental em produção;
-- documentação de build, instalação e deploy atualizada.
-
----
-
-## Fase 17.4 — Fechamento comercial de produção 🟡
-
-Esta fase não exige novas funcionalidades centrais. Ela encerra a validação ponta a ponta dos serviços externos.
-
-### Prioridade alta
-
-- realizar pagamento de teste completo no Mercado Pago;
-- confirmar recebimento e idempotência do webhook;
-- confirmar atualização automática do plano após pagamento;
-- validar URLs de sucesso, falha e pendência;
-- realizar recuperação de senha com e-mail real;
-- testar o provedor definitivo de IA em produção;
-- reiniciar o serviço e confirmar a persistência dos dados.
-
-### Critério de conclusão
-
-A fase será considerada concluída quando um usuário de teste conseguir:
+Um usuário de teste deve conseguir:
 
 1. criar uma conta;
 2. entrar no sistema;
@@ -167,82 +52,53 @@ A fase será considerada concluída quando um usuário de teste conseguir:
 4. gerar uma abordagem comercial;
 5. criar uma tarefa de follow-up;
 6. recuperar a senha por e-mail;
-7. contratar ou simular a contratação de um plano;
-8. manter os dados após um novo deploy ou reinicialização.
+7. contratar ou simular um plano;
+8. permanecer com os dados após reinicialização ou novo deploy.
 
----
+## Próximas evoluções
 
-## Fase 18 — Observabilidade e desempenho 🔵
-
-### Objetivo
-
-Reduzir o tempo de diagnóstico e manter desempenho previsível conforme o volume de dados crescer.
-
-### Planejado
+### Observabilidade e desempenho
 
 - logs estruturados com correlação por requisição;
-- painel de erros e latência;
-- métricas de chamadas aos provedores externos;
+- acompanhamento de erros e latência;
+- métricas dos provedores externos;
 - alertas de falha do MongoDB, Resend, IA e pagamento;
-- revisão dos índices do MongoDB;
+- revisão de índices do MongoDB;
 - paginação e filtros no backend;
-- cache controlado para consultas públicas;
 - otimização das consultas administrativas e comerciais;
-- testes de carga dos endpoints principais;
-- definição de metas de disponibilidade e latência.
+- testes de carga;
+- metas de disponibilidade e tempo de resposta.
 
-### Meta inicial
+Meta inicial:
 
-- endpoints de leitura comuns abaixo de 500 ms em condições normais;
-- ausência de consultas sem limite em coleções crescentes;
+- leituras comuns abaixo de 500 ms em condições normais;
+- consultas limitadas e paginadas em coleções crescentes;
 - alertas claros para falhas de integração.
 
----
-
-## Fase 19 — White label 🔵
-
-### Planejado
+### White label
 
 - nome e logotipo configuráveis;
-- paleta e identidade visual por conta;
+- paleta visual por conta;
 - domínio próprio;
 - e-mails transacionais personalizados;
-- landing e painel com marca do cliente;
+- landing e painel com a marca do cliente;
 - configuração segura pelo painel administrativo.
 
-### Dependências
-
-- modelo multiempresa;
-- armazenamento de configurações por organização;
-- estratégia de domínios e certificados;
-- isolamento de assets e cache.
-
----
-
-## Fase 20 — Equipes e multiempresa 🔵
-
-### Planejado
+### Equipes e multiempresa
 
 - organizações e workspaces;
 - convite de membros;
 - papéis e permissões avançadas;
-- proprietário, administrador, gestor e operador;
 - leads, tarefas e relatórios por organização;
 - limites de plano por equipe;
-- trilha de auditoria por usuário e empresa;
+- auditoria por usuário e empresa;
 - isolamento lógico de dados;
 - transferência de propriedade;
-- desativação e remoção de membros.
+- remoção e desativação de membros.
 
-### Requisito arquitetural
+Requisito arquitetural: toda consulta persistente deverá validar o identificador da organização antes de acessar dados comerciais.
 
-Toda consulta persistente deverá carregar e validar o identificador da organização antes de acessar dados comerciais.
-
----
-
-## Fase 21 — Escala comercial 🔵
-
-### Planejado
+### Escala comercial
 
 - importação em lote aprimorada;
 - deduplicação por domínio, telefone e e-mail;
@@ -253,39 +109,33 @@ Toda consulta persistente deverá carregar e validar o identificador da organiza
 - exportações assíncronas;
 - webhooks de integração;
 - API pública com tokens revogáveis;
-- integrações com ferramentas de agenda e comunicação.
+- integrações com agenda e comunicação.
 
----
-
-## Fora do escopo atual ⏸️
-
-Os seguintes itens não fazem parte da v26.2.0 e não devem ser tratados como falhas da release:
+## Fora do escopo atual
 
 - aplicativo móvel nativo;
 - marketplace de templates;
 - discador telefônico;
-- envio massivo de mensagens sem integração oficial;
+- envio massivo sem integração oficial;
 - enriquecimento de dados por fontes sem autorização;
 - scraping irrestrito;
-- multiempresa e white label completos.
+- white label e multiempresa completos.
 
----
+## Regras para evolução
 
-## Regras para novas releases
-
-Toda release deverá:
+Toda alteração futura deve:
 
 1. manter `npm run quality` aprovado;
-2. preservar a higiene do repositório;
-3. atualizar `CHANGELOG.md`, `README.md` e este roadmap quando o escopo mudar;
+2. preservar a organização atual do repositório;
+3. atualizar `README.md`, `ROADMAP.md` e `CHANGELOG.md` quando o escopo mudar;
 4. manter segredos e dados reais fora do Git;
 5. validar a landing React e a contingência estática;
 6. testar autenticação, planos, leads e relatórios;
-7. executar deploy com limpeza de cache quando houver mudança estrutural;
-8. realizar smoke test após a publicação;
-9. documentar qualquer migração de banco ou variável nova;
+7. usar limpeza de cache no deploy quando houver mudança estrutural;
+8. executar smoke test após a publicação;
+9. documentar migrações de banco e novas variáveis;
 10. preservar compatibilidade ou fornecer instruções explícitas de migração.
 
-## Próximo passo recomendado
+## Próxima ação recomendada
 
-Concluir a **Fase 17.4 — Fechamento comercial de produção** antes de iniciar white label ou multiempresa. Ela possui menor esforço, maior impacto imediato e confirma que todos os serviços externos funcionam juntos no ambiente real.
+Concluir as validações externas de e-mail, pagamento e IA antes de iniciar white label ou multiempresa.
