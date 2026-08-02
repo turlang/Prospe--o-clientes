@@ -1,18 +1,23 @@
 /**
- * @fileoverview Fundação omnichannel do LeadHunter: módulo src/controllers/omnichannelController.
+ * @fileoverview Controllers HTTP do domínio omnichannel e agente SDR.
  *
- * Responsabilidade isolada para conversas, integrações, agente SDR,
- * segurança ou validação deste domínio.
+ * Os handlers apenas traduzem requisições e respostas. Regras de persistência,
+ * mensageria e segurança permanecem nas camadas de serviço e repositório.
+ *
  * @module src/controllers/omnichannelController
  */
 
 const AgentConfiguration = require('../models/AgentConfiguration');
 const { compileAgentPrompt } = require('../domain/omnichannel/promptCompiler');
 const { runPlayground } = require('../services/agentSdrService');
+const conversationService = require('../services/conversationService');
 const { providerRegistry } = require('../integrations/providerRegistry');
 
 function scope(req) {
-  return { userId: req.user.sub, organizationId: req.currentUser?.organizationId || null };
+  return {
+    userId: req.user.sub,
+    organizationId: req.currentUser?.organizationId || null
+  };
 }
 
 async function listProviders(_req, res) {
@@ -65,11 +70,88 @@ async function playground(req, res) {
   return res.json(result);
 }
 
+async function listConversationLeads(req, res) {
+  const items = await conversationService.listLeadOptions(scope(req), req.query.q);
+  res.json({ items });
+}
+
+async function listConversations(req, res) {
+  res.json(await conversationService.listConversations(scope(req), req.query));
+}
+
+async function getConversationSummary(req, res) {
+  res.json(await conversationService.getSummary(scope(req)));
+}
+
+async function createConversation(req, res) {
+  const result = await conversationService.createConversation(scope(req), req.body || {});
+  res.status(result.created ? 201 : 200).json(result);
+}
+
+async function getConversation(req, res) {
+  res.json(await conversationService.getConversation(scope(req), req.params.id));
+}
+
+async function sendConversationMessage(req, res) {
+  const result = await conversationService.sendMessage(
+    scope(req),
+    req.params.id,
+    req.body || {},
+    { userId: req.user.sub }
+  );
+  res.status(201).json(result);
+}
+
+async function simulateInboundMessage(req, res) {
+  const result = await conversationService.simulateInboundMessage(
+    scope(req),
+    req.params.id,
+    req.body || {}
+  );
+  res.status(201).json(result);
+}
+
+async function updateConversation(req, res) {
+  const item = await conversationService.updateConversation(
+    scope(req),
+    req.params.id,
+    req.body || {},
+    { userId: req.user.sub }
+  );
+  res.json({ item });
+}
+
+async function markConversationRead(req, res) {
+  const item = await conversationService.markConversationRead(scope(req), req.params.id);
+  res.json({ item });
+}
+
+async function addConversationNote(req, res) {
+  const item = await conversationService.addInternalNote(
+    scope(req),
+    req.params.id,
+    req.body || {},
+    { userId: req.user.sub }
+  );
+  res.status(201).json({ item });
+}
+
 module.exports = {
+  scope,
   listProviders,
   listAgentConfigurations,
   createAgentConfiguration,
   updateAgentConfiguration,
   previewAgentPrompt,
-  playground
+  playground,
+  listConversationLeads,
+  listConversations,
+  getConversationSummary,
+  createConversation,
+  getConversation,
+  sendConversationMessage,
+  simulateInboundMessage,
+  updateConversation,
+  markConversationRead,
+  addConversationNote
 };
