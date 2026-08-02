@@ -13,11 +13,36 @@ const { runPlayground } = require('../services/agentSdrService');
 const conversationService = require('../services/conversationService');
 const { providerRegistry } = require('../integrations/providerRegistry');
 
+const AGENT_MUTABLE_FIELDS = Object.freeze([
+  'name',
+  'tone',
+  'businessName',
+  'products',
+  'targetAudience',
+  'qualificationCriteria',
+  'frequentObjections',
+  'transferRules',
+  'mode',
+  'provider',
+  'model',
+  'temperature',
+  'maxTokens',
+  'status',
+  'active'
+]);
+
 function scope(req) {
   return {
     userId: req.user.sub,
     organizationId: req.currentUser?.organizationId || null
   };
+}
+
+function pickAgentInput(input = {}) {
+  return AGENT_MUTABLE_FIELDS.reduce((result, field) => {
+    if (Object.prototype.hasOwnProperty.call(input, field)) result[field] = input[field];
+    return result;
+  }, {});
 }
 
 async function listProviders(_req, res) {
@@ -30,10 +55,10 @@ async function listAgentConfigurations(req, res) {
 }
 
 async function createAgentConfiguration(req, res) {
-  const input = req.body || {};
+  const input = pickAgentInput(req.body || {});
   const config = await AgentConfiguration.create({
-    ...scope(req),
     ...input,
+    ...scope(req),
     status: 'draft',
     active: false,
     compiledPrompt: compileAgentPrompt(input)
@@ -42,13 +67,26 @@ async function createAgentConfiguration(req, res) {
 }
 
 async function updateAgentConfiguration(req, res) {
-  const input = req.body || {};
+  const input = pickAgentInput(req.body || {});
+  const existing = await AgentConfiguration.findOne({
+    _id: req.params.id,
+    ...scope(req),
+    status: { $ne: 'archived' }
+  }).lean();
+
+  if (!existing) return res.status(404).json({ error: 'Configuração do agente não encontrada.' });
+
   const item = await AgentConfiguration.findOneAndUpdate(
-    { _id: req.params.id, ...scope(req), status: { $ne: 'archived' } },
-    { $set: { ...input, compiledPrompt: compileAgentPrompt(input) } },
+    { _id: existing._id, ...scope(req), status: { $ne: 'archived' } },
+    {
+      $set: {
+        ...input,
+        compiledPrompt: compileAgentPrompt({ ...existing, ...input })
+      }
+    },
     { new: true, runValidators: true }
   ).select('-compiledPrompt').lean();
-  if (!item) return res.status(404).json({ error: 'Configuração do agente não encontrada.' });
+
   return res.json({ item });
 }
 
@@ -137,7 +175,9 @@ async function addConversationNote(req, res) {
 }
 
 module.exports = {
+  AGENT_MUTABLE_FIELDS,
   scope,
+  pickAgentInput,
   listProviders,
   listAgentConfigurations,
   createAgentConfiguration,
