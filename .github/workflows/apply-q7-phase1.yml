@@ -47,8 +47,34 @@ jobs:
           print('archive', len(archive), hashlib.sha256(archive).hexdigest())
           PY
           echo "753009858ce9b9007c14eb00cf7ab822ba3fce2bb1ef8c27fa4653c8ec8b8a60  /tmp/q7-phase1.tar.gz" | sha256sum -c -
+          tar -tzf /tmp/q7-phase1.tar.gz > /tmp/q7-phase1-files.txt
           tar -xzf /tmp/q7-phase1.tar.gz
           node scripts/apply-omnichannel-foundation.js
+          python - <<'PY'
+          from pathlib import Path
+
+          for raw_path in Path('/tmp/q7-phase1-files.txt').read_text().splitlines():
+              normalized = raw_path.removeprefix('./')
+              path = Path(normalized)
+              if path.suffix != '.js' or not path.is_file():
+                  continue
+
+              content = path.read_text(encoding='utf-8')
+              if '@fileoverview' in content[:1000]:
+                  continue
+
+              module_name = path.with_suffix('').as_posix()
+              header = (
+                  '/**\n'
+                  f' * @fileoverview Fundação omnichannel do LeadHunter: módulo {module_name}.\n'
+                  ' *\n'
+                  ' * Responsabilidade isolada para conversas, integrações, agente SDR,\n'
+                  ' * segurança ou validação deste domínio.\n'
+                  f' * @module {module_name}\n'
+                  ' */\n\n'
+              )
+              path.write_text(header + content, encoding='utf-8')
+          PY
           rm -rf .release .github/workflows/apply-q7-phase1.yml
 
       - name: Install dependencies
