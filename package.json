@@ -1,6 +1,6 @@
 {
   "name": "agente-prospeccao-real",
-  "version": "26.2.0",
+  "version": "27.0.0",
   "description": "SaaS de prospecção tech com design system modular, analytics executivo e profundidade 3D acessível",
   "main": "src/server.js",
   "type": "commonjs",

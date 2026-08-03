@@ -1,5 +1,0 @@
-LeadHunter Pro CRM 360 clean integration
-Base: main with Omnichannel and deploy observability
-Patch SHA-256: 5029b67c4d4fef8e9213f048755c410a2a2e7f7ef6c007c92d6959ad549b1bf4
-Validate full product before commit.
-Triggered with corrected Omnichannel artifact gates.

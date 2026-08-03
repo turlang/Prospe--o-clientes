@@ -87,7 +87,7 @@
     const link = document.createElement('link');
     link.id = 'omnichannelStyles';
     link.rel = 'stylesheet';
-    link.href = '/assets/dashboard/omnichannel.css?v=26.2.0';
+    link.href = '/assets/dashboard/omnichannel.css?v=27.0.0';
     document.head.append(link);
   }
 

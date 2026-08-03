@@ -1,5 +1,5 @@
 /**
- * @fileoverview Regressões de entrega dos assets e do design system 26.2.0.
+ * @fileoverview Regressões de entrega dos assets e do design system 27.0.0.
  * @module tests/releaseDeliveryRegression.test
  */
 const test = require('node:test');
@@ -15,7 +15,7 @@ const staticCss = fs.readFileSync('frontend/landing/static/landing.css', 'utf8')
 const appSource = fs.readFileSync('src/app.js', 'utf8');
 const dashboardEntry = fs.readFileSync('public/assets/dashboard/styles.css', 'utf8');
 
-const VERSION = '26.2.0';
+const VERSION = '27.0.0';
 
 test('documentos públicos apontam para assets da release atual', () => {
   assert.match(appHtml, new RegExp(`/assets/dashboard/styles\\.css\\?v=${VERSION.replaceAll('.', '\\.')}`));

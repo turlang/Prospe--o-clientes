@@ -63,3 +63,25 @@
   body.is-authenticated .container { width: calc(100% - 10px); }
   .session-brand strong { max-width: 9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }
+
+@media (max-width: 1180px) {
+  .crm-filter-grid { grid-template-columns: repeat(3, minmax(150px, 1fr)); }
+  .crm-forecast-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 760px) {
+  .crm-control-grid,
+  .crm-filter-grid,
+  .crm-form-grid,
+  .crm-mapping-grid,
+  .crm-forecast-grid,
+  .crm-insights-grid { grid-template-columns: 1fr; }
+  .crm-dialog { width: calc(100vw - 12px); max-height: calc(100dvh - 12px); border-radius: 16px; }
+  .crm-dialog__header,
+  .crm-dialog__footer { align-items: flex-start; padding: 14px; }
+  .crm-dialog__header { flex-direction: column; }
+  .crm-settings-layout,
+  .crm-import-layout { padding: 12px; }
+  .crm-stage-editor__row { grid-template-columns: 1fr; padding: 10px; border: 1px solid #e0e8f2; border-radius: 12px; }
+  .crm-table { min-width: 760px; }
+}

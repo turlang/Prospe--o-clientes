@@ -68,6 +68,39 @@ const kanbanBoard = document.querySelector('#kanbanBoard');
 const filterStatus = document.querySelector('#filterStatus');
 const filterFavorite = document.querySelector('#filterFavorite');
 const searchLead = document.querySelector('#searchLead');
+const crmPipelineSelect = document.querySelector('#crmPipelineSelect');
+const crmViewMode = document.querySelector('#crmViewMode');
+const crmSavedFilterSelect = document.querySelector('#crmSavedFilterSelect');
+const crmSaveFilterButton = document.querySelector('#crmSaveFilterButton');
+const crmSegmentFilter = document.querySelector('#crmSegmentFilter');
+const crmServiceFilter = document.querySelector('#crmServiceFilter');
+const crmTagFilter = document.querySelector('#crmTagFilter');
+const crmSortFilter = document.querySelector('#crmSortFilter');
+const crmForecastSummary = document.querySelector('#crmForecastSummary');
+const crmGoalsPanel = document.querySelector('#crmGoalsPanel');
+const crmReactivationPanel = document.querySelector('#crmReactivationPanel');
+const crmListView = document.querySelector('#crmListView');
+const crmSettingsButton = document.querySelector('#crmSettingsButton');
+const crmImportButton = document.querySelector('#crmImportButton');
+const crmSettingsDialog = document.querySelector('#crmSettingsDialog');
+const crmImportDialog = document.querySelector('#crmImportDialog');
+const crmPipelineEditor = document.querySelector('#crmPipelineEditor');
+const crmCustomFieldsEditor = document.querySelector('#crmCustomFieldsEditor');
+const crmGoalsEditor = document.querySelector('#crmGoalsEditor');
+const crmCatalogEditor = document.querySelector('#crmCatalogEditor');
+const crmSettingsStatus = document.querySelector('#crmSettingsStatus');
+const crmSaveSettingsButton = document.querySelector('#crmSaveSettingsButton');
+const crmAddPipelineButton = document.querySelector('#crmAddPipelineButton');
+const crmAddCustomFieldButton = document.querySelector('#crmAddCustomFieldButton');
+const crmAddCatalogItemButton = document.querySelector('#crmAddCatalogItemButton');
+const crmCsvFile = document.querySelector('#crmCsvFile');
+const crmCsvText = document.querySelector('#crmCsvText');
+const crmPreviewImportButton = document.querySelector('#crmPreviewImportButton');
+const crmImportMapping = document.querySelector('#crmImportMapping');
+const crmImportSummary = document.querySelector('#crmImportSummary');
+const crmImportPreview = document.querySelector('#crmImportPreview');
+const crmImportStatus = document.querySelector('#crmImportStatus');
+const crmConfirmImportButton = document.querySelector('#crmConfirmImportButton');
 const dashboardFunnel = document.querySelector('#dashboardFunnel');
 const dashboardInsights = document.querySelector('#dashboardInsights');
 const agendaList = document.querySelector('#agendaList');
@@ -113,9 +146,11 @@ const v23CopilotClear = document.querySelector('#v23CopilotClear');
 let authToken = localStorage.getItem('authToken') || '';
 let currentUser = readStoredUser();
 let lastLeads = [];
+let crmConfig = null;
+let crmImportState = { csvText: '', mapping: {}, preview: null };
 const approachHistory = {};
 
-const PIPELINE = [
+let PIPELINE = [
   { key: 'NOVO', label: 'Novo lead', hint: 'Encontrado, ainda sem contato' },
   { key: 'CONTATADO', label: 'Contato realizado', hint: 'WhatsApp, ligação ou e-mail enviado' },
   { key: 'INTERESSADO', label: 'Interesse', hint: 'Respondeu ou pediu mais detalhes' },
@@ -210,13 +245,13 @@ logoutButton.addEventListener('click', () => {
 
 exportCsv.addEventListener('click', async () => {
   try {
-    const response = await apiFetch('/api/export.csv');
+    const response = await apiFetch(`/api/crm/export.csv?${buildCrmQueryParams().toString()}`);
     if (!response.ok) throw new Error('Erro ao exportar CSV.');
     const blob = await response.blob();
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'leads-prospeccao.csv';
+    link.download = 'leadhunter-crm-completo.csv';
     link.click();
     URL.revokeObjectURL(url);
   } catch (error) {
@@ -275,6 +310,27 @@ loadSaved.addEventListener('click', async (event) => {
 filterStatus.addEventListener('change', () => carregarLeadsCRM());
 filterFavorite.addEventListener('change', () => carregarLeadsCRM());
 searchLead.addEventListener('input', debounce(() => carregarLeadsCRM(), 350));
+[crmSegmentFilter, crmServiceFilter, crmTagFilter].filter(Boolean).forEach((input) => {
+  input.addEventListener('input', debounce(() => carregarLeadsCRM(), 350));
+});
+if (crmSortFilter) crmSortFilter.addEventListener('change', () => carregarLeadsCRM());
+if (crmPipelineSelect) crmPipelineSelect.addEventListener('change', () => {
+  if (crmConfig) crmConfig.activePipelineId = crmPipelineSelect.value;
+  syncCrmPipelineUi();
+  carregarLeadsCRM();
+});
+if (crmViewMode) crmViewMode.addEventListener('change', () => renderCrmResults(lastLeads));
+if (crmSavedFilterSelect) crmSavedFilterSelect.addEventListener('change', applySavedCrmFilter);
+if (crmSaveFilterButton) crmSaveFilterButton.addEventListener('click', saveCurrentCrmFilter);
+if (crmSettingsButton) crmSettingsButton.addEventListener('click', openCrmSettings);
+if (crmImportButton) crmImportButton.addEventListener('click', openCrmImport);
+if (crmSaveSettingsButton) crmSaveSettingsButton.addEventListener('click', saveCrmSettings);
+if (crmAddPipelineButton) crmAddPipelineButton.addEventListener('click', addCrmPipeline);
+if (crmAddCustomFieldButton) crmAddCustomFieldButton.addEventListener('click', addCrmCustomField);
+if (crmAddCatalogItemButton) crmAddCatalogItemButton.addEventListener('click', addCrmCatalogItem);
+if (crmCsvFile) crmCsvFile.addEventListener('change', readCrmCsvFile);
+if (crmPreviewImportButton) crmPreviewImportButton.addEventListener('click', previewCrmImport);
+if (crmConfirmImportButton) crmConfirmImportButton.addEventListener('click', confirmCrmImport);
 
 async function authRequest(url, payload) {
   statusBox.innerHTML = '<p class="loading">Validando acesso...</p>';
@@ -357,6 +413,7 @@ async function showDashboard() {
   renderOnboarding();
   await refreshUsage();
   await renderPlans();
+  await loadCrmConfiguration();
   await refreshStats();
   await loadSavedLeads(false, { renderCards: false });
   await loadExecutiveOverview();
@@ -1138,6 +1195,7 @@ function openLeadDetail(leadId) {
       <p><strong>Ticket</strong><span>${escapeHtml(lead.ticketEstimado || '-')}</span></p>
       <p><strong>Probabilidade</strong><span>${escapeHtml(lead.probabilidade || '-')}</span></p>
     </div>
+    ${renderCrmLeadEditor(lead)}
     <div class="links">
       ${lead.site ? `<a href="${escapeAttr(lead.site)}" target="_blank" rel="noopener">Site</a>` : ''}
       ${lead.maps ? `<a href="${escapeAttr(lead.maps)}" target="_blank" rel="noopener">Maps</a>` : ''}
@@ -1538,7 +1596,7 @@ function applyLeadUpdate(updatedLead) {
   else lastLeads.push(updatedLead);
 
   window.lastLeads = lastLeads;
-  renderKanban(lastLeads);
+  renderCrmResults(lastLeads);
   renderDashboardExtras(lastLeads);
   renderExecutiveStats(lastLeads);
   renderActivityTimeline(lastLeads);
@@ -1619,7 +1677,12 @@ async function analyzeReply(leadId, scope = 'card') {
 async function markStatus(leadId, status) {
   const response = await apiFetch('/api/leads/status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ leadId, status }) });
   const data = await readJson(response);
-  if (!response.ok) throw new Error(data.error || 'Erro ao atualizar status.');
+  if (!response.ok) {
+    const missing = Array.isArray(data.missingFields) && data.missingFields.length
+      ? ` Campos pendentes: ${data.missingFields.join(', ')}.`
+      : '';
+    throw new Error((data.error || 'Erro ao atualizar status.') + missing);
+  }
   return data;
 }
 
@@ -2270,16 +2333,10 @@ async function carregarLeadsCRM() {
   board.innerHTML = '<p class="loading">Carregando pipeline comercial...</p>';
 
   try {
-    const status = document.querySelector('#filterStatus')?.value || '';
-    const favorite = document.querySelector('#filterFavorite')?.checked || false;
-    const query = document.querySelector('#searchLead')?.value?.trim() || '';
+    if (!crmConfig) await loadCrmConfiguration();
+    const params = buildCrmQueryParams();
 
-    const params = new URLSearchParams();
-    if (status) params.set('status', status);
-    if (favorite) params.set('favorito', 'true');
-    if (query) params.set('q', query);
-
-    const response = await fetch(`/api/leads${params.toString() ? `?${params.toString()}` : ''}`, {
+    const response = await fetch(`/api/crm/leads${params.toString() ? `?${params.toString()}` : ''}`, {
       headers: { Authorization: 'Bearer ' + token }
     });
 
@@ -2290,7 +2347,7 @@ async function carregarLeadsCRM() {
     lastLeads = leads;
     window.lastLeads = leads;
 
-    renderKanban(leads);
+    renderCrmResults(leads);
     renderDashboardExtras(leads);
     renderExecutiveStats(leads);
 
@@ -2303,7 +2360,8 @@ async function carregarLeadsCRM() {
 
     const statusBox = document.querySelector('#status');
     if (statusBox) {
-      statusBox.innerHTML = `<p>${leads.length} leads carregados no pipeline comercial.</p>`;
+      statusBox.innerHTML = `<p>${leads.length} leads carregados no CRM avançado.</p>`;
+      await loadCrmInsights();
     }
   } catch (error) {
     board.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
@@ -3169,3 +3227,518 @@ if (v22CopilotForm) {
 
 window.loadV23Cockpit = loadV23Cockpit;
 window.loadV23CopilotHistory = loadV23CopilotHistory;
+
+// -----------------------------------------------------------------------------
+// CRM avançado — pipelines, campos, metas, importação e visão em lista
+// -----------------------------------------------------------------------------
+function defaultCrmConfiguration() {
+  return {
+    activePipelineId: 'sales',
+    pipelines: [{
+      id: 'sales',
+      name: 'Pipeline comercial',
+      description: 'Fluxo principal de vendas.',
+      stages: PIPELINE.map((stage, index) => ({
+        ...stage,
+        probability: [8, 16, 34, 46, 58, 100, 0][index],
+        requiredFields: stage.key === 'PROPOSTA' ? ['ticketEstimado'] : stage.key === 'FECHADO' ? ['valorFechado', 'servicoPrincipal'] : stage.key === 'SEM_INTERESSE' ? ['motivoPerda'] : []
+      }))
+    }],
+    customFields: [],
+    savedFilters: [],
+    goals: { period: 'monthly', leads: 40, contacts: 24, proposals: 8, closed: 3, revenue: 6000 },
+    catalog: []
+  };
+}
+
+function activeCrmPipeline() {
+  const config = crmConfig || defaultCrmConfiguration();
+  return config.pipelines?.find((pipeline) => pipeline.id === config.activePipelineId)
+    || config.pipelines?.[0]
+    || defaultCrmConfiguration().pipelines[0];
+}
+
+async function loadCrmConfiguration() {
+  if (!authToken) return;
+  try {
+    const response = await apiFetch('/api/crm/config');
+    const data = await readJson(response);
+    if (!response.ok) throw new Error(data.error || 'Não foi possível carregar a configuração do CRM.');
+    crmConfig = data;
+  } catch (error) {
+    crmConfig = defaultCrmConfiguration();
+    console.warn('[CRM] usando configuração local de contingência:', error.message);
+  }
+  syncCrmPipelineUi();
+}
+
+function syncCrmPipelineUi() {
+  const pipeline = activeCrmPipeline();
+  PIPELINE = (pipeline.stages || []).map((stage) => ({
+    key: stage.key,
+    label: stage.label,
+    hint: stage.hint || '',
+    probability: Number(stage.probability || 0),
+    requiredFields: Array.isArray(stage.requiredFields) ? stage.requiredFields : []
+  }));
+
+  if (crmPipelineSelect) {
+    crmPipelineSelect.innerHTML = (crmConfig?.pipelines || []).map((item) => `<option value="${escapeAttr(item.id)}" ${item.id === crmConfig.activePipelineId ? 'selected' : ''}>${escapeHtml(item.name)}</option>`).join('');
+  }
+  if (filterStatus) {
+    const selected = filterStatus.value;
+    filterStatus.innerHTML = '<option value="">Todas as etapas</option>' + PIPELINE.map((stage) => `<option value="${escapeAttr(stage.key)}">${escapeHtml(stage.label)}</option>`).join('');
+    if ([...filterStatus.options].some((option) => option.value === selected)) filterStatus.value = selected;
+  }
+  if (crmSavedFilterSelect) {
+    const selected = crmSavedFilterSelect.value;
+    crmSavedFilterSelect.innerHTML = '<option value="">Sem filtro salvo</option>' + (crmConfig?.savedFilters || []).map((filter) => `<option value="${escapeAttr(filter.id)}">${escapeHtml(filter.name)}</option>`).join('');
+    if ([...crmSavedFilterSelect.options].some((option) => option.value === selected)) crmSavedFilterSelect.value = selected;
+  }
+}
+
+function buildCrmQueryParams() {
+  const params = new URLSearchParams();
+  const values = {
+    pipelineId: crmPipelineSelect?.value || crmConfig?.activePipelineId || 'sales',
+    status: filterStatus?.value || '',
+    favorito: filterFavorite?.checked ? 'true' : '',
+    q: searchLead?.value?.trim() || '',
+    segment: crmSegmentFilter?.value?.trim() || '',
+    service: crmServiceFilter?.value?.trim() || '',
+    tag: crmTagFilter?.value?.trim() || '',
+    sort: crmSortFilter?.value || 'score-desc'
+  };
+  Object.entries(values).forEach(([key, value]) => { if (value) params.set(key, value); });
+  return params;
+}
+
+function currentCrmFilterCriteria() {
+  return Object.fromEntries(buildCrmQueryParams().entries());
+}
+
+function renderCrmResults(leads) {
+  const safeLeads = Array.isArray(leads) ? leads : [];
+  const mode = crmViewMode?.value || 'kanban';
+  if (kanbanBoard) kanbanBoard.hidden = mode !== 'kanban';
+  if (crmListView) crmListView.hidden = mode !== 'list';
+  if (mode === 'list') renderCrmList(safeLeads);
+  else renderKanban(safeLeads);
+}
+
+function renderCrmList(leads) {
+  if (!crmListView) return;
+  if (!leads.length) {
+    crmListView.innerHTML = '<p class="empty">Nenhum lead encontrado com os filtros atuais.</p>';
+    return;
+  }
+  crmListView.innerHTML = `
+    <div class="crm-table-wrap">
+      <table class="crm-table">
+        <thead><tr><th>Lead</th><th>Etapa</th><th>Segmento</th><th>Serviço</th><th>Valor</th><th>Recorrência</th><th>Score</th><th>Ação</th></tr></thead>
+        <tbody>${leads.map((lead) => `
+          <tr>
+            <td><strong>${escapeHtml(lead.nome || 'Lead')}</strong><small>${escapeHtml(lead.email || lead.telefone || lead.site || '')}</small></td>
+            <td><span class="crm-stage-chip">${escapeHtml(PIPELINE.find((stage) => stage.key === normalizeStatus(lead.status))?.label || normalizeStatus(lead.status))}</span></td>
+            <td>${escapeHtml(lead.segmentoComercial || lead.tipo || '-')}</td>
+            <td>${escapeHtml(lead.servicoPrincipal || lead.servico || '-')}</td>
+            <td>${formatMoney(Number(lead.contractValue || lead.ticketEstimado || 0))}</td>
+            <td>${formatMoney(Number(lead.monthlyRecurringRevenue || 0))}/mês</td>
+            <td>${Number(lead.score || 0)}/100</td>
+            <td><button type="button" class="secondary mini" onclick="openLeadDetail(${jsArg(getLeadId(lead))})">Abrir</button></td>
+          </tr>`).join('')}</tbody>
+      </table>
+    </div>`;
+}
+
+async function loadCrmInsights() {
+  if (!authToken || !crmConfig) return;
+  try {
+    const params = buildCrmQueryParams();
+    const [forecastResponse, reactivationResponse] = await Promise.all([
+      apiFetch(`/api/crm/forecast?${params.toString()}`),
+      apiFetch('/api/crm/reactivation?minDays=30')
+    ]);
+    const forecast = await readJson(forecastResponse);
+    const reactivation = await readJson(reactivationResponse);
+    if (!forecastResponse.ok) throw new Error(forecast.error || 'Erro ao carregar previsão.');
+    if (!reactivationResponse.ok) throw new Error(reactivation.error || 'Erro ao carregar reativação.');
+    renderCrmForecast(forecast);
+    renderCrmGoals(forecast.goals);
+    renderCrmReactivation(reactivation);
+  } catch (error) {
+    if (crmForecastSummary) crmForecastSummary.innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
+  }
+}
+
+function renderCrmForecast(data = {}) {
+  if (!crmForecastSummary) return;
+  crmForecastSummary.innerHTML = `
+    <article><small>Pipeline total</small><strong>${formatMoney(data.pipelineRevenue || 0)}</strong><span>${Number(data.activeDeals || 0)} negócios ativos</span></article>
+    <article><small>Previsão ponderada</small><strong>${formatMoney(data.weightedRevenue || 0)}</strong><span>Probabilidade por etapa</span></article>
+    <article><small>Receita fechada</small><strong>${formatMoney(data.closedRevenue || 0)}</strong><span>Valor registrado</span></article>
+    <article><small>Receita recorrente</small><strong>${formatMoney(data.monthlyRecurringRevenue || 0)}</strong><span>${formatMoney(data.annualRecurringRevenue || 0)} ao ano</span></article>`;
+}
+
+function renderCrmGoals(goals = {}) {
+  if (!crmGoalsPanel) return;
+  const labels = { leads: 'Novos leads', contacts: 'Contatos', proposals: 'Propostas', closed: 'Fechamentos', revenue: 'Receita' };
+  crmGoalsPanel.innerHTML = Object.keys(labels).map((key) => {
+    const current = Number(goals.current?.[key] || 0);
+    const target = Number(goals.targets?.[key] || 0);
+    const percentage = Number(goals.progress?.[key] || 0);
+    const displayCurrent = key === 'revenue' ? formatMoney(current) : current;
+    const displayTarget = key === 'revenue' ? formatMoney(target) : target;
+    return `<article><div><strong>${labels[key]}</strong><span>${displayCurrent} de ${displayTarget}</span></div><div class="crm-progress"><span style="width:${Math.min(100, percentage)}%"></span></div><small>${percentage}% da meta</small></article>`;
+  }).join('');
+}
+
+function renderCrmReactivation(items = []) {
+  if (!crmReactivationPanel) return;
+  crmReactivationPanel.innerHTML = items.length ? items.slice(0, 8).map((item) => `
+    <article class="history-item">
+      <div><strong>${escapeHtml(item.name)}</strong><p>${escapeHtml(item.reason)} · ${Number(item.daysWithoutActivity)} dias sem atividade</p></div>
+      <button type="button" class="secondary mini" onclick="reactivateCrmLead(${jsArg(item.leadId)})">Reativar</button>
+    </article>`).join('') : '<p class="meta">Nenhum lead precisa de reativação neste momento.</p>';
+}
+
+async function reactivateCrmLead(leadId) {
+  try {
+    const response = await apiFetch(`/api/crm/reactivation/${encodeURIComponent(leadId)}`, { method: 'POST' });
+    const data = await readJson(response);
+    if (!response.ok) throw new Error(data.error || 'Erro ao reativar lead.');
+    statusBox.innerHTML = '<p>Lead reativado e devolvido ao início do pipeline.</p>';
+    await carregarLeadsCRM();
+  } catch (error) { showError(error.message); }
+}
+window.reactivateCrmLead = reactivateCrmLead;
+
+function applySavedCrmFilter() {
+  const filter = (crmConfig?.savedFilters || []).find((item) => item.id === crmSavedFilterSelect?.value);
+  if (!filter) return;
+  const criteria = filter.criteria || {};
+  if (filterStatus) filterStatus.value = criteria.status || '';
+  if (filterFavorite) filterFavorite.checked = criteria.favorito === 'true';
+  if (searchLead) searchLead.value = criteria.q || '';
+  if (crmSegmentFilter) crmSegmentFilter.value = criteria.segment || '';
+  if (crmServiceFilter) crmServiceFilter.value = criteria.service || '';
+  if (crmTagFilter) crmTagFilter.value = criteria.tag || '';
+  if (crmSortFilter) crmSortFilter.value = criteria.sort || 'score-desc';
+  if (crmPipelineSelect && criteria.pipelineId) crmPipelineSelect.value = criteria.pipelineId;
+  carregarLeadsCRM();
+}
+
+async function saveCurrentCrmFilter() {
+  if (!crmConfig) await loadCrmConfiguration();
+  const name = window.prompt('Nome do filtro:', 'Minha visão');
+  if (!name?.trim()) return;
+  const id = `filtro-${Date.now()}`;
+  crmConfig.savedFilters = [...(crmConfig.savedFilters || []), { id, name: name.trim().slice(0, 60), criteria: currentCrmFilterCriteria() }].slice(-20);
+  await persistCrmConfiguration('Filtro salvo com sucesso.');
+  if (crmSavedFilterSelect) crmSavedFilterSelect.value = id;
+}
+
+function openCrmSettings() {
+  if (!crmConfig) return;
+  renderCrmSettingsEditors();
+  if (crmSettingsDialog?.showModal) crmSettingsDialog.showModal();
+}
+
+function renderCrmSettingsEditors() {
+  renderCrmPipelinesEditor();
+  renderCrmCustomFieldsEditor();
+  renderCrmGoalsEditor();
+  renderCrmCatalogEditor();
+}
+
+function renderCrmPipelinesEditor() {
+  if (!crmPipelineEditor) return;
+  crmPipelineEditor.innerHTML = (crmConfig?.pipelines || []).map((pipeline, pipelineIndex) => `
+    <article class="crm-editor-card" data-pipeline-index="${pipelineIndex}">
+      <div class="crm-editor-row">
+        <label>Nome<input data-pipeline-name value="${escapeAttr(pipeline.name)}" /></label>
+        <label>Descrição<input data-pipeline-description value="${escapeAttr(pipeline.description || '')}" /></label>
+        <button type="button" class="secondary mini" onclick="removeCrmPipeline(${pipelineIndex})" ${crmConfig.pipelines.length === 1 ? 'disabled' : ''}>Remover</button>
+      </div>
+      <div class="crm-stage-editor">${(pipeline.stages || []).map((stage, stageIndex) => `
+        <div class="crm-stage-editor__row" data-stage-index="${stageIndex}">
+          <strong>${escapeHtml(stage.key)}</strong>
+          <input data-stage-label value="${escapeAttr(stage.label)}" aria-label="Nome da etapa ${escapeAttr(stage.key)}" />
+          <input data-stage-probability type="number" min="0" max="100" value="${Number(stage.probability || 0)}" aria-label="Probabilidade" />
+          <input data-stage-required value="${escapeAttr((stage.requiredFields || []).join(', '))}" placeholder="Campos obrigatórios" aria-label="Campos obrigatórios" />
+        </div>`).join('')}</div>
+    </article>`).join('');
+}
+
+function renderCrmCustomFieldsEditor() {
+  if (!crmCustomFieldsEditor) return;
+  crmCustomFieldsEditor.innerHTML = (crmConfig?.customFields || []).length ? crmConfig.customFields.map((field, index) => `
+    <article class="crm-editor-row" data-custom-field-index="${index}">
+      <label>Nome<input data-field-label value="${escapeAttr(field.label)}" /></label>
+      <label>Tipo<select data-field-type>${['text','number','date','select','boolean'].map((type) => `<option value="${type}" ${field.type === type ? 'selected' : ''}>${type}</option>`).join('')}</select></label>
+      <label>Opções<input data-field-options value="${escapeAttr((field.options || []).join(', '))}" placeholder="Apenas para seleção" /></label>
+      <label>Obrigatório em<input data-field-required value="${escapeAttr((field.requiredAtStages || []).join(', '))}" placeholder="PROPOSTA, FECHADO" /></label>
+      <button type="button" class="secondary mini" onclick="removeCrmCustomField(${index})">Remover</button>
+    </article>`).join('') : '<p class="meta">Nenhum campo personalizado criado.</p>';
+}
+
+function renderCrmGoalsEditor() {
+  if (!crmGoalsEditor) return;
+  const goals = crmConfig?.goals || {};
+  crmGoalsEditor.innerHTML = `
+    <label>Período<select data-goal="period"><option value="monthly" ${goals.period === 'monthly' ? 'selected' : ''}>Mensal</option><option value="quarterly" ${goals.period === 'quarterly' ? 'selected' : ''}>Trimestral</option></select></label>
+    <label>Leads<input data-goal="leads" type="number" min="0" value="${Number(goals.leads || 0)}" /></label>
+    <label>Contatos<input data-goal="contacts" type="number" min="0" value="${Number(goals.contacts || 0)}" /></label>
+    <label>Propostas<input data-goal="proposals" type="number" min="0" value="${Number(goals.proposals || 0)}" /></label>
+    <label>Fechamentos<input data-goal="closed" type="number" min="0" value="${Number(goals.closed || 0)}" /></label>
+    <label>Receita<input data-goal="revenue" type="number" min="0" step="0.01" value="${Number(goals.revenue || 0)}" /></label>`;
+}
+
+function renderCrmCatalogEditor() {
+  if (!crmCatalogEditor) return;
+  crmCatalogEditor.innerHTML = (crmConfig?.catalog || []).length ? crmConfig.catalog.map((item, index) => `
+    <article class="crm-editor-row" data-catalog-index="${index}">
+      <label>Nome<input data-catalog-name value="${escapeAttr(item.name)}" /></label>
+      <label>Tipo<select data-catalog-type><option value="service" ${item.type === 'service' ? 'selected' : ''}>Serviço</option><option value="product" ${item.type === 'product' ? 'selected' : ''}>Produto</option></select></label>
+      <label>Preço<input data-catalog-price type="number" min="0" step="0.01" value="${Number(item.unitPrice || 0)}" /></label>
+      <label class="check"><input data-catalog-recurring type="checkbox" ${item.recurring ? 'checked' : ''} /> Recorrente</label>
+      <label class="check"><input data-catalog-active type="checkbox" ${item.active !== false ? 'checked' : ''} /> Ativo</label>
+      <button type="button" class="secondary mini" onclick="removeCrmCatalogItem(${index})">Remover</button>
+    </article>`).join('') : '<p class="meta">Nenhum item no catálogo.</p>';
+}
+
+function addCrmPipeline() {
+  const stages = defaultCrmConfiguration().pipelines[0].stages.map((stage) => ({ ...stage }));
+  crmConfig.pipelines.push({ id: `pipeline-${Date.now()}`, name: `Novo pipeline ${crmConfig.pipelines.length + 1}`, description: '', stages });
+  renderCrmPipelinesEditor();
+}
+function removeCrmPipeline(index) {
+  if (crmConfig.pipelines.length <= 1) return;
+  crmConfig.pipelines.splice(index, 1);
+  if (!crmConfig.pipelines.some((item) => item.id === crmConfig.activePipelineId)) crmConfig.activePipelineId = crmConfig.pipelines[0].id;
+  renderCrmPipelinesEditor();
+}
+function addCrmCustomField() {
+  crmConfig.customFields.push({ id: `campo-${Date.now()}`, label: `Novo campo ${crmConfig.customFields.length + 1}`, type: 'text', options: [], requiredAtStages: [], active: true });
+  renderCrmCustomFieldsEditor();
+}
+function removeCrmCustomField(index) { crmConfig.customFields.splice(index, 1); renderCrmCustomFieldsEditor(); }
+function addCrmCatalogItem() {
+  crmConfig.catalog.push({ id: `item-${Date.now()}`, name: `Novo serviço ${crmConfig.catalog.length + 1}`, type: 'service', unitPrice: 0, recurring: false, active: true });
+  renderCrmCatalogEditor();
+}
+function removeCrmCatalogItem(index) { crmConfig.catalog.splice(index, 1); renderCrmCatalogEditor(); }
+window.removeCrmPipeline = removeCrmPipeline;
+window.removeCrmCustomField = removeCrmCustomField;
+window.removeCrmCatalogItem = removeCrmCatalogItem;
+
+function collectCrmSettings() {
+  const pipelines = [...crmPipelineEditor.querySelectorAll('[data-pipeline-index]')].map((card, pipelineIndex) => ({
+    id: crmConfig.pipelines[pipelineIndex]?.id || `pipeline-${pipelineIndex + 1}`,
+    name: card.querySelector('[data-pipeline-name]')?.value || `Pipeline ${pipelineIndex + 1}`,
+    description: card.querySelector('[data-pipeline-description]')?.value || '',
+    stages: [...card.querySelectorAll('[data-stage-index]')].map((row, stageIndex) => ({
+      key: crmConfig.pipelines[pipelineIndex]?.stages?.[stageIndex]?.key,
+      label: row.querySelector('[data-stage-label]')?.value || '',
+      hint: crmConfig.pipelines[pipelineIndex]?.stages?.[stageIndex]?.hint || '',
+      probability: Number(row.querySelector('[data-stage-probability]')?.value || 0),
+      requiredFields: (row.querySelector('[data-stage-required]')?.value || '').split(',').map((value) => value.trim()).filter(Boolean)
+    }))
+  }));
+  const customFields = [...crmCustomFieldsEditor.querySelectorAll('[data-custom-field-index]')].map((row, index) => ({
+    id: crmConfig.customFields[index]?.id || `campo-${index + 1}`,
+    label: row.querySelector('[data-field-label]')?.value || `Campo ${index + 1}`,
+    type: row.querySelector('[data-field-type]')?.value || 'text',
+    options: (row.querySelector('[data-field-options]')?.value || '').split(',').map((value) => value.trim()).filter(Boolean),
+    requiredAtStages: (row.querySelector('[data-field-required]')?.value || '').split(',').map((value) => value.trim().toUpperCase()).filter(Boolean),
+    active: true
+  }));
+  const goals = Object.fromEntries([...crmGoalsEditor.querySelectorAll('[data-goal]')].map((input) => [input.dataset.goal, input.dataset.goal === 'period' ? input.value : Number(input.value || 0)]));
+  const catalog = [...crmCatalogEditor.querySelectorAll('[data-catalog-index]')].map((row, index) => ({
+    id: crmConfig.catalog[index]?.id || `item-${index + 1}`,
+    name: row.querySelector('[data-catalog-name]')?.value || `Item ${index + 1}`,
+    type: row.querySelector('[data-catalog-type]')?.value || 'service',
+    unitPrice: Number(row.querySelector('[data-catalog-price]')?.value || 0),
+    recurring: Boolean(row.querySelector('[data-catalog-recurring]')?.checked),
+    active: Boolean(row.querySelector('[data-catalog-active]')?.checked)
+  }));
+  return { ...crmConfig, pipelines, customFields, goals, catalog };
+}
+
+async function saveCrmSettings() {
+  crmConfig = collectCrmSettings();
+  if (crmSettingsStatus) crmSettingsStatus.textContent = 'Salvando...';
+  await persistCrmConfiguration('Configuração do CRM salva.');
+  if (crmSettingsStatus) crmSettingsStatus.textContent = 'Configuração atualizada com sucesso.';
+  await carregarLeadsCRM();
+}
+
+async function persistCrmConfiguration(successMessage = '') {
+  const response = await apiFetch('/api/crm/config', { method: 'PUT', body: JSON.stringify(crmConfig) });
+  const data = await readJson(response);
+  if (!response.ok) throw new Error(data.error || 'Erro ao salvar configuração do CRM.');
+  crmConfig = data;
+  syncCrmPipelineUi();
+  if (successMessage && statusBox) statusBox.innerHTML = `<p>${escapeHtml(successMessage)}</p>`;
+}
+
+function openCrmImport() {
+  crmImportState = { csvText: '', mapping: {}, preview: null };
+  if (crmCsvText) crmCsvText.value = '';
+  if (crmCsvFile) crmCsvFile.value = '';
+  if (crmImportMapping) crmImportMapping.innerHTML = '';
+  if (crmImportSummary) crmImportSummary.innerHTML = '';
+  if (crmImportPreview) crmImportPreview.innerHTML = '';
+  if (crmConfirmImportButton) crmConfirmImportButton.disabled = true;
+  if (crmImportDialog?.showModal) crmImportDialog.showModal();
+}
+
+async function readCrmCsvFile(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  if (file.size > 900_000) { showError('O CSV deve ter no máximo 900 KB por importação.'); return; }
+  crmCsvText.value = await file.text();
+}
+
+function collectCrmImportMapping() {
+  return Object.fromEntries([...crmImportMapping.querySelectorAll('[data-import-field]')].map((select) => [select.dataset.importField, select.value]));
+}
+
+async function previewCrmImport() {
+  const csvText = crmCsvText?.value || '';
+  if (!csvText.trim()) { showError('Selecione um arquivo ou cole o conteúdo CSV.'); return; }
+  crmImportStatus.textContent = 'Analisando arquivo...';
+  const mapping = crmImportMapping?.children.length ? collectCrmImportMapping() : {};
+  try {
+    const response = await apiFetch('/api/crm/import/preview', { method: 'POST', body: JSON.stringify({ csvText, mapping }) });
+    const data = await readJson(response);
+    if (!response.ok) throw new Error(data.error || data.errors?.[0] || 'Erro ao analisar CSV.');
+    crmImportState = { csvText, mapping: data.mapping || mapping, preview: data };
+    renderCrmImportMapping(data.headers || [], data.mapping || {});
+    renderCrmImportPreview(data);
+    crmImportStatus.textContent = 'Prévia concluída. Revise o mapeamento antes de importar.';
+    crmConfirmImportButton.disabled = !data.valid;
+  } catch (error) {
+    crmImportStatus.textContent = error.message;
+    crmConfirmImportButton.disabled = true;
+  }
+}
+
+function renderCrmImportMapping(headers, mapping) {
+  const fields = {
+    nome: 'Nome/empresa *', email: 'E-mail', telefone: 'Telefone', site: 'Site', endereco: 'Endereço',
+    segmentoComercial: 'Segmento', status: 'Etapa', ticketEstimado: 'Valor', servicoPrincipal: 'Serviço', tags: 'Etiquetas', notas: 'Notas'
+  };
+  crmImportMapping.innerHTML = Object.entries(fields).map(([field, label]) => `
+    <label>${label}<select data-import-field="${field}"><option value="">Não importar</option>${headers.map((header) => `<option value="${escapeAttr(header)}" ${mapping[field] === header ? 'selected' : ''}>${escapeHtml(header)}</option>`).join('')}</select></label>`).join('');
+  crmImportMapping.querySelectorAll('select').forEach((select) => select.addEventListener('change', () => { crmImportState.mapping = collectCrmImportMapping(); crmConfirmImportButton.disabled = true; crmImportStatus.textContent = 'Mapeamento alterado. Clique em Analisar arquivo novamente.'; }));
+}
+
+function renderCrmImportPreview(data) {
+  crmImportSummary.innerHTML = `
+    <article><small>Válidos</small><strong>${Number(data.valid || 0)}</strong><span>prontos para importar</span></article>
+    <article><small>Duplicados</small><strong>${Number(data.duplicates || 0)}</strong><span>serão ignorados</span></article>
+    <article><small>Inválidos</small><strong>${Number(data.invalid || 0)}</strong><span>sem nome ou dados mínimos</span></article>`;
+  crmImportPreview.innerHTML = (data.sample || []).length ? `
+    <div class="crm-table-wrap"><table class="crm-table"><thead><tr><th>Linha</th><th>Empresa</th><th>Contato</th><th>Status</th><th>Resultado</th></tr></thead><tbody>${data.sample.map((row) => `<tr><td>${row.rowNumber}</td><td>${escapeHtml(row.lead?.nome || '-')}</td><td>${escapeHtml(row.lead?.email || row.lead?.telefone || '-')}</td><td>${escapeHtml(row.lead?.status || 'NOVO')}</td><td>${row.duplicate ? 'Duplicado' : row.valid ? 'Válido' : 'Inválido'}</td></tr>`).join('')}</tbody></table></div>` : '<p class="meta">Nenhuma linha encontrada.</p>';
+}
+
+async function confirmCrmImport() {
+  const mapping = collectCrmImportMapping();
+  crmImportStatus.textContent = 'Importando leads válidos...';
+  crmConfirmImportButton.disabled = true;
+  try {
+    const response = await apiFetch('/api/crm/import', { method: 'POST', body: JSON.stringify({ csvText: crmImportState.csvText, mapping }) });
+    const data = await readJson(response);
+    if (!response.ok) throw new Error(data.error || 'Erro ao importar CSV.');
+    crmImportStatus.textContent = `${data.imported} leads importados; ${data.duplicates} duplicados ignorados.`;
+    statusBox.innerHTML = `<p>${data.imported} leads importados com deduplicação automática.</p>`;
+    await carregarLeadsCRM();
+  } catch (error) { crmImportStatus.textContent = error.message; }
+}
+
+function crmInputValue(value) {
+  const number = Number(value || 0);
+  return Number.isFinite(number) && number > 0 ? number : '';
+}
+
+function renderCrmLeadEditor(lead) {
+  const leadId = getLeadId(lead);
+  const pipeline = activeCrmPipeline();
+  const catalog = (crmConfig?.catalog || []).filter((item) => item.active !== false);
+  const selectedIds = new Set((lead.serviceItems || []).map((item) => item.catalogId));
+  const customFields = (crmConfig?.customFields || []).filter((field) => field.active);
+  return `
+    <details class="crm-lead-editor" open>
+      <summary>Dados comerciais e contrato</summary>
+      <div class="crm-form-grid">
+        <label>Pipeline<select id="crm-pipeline-${escapeAttr(leadId)}">${(crmConfig?.pipelines || []).map((item) => `<option value="${escapeAttr(item.id)}" ${(lead.pipelineId || crmConfig.activePipelineId) === item.id ? 'selected' : ''}>${escapeHtml(item.name)}</option>`).join('')}</select></label>
+        <label>Etapa<select id="crm-status-${escapeAttr(leadId)}">${pipeline.stages.map((stage) => `<option value="${stage.key}" ${normalizeStatus(lead.status) === stage.key ? 'selected' : ''}>${escapeHtml(stage.label)}</option>`).join('')}</select></label>
+        <label>Segmento<input id="crm-segment-${escapeAttr(leadId)}" value="${escapeAttr(lead.segmentoComercial || '')}" /></label>
+        <label>Serviço principal<input id="crm-service-${escapeAttr(leadId)}" value="${escapeAttr(lead.servicoPrincipal || lead.servico || '')}" /></label>
+        <label>Valor do contrato<input id="crm-contract-${escapeAttr(leadId)}" type="number" min="0" step="0.01" value="${crmInputValue(lead.contractValue || lead.ticketEstimado)}" /></label>
+        <label>Receita recorrente mensal<input id="crm-mrr-${escapeAttr(leadId)}" type="number" min="0" step="0.01" value="${crmInputValue(lead.monthlyRecurringRevenue)}" /></label>
+        <label>Valor fechado<input id="crm-closed-${escapeAttr(leadId)}" type="number" min="0" step="0.01" value="${crmInputValue(lead.valorFechado)}" /></label>
+        <label>Motivo de perda<select id="crm-loss-${escapeAttr(leadId)}"><option value="">Não se aplica</option>${['SEM_ORCAMENTO','SEM_INTERESSE','SEM_RESPOSTA','CONCORRENTE','ADIADO','FORA_DO_PERFIL','OUTRO'].map((reason) => `<option value="${reason}" ${lead.motivoPerda === reason ? 'selected' : ''}>${reason.replaceAll('_', ' ')}</option>`).join('')}</select></label>
+      </div>
+      ${catalog.length ? `<div class="crm-catalog-picker"><strong>Produtos e serviços</strong>${catalog.map((item) => `<label><input type="checkbox" data-crm-catalog="${escapeAttr(item.id)}" data-name="${escapeAttr(item.name)}" data-type="${escapeAttr(item.type)}" data-price="${Number(item.unitPrice || 0)}" data-recurring="${item.recurring ? 'true' : 'false'}" ${selectedIds.has(item.id) ? 'checked' : ''} /> <span>${escapeHtml(item.name)} · ${formatMoney(item.unitPrice || 0)}${item.recurring ? '/mês' : ''}</span></label>`).join('')}</div>` : ''}
+      ${customFields.length ? `<div class="crm-form-grid">${customFields.map((field) => renderCrmCustomFieldInput(field, lead.customFields?.[field.id], leadId)).join('')}</div>` : ''}
+      <label>Detalhe da perda<textarea id="crm-loss-detail-${escapeAttr(leadId)}">${escapeHtml(lead.motivoPerdaDetalhe || '')}</textarea></label>
+      <label>Etiquetas<input id="crm-tags-${escapeAttr(leadId)}" value="${escapeAttr((lead.tags || []).join(', '))}" /></label>
+      <label>Notas comerciais<textarea id="crm-notes-${escapeAttr(leadId)}">${escapeHtml(lead.notas || '')}</textarea></label>
+      <button type="button" onclick="saveCrmLeadAdvanced(${jsArg(leadId)})">Salvar ficha comercial</button>
+      <p id="crm-lead-status-${escapeAttr(leadId)}" class="meta"></p>
+    </details>`;
+}
+
+function renderCrmCustomFieldInput(field, value, leadId) {
+  const id = `crm-custom-${leadId}-${field.id}`;
+  if (field.type === 'boolean') return `<label class="check"><input id="${escapeAttr(id)}" data-custom-field="${escapeAttr(field.id)}" data-custom-type="boolean" type="checkbox" ${value ? 'checked' : ''} /> ${escapeHtml(field.label)}</label>`;
+  if (field.type === 'select') return `<label>${escapeHtml(field.label)}<select id="${escapeAttr(id)}" data-custom-field="${escapeAttr(field.id)}" data-custom-type="select"><option value="">Selecione</option>${(field.options || []).map((option) => `<option value="${escapeAttr(option)}" ${String(value || '') === option ? 'selected' : ''}>${escapeHtml(option)}</option>`).join('')}</select></label>`;
+  return `<label>${escapeHtml(field.label)}<input id="${escapeAttr(id)}" data-custom-field="${escapeAttr(field.id)}" data-custom-type="${escapeAttr(field.type)}" type="${field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'}" value="${escapeAttr(value ?? '')}" /></label>`;
+}
+
+async function saveCrmLeadAdvanced(leadId) {
+  const statusOutput = document.getElementById(`crm-lead-status-${leadId}`);
+  const root = document.querySelector('#leadModalContent');
+  const serviceItems = [...root.querySelectorAll('[data-crm-catalog]:checked')].map((input) => ({
+    catalogId: input.dataset.crmCatalog,
+    name: input.dataset.name,
+    type: input.dataset.type,
+    unitPrice: Number(input.dataset.price || 0),
+    recurring: input.dataset.recurring === 'true',
+    quantity: 1
+  }));
+  const customFields = Object.fromEntries([...root.querySelectorAll('[data-custom-field]')].map((input) => [input.dataset.customField, input.dataset.customType === 'boolean' ? input.checked : input.value]));
+  const payload = {
+    pipelineId: document.getElementById(`crm-pipeline-${leadId}`)?.value,
+    status: document.getElementById(`crm-status-${leadId}`)?.value,
+    segmentoComercial: document.getElementById(`crm-segment-${leadId}`)?.value,
+    servicoPrincipal: document.getElementById(`crm-service-${leadId}`)?.value,
+    contractValue: document.getElementById(`crm-contract-${leadId}`)?.value,
+    monthlyRecurringRevenue: document.getElementById(`crm-mrr-${leadId}`)?.value,
+    valorFechado: document.getElementById(`crm-closed-${leadId}`)?.value,
+    motivoPerda: document.getElementById(`crm-loss-${leadId}`)?.value,
+    motivoPerdaDetalhe: document.getElementById(`crm-loss-detail-${leadId}`)?.value,
+    tags: (document.getElementById(`crm-tags-${leadId}`)?.value || '').split(',').map((value) => value.trim()).filter(Boolean),
+    notas: document.getElementById(`crm-notes-${leadId}`)?.value,
+    serviceItems,
+    customFields
+  };
+  if (statusOutput) statusOutput.textContent = 'Salvando ficha...';
+  try {
+    const response = await apiFetch(`/api/crm/leads/${encodeURIComponent(leadId)}`, { method: 'PATCH', body: JSON.stringify(payload) });
+    const data = await readJson(response);
+    if (!response.ok) {
+      const missing = Array.isArray(data.missingFields) && data.missingFields.length ? ` Campos pendentes: ${data.missingFields.join(', ')}.` : '';
+      throw new Error((data.error || 'Erro ao salvar ficha.') + missing);
+    }
+    if (statusOutput) statusOutput.textContent = 'Ficha comercial salva com histórico imutável.';
+    statusBox.innerHTML = '<p>Ficha comercial atualizada.</p>';
+    await carregarLeadsCRM();
+    openLeadDetail(leadId);
+  } catch (error) { if (statusOutput) statusOutput.textContent = error.message; else showError(error.message); }
+}
+window.saveCrmLeadAdvanced = saveCrmLeadAdvanced;
+window.openCrmSettings = openCrmSettings;
+window.openCrmImport = openCrmImport;

@@ -181,6 +181,60 @@ async function updateLeadMeta(leadId, updates = {}, interaction = null, userId =
   });
 }
 
+
+async function updateLeadCommercialData(leadId, updates = {}, interaction = null, userId = null) {
+  const allowedFields = new Set([
+    'pipelineId',
+    'segmentoComercial',
+    'servicoPrincipal',
+    'serviceItems',
+    'contractValue',
+    'monthlyRecurringRevenue',
+    'valorFechado',
+    'ticketEstimado',
+    'motivoPerda',
+    'motivoPerdaDetalhe',
+    'customFields',
+    'tags',
+    'favorito',
+    'notas',
+    'atualizadoEm'
+  ]);
+  const safeUpdates = Object.fromEntries(
+    Object.entries(updates || {}).filter(([key]) => allowedFields.has(key))
+  );
+  safeUpdates.atualizadoEm = new Date().toISOString();
+
+  if (hasMongoUri() && userId) {
+    const doc = await Lead.findOne({ userId, leadKey: String(leadId) });
+    if (!doc) return null;
+    const interacoes = Array.isArray(doc.data.interacoes) ? doc.data.interacoes : [];
+    doc.data = {
+      ...doc.data,
+      ...safeUpdates,
+      interacoes: interaction ? [...interacoes, interaction] : interacoes
+    };
+    await doc.save();
+    return normalizeStoredLead(doc.data);
+  }
+
+  return withJsonFileLock(DB_PATH, async () => {
+    const allLeads = await readAllLocalLeads();
+    const index = allLeads.findIndex((lead) => getLeadKey(lead) === String(leadId) && belongsToUser(lead, userId));
+    if (index === -1) return null;
+
+    const current = allLeads[index];
+    const interacoes = Array.isArray(current.interacoes) ? current.interacoes : [];
+    allLeads[index] = {
+      ...current,
+      ...safeUpdates,
+      interacoes: interaction ? [...interacoes, interaction] : interacoes
+    };
+    await persistAllLocalLeads(allLeads);
+    return normalizeStoredLead(allLeads[index]);
+  });
+}
+
 async function getLeadStats(userId = null) {
   const leads = await readLeads(userId);
   const byStatus = leads.reduce((acc, lead) => {
@@ -204,4 +258,4 @@ function getLeadKey(lead) {
   return String(lead.placeId || lead.nome || '').trim();
 }
 
-module.exports = { readLeads, saveLeads, updateLeadStatus, updateLeadMeta, getLeadStats, getLeadKey };
+module.exports = { readLeads, saveLeads, updateLeadStatus, updateLeadMeta, updateLeadCommercialData, getLeadStats, getLeadKey };

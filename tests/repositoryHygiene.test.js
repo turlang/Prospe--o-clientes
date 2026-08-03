@@ -42,9 +42,9 @@ test('raiz do backend contém somente bootstrap e application factory', () => {
   assert.deepEqual(files, ['app.js', 'server.js']);
 });
 
-test('metadados principais identificam a release 26.2.0', () => {
+test('metadados principais identificam a release 27.0.0', () => {
   const packageMetadata = JSON.parse(fs.readFileSync('package.json', 'utf8'));
   const landingMetadata = JSON.parse(fs.readFileSync('frontend/landing/package.json', 'utf8'));
-  assert.equal(packageMetadata.version, '26.2.0');
-  assert.equal(landingMetadata.version, '26.2.0');
+  assert.equal(packageMetadata.version, '27.0.0');
+  assert.equal(landingMetadata.version, '27.0.0');
 });

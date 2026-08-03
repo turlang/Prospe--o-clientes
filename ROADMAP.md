@@ -1,8 +1,8 @@
 # Roadmap — LeadHunter Pro
 
-**Versão identificada no código:** 26.2.0  
-**Estado real da `main`:** base comercial validada, CRM tradicional, inteligência comercial e Central de Conversas em modo demonstrativo  
-**Próxima release planejada:** integração limpa do CRM 360 com o domínio omnichannel
+**Versão identificada no código:** 27.0.0  
+**Estado da release:** CRM 360 integrado à fundação omnichannel e aprovado localmente; publicação depende de merge e validação no Render  
+**Próxima evolução planejada:** scoring explicável e Auditor Digital comercial
 
 ## Objetivo estratégico
 
@@ -44,9 +44,9 @@ Pendência:
 
 ## Marco 2 — CRM 360
 
-**Estado corrigido:** implementação disponível em pacote de desenvolvimento, mas ainda não integrada com segurança à `main`.
+**Estado:** integrado na release 27.0.0, preservando a Central de Conversas e os dados existentes.
 
-O antigo PR de publicação contém um artefato fragmentado corrompido e não deve ser mesclado. A integração será refeita sobre uma branch limpa baseada na versão atual, preservando simultaneamente o CRM, a Central de Conversas, os dados existentes e os testes.
+A integração foi refeita sobre uma cópia exata da `main` publicada. O artefato legado corrompido permaneceu encerrado e não foi reutilizado.
 
 Escopo que deverá ser validado na integração:
 
@@ -68,7 +68,7 @@ Escopo que deverá ser validado na integração:
 - histórico comercial aditivo;
 - validação antes da mudança de etapa.
 
-Critério de conclusão: todos os itens acima presentes na `main`, aprovados pela suíte completa e testados no Render.
+Critério de conclusão: arquivos integrados e suíte completa aprovada. O marco será considerado validado em produção quando o Render executar o commit final e o checklist funcional for concluído.
 
 ## Marco 3 — Comunicação integrada
 

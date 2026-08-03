@@ -57,7 +57,7 @@ test('resumo de planos do Admin mantém total e planos na mesma linha', () => {
   assert.match(css, /\.plan-summary-row[\s\S]*grid-template-columns:\s*repeat\(4, minmax\(0, 1fr\)\)/);
 });
 
-test('assets críticos usam cache-busting da versão 26.2.0', () => {
-  assert.match(read('public/pages/app.html'), /app\.js\?v=26\.2\.0/);
-  assert.match(read('public/pages/admin.html'), /admin\.js\?v=26\.2\.0/);
+test('assets críticos usam cache-busting da versão 27.0.0', () => {
+  assert.match(read('public/pages/app.html'), /app\.js\?v=27\.0\.0/);
+  assert.match(read('public/pages/admin.html'), /admin\.js\?v=27\.0\.0/);
 });
