@@ -1,5 +1,8 @@
 /**
  * @fileoverview Regressões da barra superior e da Visão Geral.
+ *
+ * Este contrato permanece no gate global porque a navegação reúne marca, conta,
+ * uso diário, atalhos e menu dentro da mesma superfície responsiva.
  */
 
 const test = require('node:test');
