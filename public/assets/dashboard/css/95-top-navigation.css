@@ -1,9 +1,9 @@
 /**
- * @fileoverview Navegação superior da aplicação autenticada.
+ * @fileoverview Barra superior única da aplicação autenticada.
  *
- * Remove a coluna lateral do dashboard, preserva todos os contratos de DOM e
- * reposiciona o uso diário abaixo do plano da conta no cabeçalho. A navegação
- * permanece horizontal, rolável e sem sobreposição com o conteúdo principal.
+ * Mantém logo, navegação, conta, uso diário e saída dentro da mesma superfície
+ * visual. A antiga coluna lateral continua apenas como contrato de DOM, usando
+ * `display: contents`, para não quebrar os módulos existentes.
  *
  * @module public/assets/dashboard/css/top-navigation
  */
@@ -15,29 +15,38 @@ body.is-authenticated #appRoot.container {
   gap: 14px;
 }
 
+/* Superfície única que sustenta todos os elementos do topo. */
 body.is-authenticated .session-bar {
   grid-column: 1;
   grid-row: 1;
+  position: relative;
+  z-index: 1;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  grid-template-columns: auto minmax(0, 1fr) minmax(142px, auto) auto;
   grid-template-areas: "brand spacer user logout";
-  align-items: start;
-  min-height: 112px;
-  padding: 14px 18px;
+  align-items: center;
+  min-height: 92px;
+  padding: 12px 16px;
+  overflow: visible;
 }
 
 body.is-authenticated .session-brand {
   grid-area: brand;
   align-self: center;
+  position: relative;
+  z-index: 5;
 }
 
 body.is-authenticated .session-user {
   grid-area: user;
+  position: relative;
+  z-index: 5;
   display: grid;
   justify-items: end;
   align-content: start;
-  min-width: 126px;
-  padding-top: 3px;
+  min-width: 142px;
+  padding-top: 1px;
+  padding-bottom: 30px;
   text-align: right;
 }
 
@@ -46,22 +55,21 @@ body.is-authenticated .session-user > small { display: block; }
 
 body.is-authenticated .session-logout {
   grid-area: logout;
-  align-self: start;
-  margin-left: 14px;
+  position: relative;
+  z-index: 5;
+  align-self: center;
+  margin-left: 12px;
   white-space: nowrap;
 }
 
-body.is-authenticated .app-shell {
-  display: contents !important;
-}
-
+body.is-authenticated .app-shell,
 body.is-authenticated .sidebar {
   display: contents !important;
 }
 
 /*
- * O bloco continua no DOM para receber os dados do controlador, mas apenas a
- * métrica de uso permanece visível. Ela é alinhada abaixo do plano da conta.
+ * O bloco permanece no DOM para receber os dados de uso, mas deixa de criar
+ * outro cartão. Ele ocupa a mesma barra, logo abaixo do plano da conta.
  */
 body.is-authenticated .sidebar-account {
   grid-column: 1;
@@ -69,8 +77,8 @@ body.is-authenticated .sidebar-account {
   z-index: 4;
   justify-self: end;
   align-self: start;
-  width: 210px;
-  margin: 53px 126px 0 0;
+  width: 168px;
+  margin: 43px 126px 0 0;
   padding: 0;
   border: 0;
   background: transparent;
@@ -85,46 +93,54 @@ body.is-authenticated #welcome { display: none !important; }
 body.is-authenticated .sidebar-account__content .usage-box {
   display: grid;
   gap: 1px;
-  min-height: 42px;
+  min-height: 33px;
   margin: 0 !important;
-  padding: 6px 10px !important;
+  padding: 4px 8px !important;
   border: 1px solid #dbe6f3;
-  border-radius: 11px;
+  border-radius: 9px;
   background: linear-gradient(145deg, #f8fbff, #eef5ff);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .92);
-  font-size: .66rem;
-  line-height: 1.25;
+  font-size: .58rem;
+  line-height: 1.18;
 }
 
 body.is-authenticated .sidebar-account__content .usage-box strong,
 body.is-authenticated .sidebar-account__content .usage-box b {
-  font-size: .72rem;
-  line-height: 1.2;
+  font-size: .65rem;
+  line-height: 1.15;
 }
 
+/*
+ * A navegação compartilha a linha da session-bar. Não possui borda, fundo ou
+ * sombra próprios, portanto visualmente existe apenas uma barra superior.
+ */
 body.is-authenticated .sidebar nav {
   grid-column: 1;
-  grid-row: 2;
+  grid-row: 1;
   position: relative;
+  z-index: 3;
+  align-self: center;
   display: flex !important;
   align-items: center;
-  gap: 8px;
-  width: 100%;
+  gap: 6px;
+  width: auto;
   min-width: 0;
-  padding: 9px 11px;
+  height: 48px;
+  margin: 0 390px 0 170px;
+  padding: 4px 0;
   overflow-x: auto !important;
   overflow-y: hidden !important;
-  border: 1px solid rgba(203, 213, 225, .88);
-  border-radius: 18px;
-  background: rgba(255, 255, 255, .90);
-  box-shadow: var(--shadow-md);
-  backdrop-filter: blur(20px);
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
   scrollbar-width: thin;
   scrollbar-color: #a8bad1 transparent;
   overscroll-behavior-inline: contain;
 }
 
-body.is-authenticated .sidebar nav::-webkit-scrollbar { height: 7px; }
+body.is-authenticated .sidebar nav::-webkit-scrollbar { height: 5px; }
 body.is-authenticated .sidebar nav::-webkit-scrollbar-track { background: transparent; }
 body.is-authenticated .sidebar nav::-webkit-scrollbar-thumb {
   border-radius: 999px;
@@ -135,8 +151,8 @@ body.is-authenticated .sidebar nav > #adminShortcut {
   order: 0;
   flex: 0 0 auto;
   width: auto !important;
-  min-height: 40px;
-  padding: 9px 14px;
+  min-height: 38px;
+  padding: 8px 12px;
   white-space: nowrap;
 }
 
@@ -146,7 +162,7 @@ body.is-authenticated .nav-list {
   flex: 1 0 max-content;
   align-items: center;
   min-width: max-content;
-  gap: 5px;
+  gap: 4px;
   margin: 0;
   padding: 0;
 }
@@ -155,8 +171,8 @@ body.is-authenticated .nav-list > li { flex: 0 0 auto; }
 
 body.is-authenticated .nav-btn {
   width: auto !important;
-  min-height: 40px;
-  padding: 9px 13px;
+  min-height: 38px;
+  padding: 8px 11px;
   text-align: center;
   white-space: nowrap;
 }
@@ -165,51 +181,61 @@ body.is-authenticated .nav-btn:hover { transform: translateY(-1px); }
 
 body.is-authenticated .workspace {
   grid-column: 1;
-  grid-row: 3;
+  grid-row: 2;
   width: 100%;
   min-width: 0;
 }
 
-@media (max-width: 980px) {
+/* Em larguras intermediárias a navegação ocupa a parte inferior da mesma barra. */
+@media (max-width: 1180px) {
+  body.is-authenticated .session-bar {
+    min-height: 142px;
+    padding-bottom: 62px;
+  }
+
+  body.is-authenticated .sidebar nav {
+    align-self: end;
+    height: 48px;
+    margin: 0 14px 9px;
+    padding: 4px 0;
+  }
+}
+
+@media (max-width: 760px) {
   body.is-authenticated .session-bar {
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
       "brand logout"
       "user user";
-    min-height: auto;
-    row-gap: 8px;
+    min-height: 184px;
+    padding: 12px 12px 60px;
+    row-gap: 6px;
   }
 
   body.is-authenticated .session-user {
     justify-self: end;
     padding-top: 0;
+    padding-bottom: 30px;
   }
 
   body.is-authenticated .sidebar-account {
-    grid-row: 2;
-    justify-self: stretch;
-    width: auto;
-    margin: 0;
-    pointer-events: none;
+    width: min(220px, calc(100% - 24px));
+    margin: 91px 12px 0 0;
   }
 
-  body.is-authenticated .sidebar-account__content .usage-box {
-    width: min(100%, 320px);
-    margin-left: auto !important;
+  body.is-authenticated .sidebar nav {
+    margin: 0 10px 8px;
   }
-
-  body.is-authenticated .sidebar nav { grid-row: 3; }
-  body.is-authenticated .workspace { grid-row: 4; }
 }
 
 @media (max-width: 620px) {
   body.is-authenticated .session-bar {
-    padding: 12px;
+    min-height: 196px;
     border-radius: 16px;
   }
 
   body.is-authenticated .session-brand strong {
-    max-width: 9rem;
+    max-width: 8.5rem;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -218,18 +244,17 @@ body.is-authenticated .workspace {
   body.is-authenticated .session-logout {
     min-height: 38px;
     margin-left: 8px;
-    padding-inline: 11px;
+    padding-inline: 10px;
   }
 
-  body.is-authenticated .sidebar nav {
-    padding: 7px;
-    border-radius: 15px;
+  body.is-authenticated .sidebar-account {
+    margin-top: 96px;
   }
 
   body.is-authenticated .sidebar nav > #adminShortcut,
   body.is-authenticated .nav-btn {
-    min-height: 38px;
-    padding: 8px 11px;
-    font-size: .74rem;
+    min-height: 36px;
+    padding: 7px 10px;
+    font-size: .72rem;
   }
 }
