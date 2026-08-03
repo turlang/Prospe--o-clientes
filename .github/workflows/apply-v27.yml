@@ -15,6 +15,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: leadhunter-v27-crm360
+  cancel-in-progress: false
+
 jobs:
   apply:
     runs-on: ubuntu-latest
@@ -38,8 +42,8 @@ jobs:
           import hashlib
 
           chunks = sorted(Path('.release/v27').glob('chunk-*.b64'))
-          if len(chunks) != 13:
-              raise SystemExit(f'Expected 13 chunks, found {len(chunks)}')
+          if len(chunks) != 16:
+              raise SystemExit(f'Expected 16 chunks, found {len(chunks)}')
 
           for path in chunks:
               raw = path.read_bytes()
