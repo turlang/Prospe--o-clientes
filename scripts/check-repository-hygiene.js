@@ -125,13 +125,15 @@ function isTextFile(filePath) {
 /**
  * Evita procurar chaves reais dentro de exemplos e documentação, onde nomes de
  * variáveis e credenciais fictícias são necessários para orientar o usuário.
+ * Arquivos Markdown continuam sujeitos às regras de formato e nome, apenas não
+ * são avaliados por expressões de segredo que confundem placeholders com chaves.
  *
  * @param {string} relative Caminho relativo normalizado.
  * @returns {boolean} Verdadeiro quando a busca de segredos deve ser executada.
  */
 function shouldScanSecrets(relative) {
   if (relative === '.env.example') return false;
-  if (relative.startsWith('docs/')) return false;
+  if (path.extname(relative).toLowerCase() === '.md') return false;
   if (relative.startsWith('tests/')) return false;
   if (relative === 'scripts/check-repository-hygiene.js') return false;
   return !isGenerated(relative);
