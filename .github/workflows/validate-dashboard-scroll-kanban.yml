@@ -1,0 +1,26 @@
+name: Validate Dashboard Scroll and Kanban
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - public/assets/dashboard/css/90-responsive.css
+      - tests/dashboardLayoutRegression.test.js
+      - .github/workflows/validate-dashboard-scroll-kanban.yml
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci
+      - run: node --test tests/dashboardLayoutRegression.test.js
+      - run: npm run quality

@@ -85,3 +85,59 @@
   .crm-stage-editor__row { grid-template-columns: 1fr; padding: 10px; border: 1px solid #e0e8f2; border-radius: 12px; }
   .crm-table { min-width: 760px; }
 }
+
+/*
+ * Correções de navegação e leitura identificadas na validação visual da v27.
+ * O cabeçalho deixa de cobrir o conteúdo, listas operacionais usam apenas a
+ * rolagem da página e todas as etapas do Kanban permanecem em uma única faixa.
+ */
+.session-bar,
+body.is-authenticated .session-bar {
+  position: relative;
+  top: auto;
+  z-index: 1;
+}
+
+.sidebar,
+body.is-authenticated .sidebar { top: 14px; }
+
+.cockpit-action-list,
+body.is-authenticated .cockpit-action-list {
+  max-height: none;
+  overflow: visible;
+}
+
+.kanban-board,
+body.is-authenticated .kanban-board {
+  display: flex;
+  grid-template-columns: none;
+  grid-auto-flow: initial;
+  align-items: stretch;
+  gap: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 2px 2px 12px;
+  scroll-snap-type: inline proximity;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #9fb5d1 #edf3fa;
+}
+
+.kanban-board::-webkit-scrollbar { height: 10px; }
+.kanban-board::-webkit-scrollbar-track { border-radius: 999px; background: #edf3fa; }
+.kanban-board::-webkit-scrollbar-thumb { border-radius: 999px; background: #9fb5d1; }
+
+.kanban-column,
+body.is-authenticated .kanban-column {
+  flex: 0 0 clamp(220px, 22vw, 280px);
+  min-width: 220px;
+  scroll-snap-align: start;
+}
+
+@media (max-width: 760px) {
+  .kanban-column,
+  body.is-authenticated .kanban-column {
+    flex-basis: min(82vw, 300px);
+    min-width: min(82vw, 300px);
+  }
+}
