@@ -20,6 +20,30 @@ const {
 } = require('../config/application');
 
 /**
+ * Retorna metadados estáveis do artefato que está executando.
+ *
+ * O Render injeta branch e commit automaticamente. Em desenvolvimento local,
+ * os campos recebem valores explícitos para evitar que a interface apresente
+ * uma implantação como produção real.
+ *
+ * @returns {{provider: string, branch: string, commit: string, shortCommit: string, repository: string|null, service: string}}
+ */
+function getDeploymentMetadata() {
+  const isRender = String(process.env.RENDER || '').toLowerCase() === 'true';
+  const commit = String(process.env.RENDER_GIT_COMMIT || process.env.GIT_COMMIT || '').trim();
+  const branch = String(process.env.RENDER_GIT_BRANCH || process.env.GIT_BRANCH || '').trim();
+
+  return {
+    provider: isRender ? 'render' : 'local',
+    branch: branch || 'local',
+    commit: commit || 'development',
+    shortCommit: commit ? commit.slice(0, 7) : 'local',
+    repository: String(process.env.RENDER_GIT_REPO_SLUG || '').trim() || null,
+    service: String(process.env.RENDER_SERVICE_NAME || process.env.APP_NAME || 'LeadHunter Pro').trim()
+  };
+}
+
+/**
  * Configura cabeçalhos de documentos HTML que não devem permanecer obsoletos
  * após um deploy. Assets versionados continuam usando cache no middleware
  * estático, mas os documentos de entrada são sempre revalidados.
@@ -28,9 +52,11 @@ const {
  * @param {string} pageName Identificador da página para diagnóstico.
  */
 function setHtmlResponseHeaders(res, pageName) {
+  const deploy = getDeploymentMetadata();
   res.setHeader('Cache-Control', 'no-store, max-age=0');
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('X-Application-Version', APPLICATION_VERSION);
+  res.setHeader('X-Deploy-Commit', deploy.shortCommit);
   res.setHeader('X-Page-Name', pageName);
 }
 
@@ -49,7 +75,7 @@ function resolveLandingArtifact(fs) {
     if (typeof fs.readFileSync === 'function') {
       try {
         const document = fs.readFileSync(LANDING_BUILD_PATH, 'utf8');
-        if (document.includes('id=\"root\"')) source = 'react-build';
+        if (document.includes('id="root"')) source = 'react-build';
       } catch {
         // A existência do artefato já foi confirmada. A leitura será refeita
         // pelo sendFile e eventuais erros serão tratados pelo Express.
@@ -122,10 +148,18 @@ function registerSystemRoutes(app, context) {
 
   app.get('/api/health', (_req, res) => {
     const landing = resolveLandingArtifact(fs);
+    const deploy = getDeploymentMetadata();
+
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('X-Application-Version', APPLICATION_VERSION);
+    res.setHeader('X-Deploy-Commit', deploy.shortCommit);
+
     res.json({
       ok: true,
       service: 'prospeccao-leads',
       version: APPLICATION_VERSION,
+      deploy,
       uptimeSeconds: Math.round(process.uptime()),
       startedAt,
       mongodbAtivo: hasMongoUri(),
@@ -186,6 +220,7 @@ function registerSystemRoutes(app, context) {
       provider: process.env.PLACES_PROVIDER || null,
       mongodbAtivo: hasMongoUri(),
       mongodbStatus: getMongoStatus(),
+      deploy: getDeploymentMetadata(),
       recuperacaoSenha: (() => {
         const status = getPasswordResetEmailStatus();
         return {
@@ -214,6 +249,7 @@ function registerSystemRoutes(app, context) {
 }
 
 module.exports = {
+  getDeploymentMetadata,
   registerSystemRoutes,
   resolveLandingArtifact,
   setHtmlResponseHeaders
