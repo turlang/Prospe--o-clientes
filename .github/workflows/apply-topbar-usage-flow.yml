@@ -1,0 +1,85 @@
+name: Apply Topbar Usage Flow Fix
+
+on:
+  push:
+    branches:
+      - fix/topbar-usage-flow-v27
+    paths:
+      - .release/topbar-usage-flow/READY
+
+permissions:
+  contents: write
+
+concurrency:
+  group: leadhunter-topbar-usage-flow
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/topbar-usage-flow-v27
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: Move usage into the account block
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('public/pages/app.html')
+          document = path.read_text(encoding='utf-8')
+
+          old_user = '''      <div class="session-user"><span id="sessionUserName">Usuário</span><small id="sessionPlanName">Plano</small></div>'''
+          new_user = '''      <div class="session-user">
+        <span id="sessionUserName">Usuário</span>
+        <small id="sessionPlanName">Plano</small>
+        <div id="usageBox" class="usage-box" aria-live="polite"></div>
+      </div>'''
+
+          old_sidebar_account = '''        <div class="sidebar-account">
+          <div class="sidebar-account__content">
+            <p class="tag">Dashboard</p>
+            <h2 id="welcome">Sua central</h2>
+            <div id="usageBox" class="usage-box" aria-live="polite"></div>
+          </div>
+        </div>
+'''
+
+          if old_user not in document:
+              raise SystemExit('Bloco session-user esperado não foi encontrado.')
+          if old_sidebar_account not in document:
+              raise SystemExit('Bloco sidebar-account esperado não foi encontrado.')
+
+          document = document.replace(old_user, new_user, 1)
+          document = document.replace(old_sidebar_account, '', 1)
+
+          if document.count('id="usageBox"') != 1:
+              raise SystemExit('usageBox deve existir exatamente uma vez.')
+          if 'class="session-user"' not in document:
+              raise SystemExit('session-user ausente após a transformação.')
+
+          path.write_text(document, encoding='utf-8')
+          PY
+
+      - name: Validate repository
+        run: |
+          npm ci
+          npm run quality
+
+      - name: Commit validated fix
+        shell: bash
+        run: |
+          rm -rf .release/topbar-usage-flow .github/workflows/apply-topbar-usage-flow.yml
+          git config user.name "LeadHunter Release Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git commit -m "fix: integrar uso diário ao bloco da conta"
+          git push origin HEAD:fix/topbar-usage-flow-v27
