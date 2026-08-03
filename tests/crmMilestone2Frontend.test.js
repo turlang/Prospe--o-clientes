@@ -34,3 +34,11 @@ test('estilos do CRM avançado incluem tabela e dialogs responsivos', () => {
   assert.match(css, /\.crm-dialog/);
   assert.match(css, /\.crm-forecast-grid/);
 });
+
+
+test('lista do CRM trata faixas monetárias e preserva o botão de ação', () => {
+  assert.match(js, /function estimateTicket/);
+  assert.match(js, /isRange/);
+  assert.match(js, /crm-open-button/);
+  assert.match(css, /\.crm-open-button/);
+});

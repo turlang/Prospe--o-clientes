@@ -17,17 +17,44 @@ const LOSS_REASONS = Object.freeze([
   'OUTRO'
 ]);
 
+function parseMoneyToken(value) {
+  let text = String(value || '').trim().replace(/[^0-9.,]/g, '');
+  if (!text) return 0;
+
+  const lastComma = text.lastIndexOf(',');
+  const lastDot = text.lastIndexOf('.');
+
+  if (lastComma >= 0 && lastDot >= 0) {
+    if (lastComma > lastDot) text = text.replace(/\./g, '').replace(',', '.');
+    else text = text.replace(/,/g, '');
+  } else if (lastComma >= 0) {
+    const decimalDigits = text.length - lastComma - 1;
+    text = decimalDigits > 0 && decimalDigits <= 2
+      ? text.replace(/\./g, '').replace(',', '.')
+      : text.replace(/,/g, '');
+  } else if (lastDot >= 0) {
+    const dotCount = (text.match(/\./g) || []).length;
+    const decimalDigits = text.length - lastDot - 1;
+    if (dotCount > 1 || decimalDigits === 3) text = text.replace(/\./g, '');
+  }
+
+  const number = Number(text);
+  return Number.isFinite(number) ? Math.max(0, number) : 0;
+}
+
 function normalizeMoney(value) {
   if (typeof value === 'number') return Number.isFinite(value) ? Math.max(0, value) : 0;
   const text = String(value || '').trim();
   if (!text) return 0;
-  const normalized = text
-    .replace(/R\$/gi, '')
-    .replace(/\s+/g, '')
-    .replace(/\.(?=\d{3}(?:\D|$))/g, '')
-    .replace(',', '.');
-  const number = Number(normalized.replace(/[^0-9.-]/g, ''));
-  return Number.isFinite(number) ? Math.max(0, number) : 0;
+
+  const tokens = text.match(/\d[\d.,]*/g) || [];
+  const amounts = tokens.map(parseMoneyToken).filter((amount) => Number.isFinite(amount) && amount >= 0);
+  if (!amounts.length) return 0;
+
+  const isRange = amounts.length >= 2 && /(?:\bentre\b.*\be\b|\b(?:a|até|ate)\b|[-–—])/i.test(text);
+  if (isRange) return Math.round(((amounts[0] + amounts[1]) / 2) * 100) / 100;
+
+  return amounts[0];
 }
 
 function getLeadId(lead = {}) {
