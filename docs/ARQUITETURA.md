@@ -1,101 +1,331 @@
-# Arquitetura — LeadHunter Pro 25.7.0
+# Arquitetura — LeadHunter Pro 27.0.0
 
 ## 1. Objetivos
 
-A arquitetura prioriza separação de responsabilidades, baixo acoplamento, testabilidade, segurança por padrão, acessibilidade e deploy reproduzível.
+A arquitetura prioriza:
 
-## 2. Camadas do backend
+- separação de responsabilidades;
+- baixo acoplamento;
+- regras de negócio testáveis;
+- segurança por padrão;
+- isolamento de dados;
+- integração externa substituível;
+- acessibilidade;
+- deploy reproduzível;
+- evolução incremental sem interromper a produção.
 
-```text
-HTTP → routes → services/use cases → domain → repositories/integrations
-```
-
-- `routes`: valida o contrato HTTP, aplica políticas e serializa respostas;
-- `services`: coordena casos de uso e transações lógicas;
-- `domain`: regras puras, sem Express, rede ou persistência;
-- `repositories`: adapta MongoDB e armazenamento JSON local;
-- `integrations`: encapsula provedores externos;
-- `infrastructure`: inicialização de conexões e detalhes operacionais;
-- `config`: valores da aplicação e caminhos absolutos centralizados.
-
-`src/app.js` usa Application Factory e não abre porta. `src/server.js` executa o bootstrap do processo.
-
-## 3. Frontend público
-
-A landing adota organização por funcionalidades:
+## 2. Visão geral
 
 ```text
-src/app          composição
-src/features     painéis de apresentação e recursos comerciais
-src/shared       layout, navegação e UI reutilizável
-src/hooks        navegação e efeitos
-src/services     acesso à API
-src/data         conteúdo estático
+cliente web
+→ Express
+→ middleware
+→ routes
+→ services/use cases
+→ domain
+→ repositories / integrations
+→ MongoDB / serviços externos
 ```
 
-### 3.1 Modelo de navegação
+`src/app.js` é uma Application Factory: monta a aplicação e suas dependências, mas não abre porta. `src/server.js` executa o bootstrap do processo, conecta infraestrutura e inicia o servidor.
 
-A página é uma aplicação de tela única:
+## 3. Camadas do backend
 
-- `html`, `body` e `#root` ocupam `100%` da viewport;
-- o documento usa `overflow: hidden`;
-- somente um painel fica visível por vez;
-- botões semânticos alternam Início, Fluxo, Ferramentas, Público e Planos;
-- o hash registra a tela ativa sem provocar scroll;
-- histórico, teclado e foco permanecem funcionais;
-- no mobile, a barra inferior respeita `env(safe-area-inset-bottom)`.
+### `routes`
 
-Conteúdo que ultrapasse a altura disponível deve ser resumido ou reorganizado, não transferido para scroll da página. Componentes internos podem usar overflow controlado apenas quando indispensável e devidamente rotulado.
+Responsável pelo contrato HTTP:
 
-### 3.2 Saídas de produção
+- validação de entrada;
+- autenticação e autorização;
+- rate limit;
+- chamada do caso de uso;
+- status HTTP;
+- serialização segura.
 
-A página pública tem duas saídas da mesma release:
+Rotas não devem conter regra comercial extensa nem acesso direto a provedores externos.
 
-1. bundle React/Tailwind produzido pelo Vite;
-2. contingência estática interativa e visualmente equivalente.
+### `services`
 
-O script `verify-landing-build.js` exige a versão `25.7.0`, os cinco painéis, os controles de navegação e as regras de viewport. Assim, a aplicação não volta silenciosamente para a landing antiga.
+Coordena casos de uso e combina regras, persistência e integrações.
 
-## 4. Planos dinâmicos
+Exemplos:
 
-O painel de preços consome `GET /api/plans`. O Admin publica no MongoDB uma revisão do catálogo; a landing revalida os dados por foco, visibilidade, canal entre abas e intervalo controlado. A contingência estática usa o mesmo contrato.
+- prospecção;
+- auditoria digital;
+- CRM avançado;
+- relatórios;
+- propostas;
+- clientes;
+- copiloto;
+- omnichannel;
+- reset administrativo.
 
-## 5. Painel autenticado
+### `domain`
 
-As páginas ficam em `public/pages`; CSS e controladores ficam em `public/assets` separados por domínio (`dashboard`, `admin`, `auth`). O painel legado continua funcional e deve ser migrado progressivamente para componentes, sempre protegido por testes de regressão.
+Regras puras, sem Express, Mongoose, filesystem ou rede.
 
-## 6. Fluxo de dados
+Responsabilidades atuais:
+
+- scoring;
+- normalização de leads;
+- pipelines e configuração CRM;
+- qualificação;
+- políticas de agentes;
+- regras de planos;
+- cálculos comerciais.
+
+### `repositories`
+
+Abstrai persistência e normaliza o acesso ao banco.
+
+- MongoDB/Mongoose é a fonte de verdade em produção;
+- armazenamento local existe somente para desenvolvimento quando permitido;
+- dados sempre são filtrados pelo proprietário;
+- detalhes de schema não vazam para a camada HTTP.
+
+### `models`
+
+Schemas, índices e validações estruturais do MongoDB. Regras de negócio complexas permanecem no domínio e nos serviços.
+
+### `integrations`
+
+Adaptadores para serviços externos:
+
+- IA;
+- e-mail;
+- pagamentos;
+- mensageria.
+
+Controllers e serviços dependem de contratos, não de detalhes específicos de cada provedor.
+
+### `middleware`
+
+Políticas transversais:
+
+- autenticação;
+- autorização;
+- limites;
+- correlação;
+- tratamento de erros;
+- segurança HTTP.
+
+### `config` e `infrastructure`
+
+`config` centraliza valores estáveis, caminhos e normalização de ambiente. `infrastructure` contém conexões e detalhes operacionais do processo.
+
+## 4. Domínios principais
+
+### Leads e prospecção
+
+```text
+busca
+→ normalização
+→ auditoria pública
+→ scoring
+→ persistência
+→ recomendação comercial
+```
+
+### CRM 360
+
+```text
+lead
+→ pipeline ativo
+→ etapa
+→ requisitos obrigatórios
+→ dados comerciais
+→ atividade
+→ forecast e metas
+```
+
+O CRM adiciona dados ao lead existente em vez de criar uma entidade comercial paralela incompatível.
+
+### Omnichannel
+
+```text
+provedor
+→ evento normalizado
+→ fingerprint e idempotência
+→ conversa/mensagem
+→ contato e lead
+→ agente ou humano
+→ atividade CRM
+```
+
+O modo demonstrativo é isolado e deve permanecer claramente identificado. Credenciais reais são criptografadas com chave independente do JWT.
+
+### Planos e billing
+
+Catálogo de planos, consumo, pagamentos e limites usam contratos compartilhados entre landing, aplicação e admin. Alterações feitas no painel administrativo são persistidas e publicadas sem novo deploy.
+
+## 5. Frontend público
+
+A landing segue organização por funcionalidade:
+
+```text
+frontend/landing/src/app       composição
+frontend/landing/src/features  painéis comerciais
+frontend/landing/src/shared    layout e UI reutilizável
+frontend/landing/src/hooks     estado e navegação
+frontend/landing/src/services  API pública
+frontend/landing/src/data      conteúdo estruturado
+```
+
+### Navegação
+
+- uma seção principal é exibida por vez;
+- hash e histórico preservam a tela ativa;
+- teclado e foco permanecem funcionais;
+- mobile respeita safe areas;
+- a página evita scroll documental quando o contrato visual exige uma viewport única.
+
+### Saídas
+
+1. bundle React/Vite;
+2. contingência estática equivalente.
+
+`public/landing-react/` é gerado. A fonte deve ser alterada em `frontend/landing/`.
+
+## 6. Frontend autenticado
+
+A aplicação autenticada usa HTML semântico, JavaScript progressivamente modular e CSS por responsabilidade.
+
+```text
+public/pages/app.html
+public/assets/dashboard/app.js
+public/assets/dashboard/omnichannel.js
+public/assets/dashboard/css/
+```
+
+IDs de DOM são contratos consumidos pelos controladores. Renomeações exigem atualização global e teste de regressão.
+
+### Navegação superior
+
+A navegação, marca, conta, plano, uso diário e saída compartilham uma única superfície superior. Em desktop, o menu deve permanecer legível sem scrollbar visível; em larguras menores, rolagem horizontal controlada é permitida.
+
+### Visão Geral
+
+A Visão Geral não possui rolagem interna. O conteúdo usa apenas a rolagem natural da página quando excede a viewport.
+
+### CSS modular
+
+A ordem de importação é intencional:
+
+```text
+99-legacy
+→ tokens
+→ base
+→ layout
+→ components
+→ views
+→ operational-polish
+→ depth
+→ responsive
+→ top-navigation
+```
+
+Regras posteriores podem refinar compatibilidade anterior. Novos estilos devem ser colocados na camada adequada e cobertos por testes estruturais.
+
+## 7. Painel administrativo
+
+O admin é separado da aplicação comum. A interface pode ocultar controles, mas autorização real sempre ocorre no backend.
+
+Áreas:
+
+- visão executiva;
+- economia;
+- usuários;
+- planos;
+- pagamentos;
+- segurança;
+- manutenção;
+- auditoria.
+
+## 8. Fluxo de dados e isolamento
 
 - entrada externa é normalizada na borda;
-- regras de negócio não dependem de objetos Express;
+- `userId` vem da autenticação, nunca do corpo confiável;
+- recursos futuros podem incluir `organizationId` sem quebrar o isolamento atual;
 - persistência é acessada por repositórios;
-- erros operacionais são convertidos para respostas pela camada HTTP;
-- segredos são lidos somente de variáveis de ambiente.
+- erros são traduzidos pela camada HTTP;
+- segredos vêm somente do ambiente;
+- operações externas repetíveis devem ser idempotentes.
 
-## 7. Segurança
+## 9. Segurança
 
-- autenticação JWT e verificação de usuário ativo;
-- autorização administrativa separada;
-- rate limit para APIs;
-- Helmet/CSP, CORS explícito e limite de corpo;
-- URLs públicas normalizadas;
+- senhas com bcrypt;
+- JWT com issuer e audience;
+- verificação de usuário ativo;
+- autorização administrativa;
+- Helmet/CSP;
+- CORS explícito;
+- limite de body;
+- rate limit;
 - MongoDB obrigatório em produção;
-- recuperação de senha com token de uso único e e-mail transacional;
-- logs sem segredos e respostas sem detalhes internos.
+- token de recuperação de uso único;
+- criptografia AES-256-GCM para credenciais de integração;
+- mascaramento de segredos;
+- logs sem credenciais;
+- auditoria administrativa;
+- proteção contra replay e duplicidade planejada para webhooks reais.
 
-## 8. Acessibilidade
+## 10. Comentários e documentação
 
-- abas usam `role="tab"`, `aria-selected` e painéis associados;
-- navegação por setas, Home e End no desktop;
-- foco visível e ordem de tabulação previsível;
-- conteúdo oculto usa o atributo `hidden`;
-- animações respeitam `prefers-reduced-motion`;
-- componentes críticos não dependem apenas de cor.
+Todos os módulos JavaScript mantidos devem possuir `@fileoverview`. Funções públicas ou complexas recebem JSDoc. Comentários explicam intenção, invariantes, compatibilidade e risco; não repetem linha por linha o que o código já expressa.
 
-## 9. Decisões de compatibilidade
+O mapa de responsabilidades está em [`MAPA_DO_CODIGO.md`](MAPA_DO_CODIGO.md).
 
-A CSP ainda permite handlers inline apenas no painel legado. Isso é dívida técnica registrada; código novo React não usa handlers HTML inline ou `dangerouslySetInnerHTML`.
+## 11. Testabilidade
 
-## 10. Diagnóstico de release
+- domínio usa funções puras sempre que possível;
+- Application Factory permite testes sem abrir porta;
+- provedores são injetados;
+- repositórios podem usar implementações controladas em teste;
+- bugs recebem teste de regressão;
+- scripts impedem regressão arquitetural, documental, visual e de higiene.
 
-`GET /api/health` informa versão e origem do artefato da landing. Respostas HTML públicas recebem `Cache-Control: no-store`, `X-Application-Version`, `X-Landing-Version` e `X-Landing-Source`.
+## 12. Qualidade
+
+```text
+check:hygiene
+→ check:syntax
+→ check:docs
+→ check:architecture
+→ check:frontend
+→ check:styles
+→ verify:landing
+→ tests
+```
+
+O gate completo é `npm run quality`.
+
+## 13. Diagnóstico de release
+
+`GET /api/health` informa:
+
+- versão;
+- estado do MongoDB;
+- artefato da landing;
+- branch implantada;
+- commit implantado;
+- uptime.
+
+Respostas HTML recebem cabeçalhos de versão e não devem permanecer obsoletas após deploy.
+
+## 14. Dívidas técnicas controladas
+
+- dashboard principal ainda possui controlador legado grande;
+- handlers inline permanecem em áreas de compatibilidade;
+- Central de Conversas usa provedor demonstrativo;
+- integrações externas reais ainda precisam de filas e idempotência operacional completas;
+- migração progressiva para componentes menores deve preservar contratos e testes.
+
+## 15. Regra de evolução
+
+Uma funcionalidade só é considerada concluída quando:
+
+1. os arquivos reais estão na `main`;
+2. `npm run quality` passou;
+3. o Render executa o commit esperado;
+4. o fluxo foi validado na interface;
+5. limitações e dependências externas estão documentadas.
