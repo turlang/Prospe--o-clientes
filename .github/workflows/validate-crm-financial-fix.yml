@@ -30,6 +30,19 @@ jobs:
           node-version-file: .node-version
           cache: npm
 
+      - name: Preserve JavaScript regex escapes
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('scripts/apply-crm-financial-fix.py')
+          text = path.read_text(encoding='utf-8')
+          text = text.replace('    """function normalizeMoney(value)', '    r"""function normalizeMoney(value)')
+          text = text.replace('    """function parseMoneyToken(value)', '    r"""function parseMoneyToken(value)')
+          text = text.replace('    """function parseUiMoneyToken(value)', '    r"""function parseUiMoneyToken(value)')
+          path.write_text(text, encoding='utf-8')
+          PY
+
       - name: Apply correction
         run: python scripts/apply-crm-financial-fix.py
 
