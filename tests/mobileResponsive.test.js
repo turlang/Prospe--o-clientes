@@ -44,7 +44,7 @@ test('kanban preserva rolagem interna sem estourar o documento', () => {
 
 test('estado hidden, cache e efeitos 3D estão protegidos', () => {
   assert.match(css, /\[hidden\]\s*\{\s*display:\s*none\s*!important;/);
-  assert.match(html, /\/assets\/dashboard\/styles\.css\?v=26\.2\.0/);
+  assert.match(html, /\/assets\/dashboard\/styles\.css\?v=27\.0\.0/);
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
   assert.match(css, /pointer:\s*coarse/);
 });

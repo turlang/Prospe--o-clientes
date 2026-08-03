@@ -28,8 +28,8 @@ const REQUIRED_DOCUMENTS = [
   'docs/DESIGN_SYSTEM.md',
   'docs/RELEASE_26.0.0.md',
   'docs/RELEASE_26.1.0.md',
-  'docs/RELEASE_26.2.0.md',
-  'docs/VALIDATION_26.2.0.md'
+  'docs/RELEASE_27.0.0.md',
+  'docs/VALIDATION_27.0.0.md'
 ];
 
 function collectModules(entry, output = []) {

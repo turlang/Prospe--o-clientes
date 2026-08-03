@@ -30,4 +30,4 @@ copyFile('index.html', path.join(PUBLIC_DIR, 'landing-fallback.html'));
 copyFile('landing.css', path.join(PUBLIC_DIR, 'landing-static.css'));
 copyFile('landing.js', path.join(PUBLIC_DIR, 'landing-static.js'));
 
-console.log('Landing estática v26.2.0 sincronizada com os destinos públicos.');
+console.log('Landing estática v27.0.0 sincronizada com os destinos públicos.');

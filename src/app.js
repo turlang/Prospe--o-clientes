@@ -19,7 +19,7 @@ const { format } = require('@fast-csv/format');
 const { searchPlaces, testGoogleConnection } = require('./integrations/googlePlaces');
 const { scoreLead, filterActionable } = require('./domain/leads/leadScoring');
 const { auditWebsite } = require('./integrations/siteAuditor');
-const { readLeads, saveLeads, updateLeadStatus, updateLeadMeta, getLeadStats } = require('./repositories/leadRepository');
+const { readLeads, saveLeads, updateLeadStatus, updateLeadMeta, updateLeadCommercialData, getLeadStats } = require('./repositories/leadRepository');
 const SearchHistory = require('./models/SearchHistory');
 const { analyzeLeadResponse } = require('./domain/conversations/conversationEngine');
 const authRoutes = require('./routes/authRoutes');
@@ -38,6 +38,7 @@ const Lead = require('./models/Lead');
 const Task = require('./models/Task');
 const CopilotConversation = require('./models/CopilotConversation');
 const PlanConfiguration = require('./models/PlanConfiguration');
+const CrmConfiguration = require('./models/CrmConfiguration');
 const { getAllPlans, getCatalogMetadata, getPlan, normalizePlan, updatePlan, updatePlanPersistent } = require('./domain/plans/planCatalog');
 const { getPublicPlans } = require('./services/publicPlanService');
 const { getDailyUsage, getTotalUsage, addDailyUsage } = require('./repositories/local/usageRepository');
@@ -81,6 +82,19 @@ const { readJsonFile, writeJsonFileAtomic, withJsonFileLock } = require('./utils
 const { createDatabaseResetService, RESET_CONFIRMATION_PHRASE } = require('./services/databaseResetService');
 const { getPasswordResetEmailStatus } = require('./services/emailService');
 const { LEAD_STATUS_SET } = require('./domain/leadStatus');
+const { getCrmConfiguration, saveCrmConfiguration } = require('./repositories/crmConfigurationRepository');
+const { normalizeCrmConfiguration } = require('./domain/crm/crmConfiguration');
+const {
+  normalizeLeadCommercialUpdates,
+  validateStageRequirements,
+  applyLeadFilters,
+  buildForecast,
+  buildPeriodReport,
+  previewCsvImport,
+  importCsvLeads,
+  buildFullExportCsv,
+  findReactivationCandidates
+} = require('./services/crmAdvancedService');
 
 const { registerSystemRoutes } = require('./routes/systemRoutes');
 const { registerBillingRoutes } = require('./routes/billingRoutes');
@@ -88,6 +102,7 @@ const { registerLeadRoutes } = require('./routes/leadRoutes');
 const { registerAdminRoutes } = require('./routes/adminRoutes');
 const { registerCommercialRoutes } = require('./routes/commercialRoutes');
 const { createOmnichannelRoutes } = require('./routes/omnichannelRoutes');
+const { registerCrmRoutes } = require('./routes/crmRoutes');
 
 
 /**
@@ -121,7 +136,8 @@ function createApp() {
       TrialGuard,
       PasswordReset,
       CopilotConversation,
-      AdminAuditLog
+      AdminAuditLog,
+      CrmConfiguration
     },
     readJsonFile,
     writeJsonFileAtomic,
@@ -192,7 +208,7 @@ function createApp() {
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Device-Id'],
     maxAge: 600
   }));
-  app.use(express.json({ limit: '256kb', strict: true }));
+  app.use(express.json({ limit: '1mb', strict: true }));
   app.use((req, _res, next) => { req.body = req.body && typeof req.body === 'object' ? req.body : {}; next(); });
   app.use(requestLogger);
   app.use('/api', simpleRateLimit({ windowMs: 60_000, max: 120 }));
@@ -235,6 +251,7 @@ function createApp() {
     saveLeads,
     updateLeadStatus,
     updateLeadMeta,
+    updateLeadCommercialData,
     getLeadStats,
     SearchHistory,
     analyzeLeadResponse,
@@ -287,6 +304,18 @@ function createApp() {
     buildNextTaskPlan,
     generateAiEnhancedApproach,
     getAiProviderStatus,
+    getCrmConfiguration,
+    saveCrmConfiguration,
+    normalizeCrmConfiguration,
+    normalizeLeadCommercialUpdates,
+    validateStageRequirements,
+    applyLeadFilters,
+    buildForecast,
+    buildPeriodReport,
+    previewCsvImport,
+    importCsvLeads,
+    buildFullExportCsv,
+    findReactivationCandidates,
     buildAgendaSummary,
     buildCommercialIntelligence,
     buildObjectionResponse,
@@ -325,6 +354,7 @@ function createApp() {
   app.use('/api/v23', createSalesOsRoutes({ requireAuth }));
   registerBillingRoutes(app, routeContext);
   registerLeadRoutes(app, routeContext);
+  registerCrmRoutes(app, routeContext);
   registerAdminRoutes(app, routeContext);
   registerCommercialRoutes(app, routeContext);
   app.use('/api/omnichannel', createOmnichannelRoutes({ requireAuth, simpleRateLimit }));

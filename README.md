@@ -1,10 +1,31 @@
 # LeadHunter Pro
 
-**Versão:** 26.2.0  
+**Versão:** 27.0.0  
 **Estado:** publicado e operacional  
 **Público:** desenvolvedores, freelancers e agências que vendem sites, sistemas, automações e soluções com IA
 
-O LeadHunter Pro é uma plataforma de prospecção comercial que centraliza descoberta de oportunidades, gestão de leads, CRM, tarefas, plano de ação, inteligência comercial, relatórios, planos e administração.
+O LeadHunter Pro é um sistema operacional comercial para freelancers, agências e pequenas equipes que vendem sites, automações e soluções digitais. A plataforma conecta descoberta de oportunidades, auditoria digital, CRM 360, tarefas, inteligência comercial, relatórios, planos, administração e uma Central de Conversas omnichannel em modo demonstrativo.
+
+
+## Release 27.0.0 — CRM 360 + Omnichannel
+
+A release integra o CRM 360 à base omnichannel já publicada, preservando autenticação, planos, dados, painel executivo e rastreabilidade do Render.
+
+Principais recursos:
+
+- múltiplos pipelines e etapas configuráveis;
+- probabilidades e campos obrigatórios por etapa;
+- campos personalizados e filtros salvos;
+- Kanban e visualização em lista;
+- catálogo de produtos e serviços;
+- contrato, receita recorrente, valor fechado e motivos de perda;
+- previsão ponderada, metas e relatórios por período;
+- importação CSV com prévia, mapeamento e deduplicação;
+- exportação completa e reativação de oportunidades;
+- Central de Conversas vinculada ao CRM;
+- histórico, notas internas, não lidas e transferência humana;
+- identificação explícita do modo demonstrativo;
+- commit e branch implantados expostos pelo `/api/health`.
 
 ## Produto entregue
 
@@ -318,3 +339,9 @@ Validações externas recomendadas antes da cobrança comercial real:
 ## Uso responsável
 
 A prospecção deve respeitar a legislação aplicável, a privacidade, os termos dos provedores e os mecanismos de descadastro. Informações públicas não autorizam coleta excessiva ou disparos abusivos.
+
+## Documentos da release
+
+- [`docs/RELEASE_27.0.0.md`](docs/RELEASE_27.0.0.md)
+- [`docs/VALIDATION_27.0.0.md`](docs/VALIDATION_27.0.0.md)
+- [`docs/PRODUCT_AUDIT_2026.md`](docs/PRODUCT_AUDIT_2026.md)

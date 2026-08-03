@@ -1,5 +1,34 @@
 # Changelog
 
+## 27.0.0 — CRM 360 integrado ao Omnichannel
+
+### CRM
+
+- múltiplos pipelines configuráveis por usuário;
+- etapas, probabilidades e requisitos personalizados;
+- campos personalizados, filtros salvos e catálogo comercial;
+- visualizações Kanban e Lista;
+- valores de contrato, recorrência, fechamento e perda;
+- previsão ponderada, metas e relatórios por período;
+- importação CSV com mapeamento, prévia e deduplicação;
+- exportação completa e reativação de oportunidades;
+- validação antes da mudança de etapa;
+- histórico comercial preservado.
+
+### Omnichannel e plataforma
+
+- Central de Conversas preservada e vinculada ao CRM;
+- modo demonstrativo explicitamente identificado;
+- chave de criptografia das integrações gerada no Render;
+- branch e commit implantados expostos pelo `/api/health`;
+- cache de assets atualizado para a release 27.0.0.
+
+### Qualidade
+
+- testes específicos do CRM 360;
+- testes de regressão do omnichannel;
+- validação de sintaxe, arquitetura, frontend, estilos, landing e documentação.
+
 ## 26.2.0 — Entrega consolidada
 
 ### Produto

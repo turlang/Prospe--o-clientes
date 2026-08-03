@@ -10,7 +10,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>LeadHunter Pro — Dashboard</title>
   <link rel="icon" href="data:," />
-  <link rel="stylesheet" href="/assets/dashboard/styles.css?v=26.2.0" />
+  <link rel="stylesheet" href="/assets/dashboard/styles.css?v=27.0.0" />
 </head>
 <body>
   <main id="appRoot" class="container">
@@ -239,19 +239,67 @@
         </section>
 
         <section id="view-crm" class="view">
-          <section class="kanban-preview card-panel crm-pipeline-only">
+          <section class="card-panel crm-advanced-shell">
             <div class="section-title pipeline-title-row">
-              <div><p class="tag dark">CRM</p><h2>Pipeline comercial</h2><p class="meta">Arraste os cards entre as etapas e clique no lead para abrir sua ficha em popup.</p></div>
-              <button id="loadSaved" type="button" class="secondary">Atualizar pipeline</button>
+              <div>
+                <p class="tag dark">CRM 360</p>
+                <h2>Operação comercial avançada</h2>
+                <p class="meta">Múltiplos pipelines, campos personalizados, metas, catálogo, importação inteligente e previsão de receita.</p>
+              </div>
+              <div class="header-actions">
+                <button id="crmImportButton" type="button" class="secondary">Importar CSV</button>
+                <button id="crmSettingsButton" type="button" class="secondary">Configurar CRM</button>
+                <button id="loadSaved" type="button">Atualizar</button>
+              </div>
             </div>
-            <div class="pipeline-filters">
-              <input id="searchLead" name="searchLead" placeholder="Buscar nome, endereço ou segmento" aria-label="Buscar lead" />
+
+            <div class="crm-control-grid" aria-label="Controles do CRM">
+              <label>Pipeline
+                <select id="crmPipelineSelect" aria-label="Selecionar pipeline"></select>
+              </label>
+              <label>Visualização
+                <select id="crmViewMode" aria-label="Selecionar visualização">
+                  <option value="kanban">Kanban</option>
+                  <option value="list">Lista</option>
+                </select>
+              </label>
+              <label>Filtro salvo
+                <select id="crmSavedFilterSelect" aria-label="Selecionar filtro salvo"><option value="">Sem filtro salvo</option></select>
+              </label>
+              <button id="crmSaveFilterButton" type="button" class="secondary crm-control-button">Salvar filtro atual</button>
+            </div>
+
+            <div class="pipeline-filters crm-filter-grid">
+              <input id="searchLead" name="searchLead" placeholder="Buscar nome, contato, serviço ou campo personalizado" aria-label="Buscar lead" />
               <select id="filterStatus" name="filterStatus" aria-label="Filtrar status"><option value="">Todas as etapas</option><option>NOVO</option><option>CONTATADO</option><option>INTERESSADO</option><option>REUNIAO</option><option>PROPOSTA</option><option>FECHADO</option><option>SEM_INTERESSE</option></select>
+              <input id="crmSegmentFilter" placeholder="Filtrar segmento" aria-label="Filtrar segmento" />
+              <input id="crmServiceFilter" placeholder="Filtrar serviço" aria-label="Filtrar serviço" />
+              <input id="crmTagFilter" placeholder="Filtrar etiqueta" aria-label="Filtrar etiqueta" />
+              <select id="crmSortFilter" aria-label="Ordenar leads">
+                <option value="score-desc">Maior score</option>
+                <option value="value-desc">Maior valor</option>
+                <option value="updated-desc">Atualizados recentemente</option>
+                <option value="name-asc">Nome A–Z</option>
+              </select>
               <label class="check" for="filterFavorite"><input id="filterFavorite" name="filterFavorite" type="checkbox" /> Favoritos</label>
-              <button id="exportCsv" type="button" class="secondary">Exportar CSV</button>
+              <button id="exportCsv" type="button" class="secondary">Exportar completo</button>
             </div>
+
+            <div id="crmForecastSummary" class="crm-forecast-grid" aria-live="polite"></div>
             <div id="kanbanBoard" class="kanban-board"></div>
+            <div id="crmListView" class="crm-list-view" hidden></div>
           </section>
+
+          <div class="crm-insights-grid">
+            <section class="card-panel">
+              <div class="section-title"><h3>Metas do período</h3><p class="meta">Acompanhamento de volume, conversão e receita.</p></div>
+              <div id="crmGoalsPanel" class="crm-goals-panel"></div>
+            </section>
+            <section class="card-panel">
+              <div class="section-title"><h3>Oportunidades para reativar</h3><p class="meta">Leads perdidos ou parados que merecem uma nova tentativa.</p></div>
+              <div id="crmReactivationPanel" class="history-list compact-list"></div>
+            </section>
+          </div>
         </section>
 
         <section id="view-historico" class="view">
@@ -447,9 +495,57 @@
         </section>
       </section>
     </section>
+
+    <dialog id="crmSettingsDialog" class="crm-dialog">
+      <form method="dialog" class="crm-dialog__header">
+        <div><p class="tag dark">Configuração</p><h2>CRM avançado</h2><p class="meta">Personalize pipelines, etapas, campos, metas e catálogo.</p></div>
+        <button type="submit" class="secondary">Fechar</button>
+      </form>
+      <div class="crm-settings-layout">
+        <section>
+          <div class="section-title"><h3>Pipelines e etapas</h3><button id="crmAddPipelineButton" type="button" class="secondary mini">Novo pipeline</button></div>
+          <div id="crmPipelineEditor" class="crm-editor-list"></div>
+        </section>
+        <section>
+          <div class="section-title"><h3>Campos personalizados</h3><button id="crmAddCustomFieldButton" type="button" class="secondary mini">Novo campo</button></div>
+          <div id="crmCustomFieldsEditor" class="crm-editor-list"></div>
+        </section>
+        <section>
+          <div class="section-title"><h3>Metas comerciais</h3><p class="meta">Defina o objetivo do mês ou trimestre.</p></div>
+          <div id="crmGoalsEditor" class="crm-form-grid"></div>
+        </section>
+        <section>
+          <div class="section-title"><h3>Catálogo de produtos e serviços</h3><button id="crmAddCatalogItemButton" type="button" class="secondary mini">Novo item</button></div>
+          <div id="crmCatalogEditor" class="crm-editor-list"></div>
+        </section>
+      </div>
+      <div class="crm-dialog__footer">
+        <span id="crmSettingsStatus" class="meta"></span>
+        <button id="crmSaveSettingsButton" type="button">Salvar configuração</button>
+      </div>
+    </dialog>
+
+    <dialog id="crmImportDialog" class="crm-dialog crm-import-dialog">
+      <form method="dialog" class="crm-dialog__header">
+        <div><p class="tag dark">Importação</p><h2>Importar leads por CSV</h2><p class="meta">O sistema mapeia colunas, detecta duplicidades e mostra uma prévia antes de salvar.</p></div>
+        <button type="submit" class="secondary">Fechar</button>
+      </form>
+      <div class="crm-import-layout">
+        <label>Arquivo CSV<input id="crmCsvFile" type="file" accept=".csv,text/csv" /></label>
+        <label>Ou cole o conteúdo<textarea id="crmCsvText" rows="8" placeholder="nome,email,telefone,site,segmento,status,valor"></textarea></label>
+        <button id="crmPreviewImportButton" type="button" class="secondary">Analisar arquivo</button>
+        <div id="crmImportMapping" class="crm-mapping-grid"></div>
+        <div id="crmImportSummary" class="crm-forecast-grid"></div>
+        <div id="crmImportPreview" class="crm-list-view"></div>
+      </div>
+      <div class="crm-dialog__footer">
+        <span id="crmImportStatus" class="meta"></span>
+        <button id="crmConfirmImportButton" type="button" disabled>Importar leads válidos</button>
+      </div>
+    </dialog>
   </main>
-  <script src="/assets/shared/depth-effects.js?v=26.2.0" defer></script>
-  <script src="/assets/dashboard/app.js?v=26.2.0"></script>
-  <script src="/assets/dashboard/omnichannel.js?v=26.2.0"></script>
+  <script src="/assets/shared/depth-effects.js?v=27.0.0" defer></script>
+  <script src="/assets/dashboard/app.js?v=27.0.0"></script>
+  <script src="/assets/dashboard/omnichannel.js?v=27.0.0"></script>
 </body>
 </html>

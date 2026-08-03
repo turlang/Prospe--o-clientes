@@ -26,6 +26,9 @@ function registerLeadRoutes(app, context) {
     updateLeadStatus,
     updateLeadMeta,
     getLeadStats,
+    getCrmConfiguration,
+    applyLeadFilters,
+    validateStageRequirements,
     SearchHistory,
     analyzeLeadResponse,
     requireAuth,
@@ -155,15 +158,19 @@ function registerLeadRoutes(app, context) {
 
   // Leitura, histórico e atualização do CRM.
   app.get('/api/leads', requireAuth, async (req, res) => {
-    const { status, favorito, tag, q } = req.query;
     let leads = await readLeads(req.user.sub);
-
-    if (status) leads = leads.filter((lead) => String(lead.status || 'NOVO') === String(status));
-    if (favorito === 'true') leads = leads.filter((lead) => Boolean(lead.favorito));
-    if (tag) leads = leads.filter((lead) => Array.isArray(lead.tags) && lead.tags.includes(String(tag)));
-    if (q) {
-      const term = String(q).toLowerCase();
-      leads = leads.filter((lead) => [lead.nome, lead.endereco, lead.segmentoComercial, lead.tipo].filter(Boolean).join(' ').toLowerCase().includes(term));
+    if (typeof applyLeadFilters === 'function' && typeof getCrmConfiguration === 'function') {
+      const config = await getCrmConfiguration(req.user.sub);
+      leads = applyLeadFilters(leads, req.query, config);
+    } else {
+      const { status, favorito, tag, q } = req.query;
+      if (status) leads = leads.filter((lead) => String(lead.status || 'NOVO') === String(status));
+      if (favorito === 'true') leads = leads.filter((lead) => Boolean(lead.favorito));
+      if (tag) leads = leads.filter((lead) => Array.isArray(lead.tags) && lead.tags.includes(String(tag)));
+      if (q) {
+        const term = String(q).toLowerCase();
+        leads = leads.filter((lead) => [lead.nome, lead.endereco, lead.segmentoComercial, lead.tipo].filter(Boolean).join(' ').toLowerCase().includes(term));
+      }
     }
 
     res.json(leads);
@@ -286,6 +293,23 @@ function registerLeadRoutes(app, context) {
       const status = String(req.body.status || '').trim().toUpperCase();
       if (!leadId || !ALLOWED_LEAD_STATUSES.has(status)) {
         return res.status(400).json({ error: 'Informe um leadId e um status comercial válido.' });
+      }
+
+      if (typeof getCrmConfiguration === 'function' && typeof validateStageRequirements === 'function') {
+        const [leads, config] = await Promise.all([
+          readLeads(req.user.sub),
+          getCrmConfiguration(req.user.sub)
+        ]);
+        const currentLead = leads.find((lead) => String(lead.placeId || lead.nome) === String(leadId));
+        if (!currentLead) return res.status(404).json({ error: 'Lead não encontrado.' });
+        const validation = validateStageRequirements(currentLead, status, config, currentLead.pipelineId);
+        if (!validation.valid) {
+          return res.status(422).json({
+            error: 'Preencha os campos obrigatórios antes de mover o lead para esta etapa.',
+            missingFields: validation.missingFields,
+            stage: validation.stage
+          });
+        }
       }
 
       const updated = await updateLeadStatus(leadId, status, {

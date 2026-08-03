@@ -16,7 +16,8 @@ const LOCAL_DATA_FILES = Object.freeze({
   leads: path.join(process.cwd(), 'data', 'leads.json'),
   tasks: path.join(process.cwd(), 'data', 'tasks.json'),
   usage: path.join(process.cwd(), 'data', 'usage.json'),
-  copilotConversations: path.join(process.cwd(), 'data', 'copilot-conversations.json')
+  copilotConversations: path.join(process.cwd(), 'data', 'copilot-conversations.json'),
+  crmConfigurations: path.join(process.cwd(), 'data', 'crm-configurations.json')
 });
 
 function createHttpError(statusCode, message) {
@@ -65,7 +66,8 @@ function createDatabaseResetService(dependencies) {
     trialGuards: models.TrialGuard,
     passwordResets: models.PasswordReset,
     copilotConversations: models.CopilotConversation,
-    auditLogs: models.AdminAuditLog
+    auditLogs: models.AdminAuditLog,
+    crmConfigurations: models.CrmConfiguration
   });
 
   async function countLocalFile(filePath) {
@@ -85,6 +87,7 @@ function createDatabaseResetService(dependencies) {
   async function getMongoPreview() {
     const counts = {};
     for (const [key, model] of Object.entries(mongoOperationalModels)) {
+      if (!model) continue;
       counts[key] = await model.countDocuments({});
     }
 
@@ -107,7 +110,8 @@ function createDatabaseResetService(dependencies) {
       leads: await countLocalFile(localFiles.leads),
       tasks: await countLocalFile(localFiles.tasks),
       usage: await countLocalUsage(),
-      copilotConversations: await countLocalFile(localFiles.copilotConversations)
+      copilotConversations: await countLocalFile(localFiles.copilotConversations),
+      crmConfigurations: localFiles.crmConfigurations ? await countLocalFile(localFiles.crmConfigurations) : 0
     };
 
     return {
@@ -152,6 +156,7 @@ function createDatabaseResetService(dependencies) {
     deleted.tasks = await clearLocalFile(localFiles.tasks);
     deleted.usage = await clearLocalUsage();
     deleted.copilotConversations = await clearLocalFile(localFiles.copilotConversations);
+    if (localFiles.crmConfigurations) deleted.crmConfigurations = await clearLocalFile(localFiles.crmConfigurations);
 
     // Usuários comuns são removidos por último pelo mesmo motivo adotado no
     // MongoDB: uma falha intermediária não pode eliminar o acesso ao painel.
@@ -182,6 +187,7 @@ function createDatabaseResetService(dependencies) {
 
     const deleted = {};
     for (const [key, model] of Object.entries(mongoOperationalModels)) {
+      if (!model) continue;
       deleted[key] = normalizeCountResult(await model.deleteMany({}));
     }
 
