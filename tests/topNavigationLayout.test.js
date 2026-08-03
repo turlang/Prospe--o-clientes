@@ -12,6 +12,13 @@ const fs = require('node:fs');
 const entry = fs.readFileSync('public/assets/dashboard/styles.css', 'utf8');
 const css = fs.readFileSync('public/assets/dashboard/css/95-top-navigation.css', 'utf8');
 
+function getCssRule(selector) {
+  const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const match = css.match(new RegExp(`${escapedSelector}\\s*\\{([^}]*)\\}`));
+  assert.ok(match, `Regra CSS ausente: ${selector}`);
+  return match[1];
+}
+
 test('carrega a navegação superior depois das regras responsivas', () => {
   const responsive = entry.indexOf('./css/90-responsive.css');
   const topNavigation = entry.indexOf('./css/95-top-navigation.css');
@@ -29,11 +36,12 @@ test('mantém somente uma superfície superior e remove a coluna lateral', () =>
 });
 
 test('uso diário ocupa célula própria e não usa posição absoluta', () => {
-  assert.match(css, /body\.is-authenticated \.sidebar-account[\s\S]*grid-row:\s*1/);
-  assert.match(css, /body\.is-authenticated \.sidebar-account[\s\S]*justify-self:\s*end/);
-  assert.match(css, /body\.is-authenticated \.sidebar-account[\s\S]*align-self:\s*end/);
-  assert.match(css, /body\.is-authenticated \.sidebar-account[\s\S]*margin:\s*0 126px 9px 0/);
-  assert.doesNotMatch(css, /body\.is-authenticated \.sidebar-account[\s\S]*position:\s*absolute/);
+  const rule = getCssRule('body.is-authenticated .sidebar-account');
+  assert.match(rule, /grid-row:\s*1/);
+  assert.match(rule, /justify-self:\s*end/);
+  assert.match(rule, /align-self:\s*end/);
+  assert.match(rule, /margin:\s*0 126px 9px 0/);
+  assert.doesNotMatch(rule, /position:\s*absolute/);
 });
 
 test('conta e saída possuem colunas independentes', () => {
