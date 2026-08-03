@@ -45,50 +45,65 @@ jobs:
           import tarfile
 
           release_dir = Path('.release/v27')
-          chunks = sorted(
-              path for path in release_dir.glob('chunk-*.b64')
-              if re.fullmatch(r'chunk-\d{3}\.b64', path.name)
-          )
-          if len(chunks) != 13:
-              raise SystemExit(f'Expected 13 canonical chunks, found {len(chunks)}')
 
-          encoded = ''
-          for path in chunks:
-              raw = path.read_bytes()
-              print(path.name, len(raw), hashlib.sha256(raw).hexdigest())
-              encoded += path.read_text(encoding='utf-8-sig')
+          def read(name):
+              text = (release_dir / name).read_text(encoding='utf-8-sig')
+              return ''.join(text.replace('\ufeff', '').split())
 
-          encoded = encoded.replace('\ufeff', '')
-          encoded = ''.join(encoded.split())
-          if re.search(r'[^A-Za-z0-9+/=]', encoded):
-              raise SystemExit('Release contains invalid base64 characters')
+          canonical_names = [f'chunk-{index:03d}.b64' for index in range(13)]
+          split_names = ['chunk-000.b64', 'chunk-001.b64', 'chunk-002a.b64', 'chunk-002b.b64', 'chunk-002c.b64'] + [f'chunk-{index:03d}.b64' for index in range(3, 13)]
 
-          # O pacote histórico possui vários blocos base64 completos concatenados.
-          # O regex separa cada bloco no padding, sem misturar o início do próximo.
-          raw_segments = re.findall(r'[A-Za-z0-9+/]+={0,2}', encoded)
-          segments = []
-          for index, segment in enumerate(raw_segments):
-              segment += '=' * ((4 - len(segment) % 4) % 4)
+          for name in sorted(path.name for path in release_dir.glob('chunk-*.b64')):
+              text = read(name)
+              equals = [index for index, char in enumerate(text) if char == '=']
+              print(name, 'chars=', len(text), 'mod4=', len(text) % 4, 'padding=', len(equals), 'padding_positions=', equals[:8])
+
+          print('chunk002_equals_parts=', read('chunk-002.b64') == ''.join(read(name) for name in ['chunk-002a.b64', 'chunk-002b.b64', 'chunk-002c.b64']))
+
+          def decode_join(names, remove_padding=False):
+              text = ''.join(read(name) for name in names)
+              if remove_padding:
+                  text = text.replace('=', '')
+              text += '=' * ((4 - len(text) % 4) % 4)
+              return base64.b64decode(text, validate=False)
+
+          def decode_parts(names):
+              output = bytearray()
+              for name in names:
+                  text = read(name)
+                  text += '=' * ((4 - len(text) % 4) % 4)
+                  output.extend(base64.b64decode(text, validate=False))
+              return bytes(output)
+
+          candidates = []
+          strategies = [
+              ('canonical_join', lambda: decode_join(canonical_names, False)),
+              ('canonical_without_internal_padding', lambda: decode_join(canonical_names, True)),
+              ('split_join', lambda: decode_join(split_names, False)),
+              ('split_without_internal_padding', lambda: decode_join(split_names, True)),
+              ('canonical_decoded_per_file', lambda: decode_parts(canonical_names)),
+              ('split_decoded_per_file', lambda: decode_parts(split_names))
+          ]
+
+          for label, factory in strategies:
               try:
-                  decoded = base64.b64decode(segment, validate=True)
+                  payload = factory()
+                  print(label, 'bytes=', len(payload), 'sha256=', hashlib.sha256(payload).hexdigest(), 'magic=', payload[:4].hex())
+                  with tarfile.open(fileobj=io.BytesIO(payload), mode='r:gz') as package:
+                      members = package.getmembers()
+                  if members:
+                      candidates.append((label, payload, len(members)))
+                      print(label, 'VALID_TAR members=', len(members))
               except Exception as error:
-                  raise SystemExit(f'Invalid base64 segment {index}: {error}') from error
-              segments.append(decoded)
+                  print(label, 'FAILED', type(error).__name__, str(error))
 
-          archive = b''.join(segments)
-          if not archive.startswith(b'\x1f\x8b'):
-              raise SystemExit('Rebuilt payload is not a gzip archive')
+          if not candidates:
+              raise SystemExit('Nenhuma estratégia reconstruiu um tar.gz válido.')
 
-          with tarfile.open(fileobj=io.BytesIO(archive), mode='r:gz') as package:
-              members = package.getmembers()
-              if not members:
-                  raise SystemExit('Release archive is empty')
-              print('members', len(members))
-
+          label, archive, member_count = candidates[0]
           output = Path('/tmp/leadhunter-v27-delta.tar.gz')
           output.write_bytes(archive)
-          print('segments', len(segments))
-          print('archive', len(archive), hashlib.sha256(archive).hexdigest())
+          print('selected=', label, 'members=', member_count, 'archive=', len(archive), hashlib.sha256(archive).hexdigest())
           PY
           tar -xzf /tmp/leadhunter-v27-delta.tar.gz
           rm -rf .release .github/workflows/apply-v27.yml
