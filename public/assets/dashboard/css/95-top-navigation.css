@@ -1,9 +1,9 @@
 /**
  * @fileoverview Barra superior única, compacta e sem sobreposição.
  *
- * Mantém logo, navegação, conta, uso diário e saída dentro da mesma superfície
- * visual. A antiga sidebar permanece apenas como contrato de DOM para preservar
- * os controladores existentes enquanto a apresentação é reorganizada por CSS.
+ * Mantém logo, navegação, conta, uso diário e saída dentro da mesma superfície.
+ * O uso diário participa do fluxo normal do bloco da conta; não usa posição
+ * absoluta e, por isso, não cobre nome, plano ou botão de saída.
  *
  * @module public/assets/dashboard/css/top-navigation
  */
@@ -20,19 +20,15 @@ body.is-authenticated .sidebar {
   display: contents !important;
 }
 
-/*
- * A superfície principal ocupa somente a altura necessária para os controles.
- * A navegação utiliza a faixa central e o contexto da conta permanece à direita.
- */
 body.is-authenticated .session-bar {
   grid-column: 1;
   grid-row: 1;
   position: relative;
   z-index: 2;
   display: grid;
-  grid-template-columns: 150px minmax(0, 1fr) 176px 112px;
+  grid-template-columns: 150px minmax(0, 1fr) 184px 112px;
   align-items: center;
-  min-height: 82px;
+  min-height: 88px;
   padding: 10px 14px;
   overflow: hidden;
 }
@@ -52,16 +48,21 @@ body.is-authenticated .session-brand strong {
   white-space: nowrap;
 }
 
+/*
+ * Nome, plano e uso diário pertencem ao mesmo bloco. A ordem visual é definida
+ * pelo próprio DOM e não depende de coordenadas absolutas.
+ */
 body.is-authenticated .session-user {
   grid-column: 3;
   position: relative;
   z-index: 6;
-  display: grid;
-  align-self: start;
-  justify-items: end;
-  align-content: start;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  align-self: stretch;
   min-width: 0;
-  padding: 1px 8px 0 0;
+  padding: 0 8px 0 0;
   line-height: 1.12;
   text-align: right;
 }
@@ -85,6 +86,30 @@ body.is-authenticated .session-user > small {
   font-size: .63rem;
 }
 
+body.is-authenticated .session-user .usage-box {
+  display: grid;
+  gap: 1px;
+  width: 176px;
+  min-height: 30px;
+  margin: 4px 0 0 !important;
+  padding: 4px 8px !important;
+  overflow: hidden;
+  border: 1px solid #dbe6f3;
+  border-radius: 9px;
+  background: linear-gradient(145deg, #f8fbff, #eef5ff);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .92);
+  font-size: .55rem;
+  line-height: 1.12;
+  text-align: left;
+  text-overflow: ellipsis;
+}
+
+body.is-authenticated .session-user .usage-box strong,
+body.is-authenticated .session-user .usage-box b {
+  font-size: .62rem;
+  line-height: 1.1;
+}
+
 body.is-authenticated .session-logout {
   grid-column: 4;
   position: relative;
@@ -96,22 +121,9 @@ body.is-authenticated .session-logout {
   white-space: nowrap;
 }
 
-/*
- * Uso diário fica diretamente abaixo do plano, dentro da mesma coluna visual.
- * A largura e o deslocamento reservam espaço real para o botão de saída.
- */
+/* O antigo contêiner lateral deixa de participar do layout. */
 body.is-authenticated .sidebar-account {
-  position: absolute;
-  z-index: 7;
-  top: 39px;
-  right: 134px;
-  width: 176px;
-  margin: 0;
-  padding: 0 8px 0 0;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-  pointer-events: none;
+  display: none !important;
 }
 
 body.is-authenticated .sidebar-account__content > .tag,
@@ -120,38 +132,14 @@ body.is-authenticated #welcome {
   display: none !important;
 }
 
-body.is-authenticated .sidebar-account__content .usage-box {
-  display: grid;
-  gap: 1px;
-  width: 100%;
-  min-height: 30px;
-  margin: 0 !important;
-  padding: 4px 8px !important;
-  overflow: hidden;
-  border: 1px solid #dbe6f3;
-  border-radius: 9px;
-  background: linear-gradient(145deg, #f8fbff, #eef5ff);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .92);
-  font-size: .55rem;
-  line-height: 1.12;
-  text-overflow: ellipsis;
-}
-
-body.is-authenticated .sidebar-account__content .usage-box strong,
-body.is-authenticated .sidebar-account__content .usage-box b {
-  font-size: .62rem;
-  line-height: 1.1;
-}
-
 /*
- * O menu ocupa a faixa central da mesma barra. Quando a largura disponível não
- * comporta todos os módulos, continua navegável horizontalmente sem exibir uma
- * segunda barra visual ou aumentar a altura do cabeçalho.
+ * O menu ocupa a faixa central da mesma barra. Quando faltar largura, continua
+ * navegável horizontalmente sem aumentar a altura do cabeçalho.
  */
 body.is-authenticated .sidebar nav {
   position: absolute;
   z-index: 5;
-  top: 18px;
+  top: 21px;
   left: 174px;
   right: 326px;
   display: flex !important;
@@ -227,7 +215,7 @@ body.is-authenticated .workspace {
   min-width: 0;
 }
 
-/* Visão Geral usa somente a rolagem natural da página, nunca uma rolagem interna. */
+/* Visão Geral usa somente a rolagem natural da página. */
 body.is-authenticated #view-dashboard.active-view,
 body.is-authenticated #view-dashboard .overview-executive-grid,
 body.is-authenticated #view-dashboard .overview-side-stack,
@@ -245,7 +233,6 @@ body.is-authenticated #view-dashboard *::-webkit-scrollbar {
   height: 0;
 }
 
-/* Link do painel administrativo com a mesma linguagem visual dos botões. */
 body .admin-header .admin-actions .admin-dashboard-link {
   display: inline-flex;
   min-height: 38px;
@@ -273,19 +260,18 @@ body .admin-header .admin-actions .admin-dashboard-link:hover {
 
 @media (max-width: 1400px) {
   body.is-authenticated .session-bar {
-    grid-template-columns: 142px minmax(0, 1fr) 166px 104px;
-    min-height: 82px;
+    grid-template-columns: 142px minmax(0, 1fr) 174px 104px;
+    min-height: 88px;
     padding-inline: 12px;
+  }
+
+  body.is-authenticated .session-user .usage-box {
+    width: 166px;
   }
 
   body.is-authenticated .sidebar nav {
     left: 158px;
     right: 304px;
-  }
-
-  body.is-authenticated .sidebar-account {
-    right: 116px;
-    width: 166px;
   }
 
   body.is-authenticated .nav-btn {
@@ -297,7 +283,7 @@ body .admin-header .admin-actions .admin-dashboard-link:hover {
 @media (max-width: 980px) {
   body.is-authenticated .session-bar {
     grid-template-columns: 150px minmax(0, 1fr) 104px;
-    min-height: 132px;
+    min-height: 142px;
     padding: 10px 12px 58px;
   }
 
@@ -308,22 +294,20 @@ body .admin-header .admin-actions .admin-dashboard-link:hover {
   body.is-authenticated .session-user {
     grid-column: 2;
     justify-self: end;
-    width: 166px;
+    width: 174px;
     padding-right: 8px;
+  }
+
+  body.is-authenticated .session-user .usage-box {
+    width: 166px;
   }
 
   body.is-authenticated .session-logout {
     grid-column: 3;
   }
 
-  body.is-authenticated .sidebar-account {
-    top: 39px;
-    right: 116px;
-    width: 166px;
-  }
-
   body.is-authenticated .sidebar nav {
-    top: 79px;
+    top: 89px;
     left: 12px;
     right: 12px;
   }
@@ -332,7 +316,7 @@ body .admin-header .admin-actions .admin-dashboard-link:hover {
 @media (max-width: 700px) {
   body.is-authenticated .session-bar {
     grid-template-columns: minmax(0, 1fr) auto;
-    min-height: 174px;
+    min-height: 184px;
     padding: 10px 12px 58px;
     align-items: start;
   }
@@ -350,21 +334,18 @@ body .admin-header .admin-actions .admin-dashboard-link:hover {
     padding-right: 0;
   }
 
+  body.is-authenticated .session-user .usage-box {
+    width: 100%;
+  }
+
   body.is-authenticated .session-logout {
     grid-column: 2;
     align-self: center;
     margin-left: 8px;
   }
 
-  body.is-authenticated .sidebar-account {
-    top: 84px;
-    right: 12px;
-    width: min(210px, calc(100% - 24px));
-    padding-right: 0;
-  }
-
   body.is-authenticated .sidebar nav {
-    top: 121px;
+    top: 131px;
     left: 10px;
     right: 10px;
   }
@@ -372,7 +353,7 @@ body .admin-header .admin-actions .admin-dashboard-link:hover {
 
 @media (max-width: 480px) {
   body.is-authenticated .session-bar {
-    min-height: 184px;
+    min-height: 194px;
     border-radius: 16px;
   }
 
