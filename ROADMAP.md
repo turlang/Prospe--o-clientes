@@ -1,17 +1,30 @@
 # Roadmap — LeadHunter Pro
 
-**Versão atual:** 27.0.0  
-**Estado:** Marco 2 concluído; aplicação pronta para validação em produção
+**Versão identificada no código:** 26.2.0  
+**Estado real da `main`:** base comercial validada, CRM tradicional, inteligência comercial e Central de Conversas em modo demonstrativo  
+**Próxima release planejada:** integração limpa do CRM 360 com o domínio omnichannel
 
 ## Objetivo estratégico
 
 Transformar o LeadHunter Pro no sistema operacional comercial mais eficiente para freelancers, agências e pequenas equipes que vendem sites, automações e soluções digitais.
 
-A estratégia não é apenas copiar CRMs generalistas. O produto deve unir descoberta de oportunidades, auditoria digital, CRM, comunicação, IA, proposta, pagamento e acompanhamento de clientes em um único fluxo.
+O diferencial não será copiar CRMs generalistas. O produto deve encontrar empresas com deficiência digital, comprovar a oportunidade, recomendar a oferta adequada, conduzir o contato e acompanhar receita e entrega em um único fluxo.
+
+## Regra de verdade do produto
+
+Uma funcionalidade só pode ser marcada como concluída quando:
+
+1. os arquivos reais estiverem presentes na `main`;
+2. `npm run quality` estiver aprovado;
+3. o Render estiver executando o commit esperado;
+4. o fluxo tiver sido validado na interface;
+5. limitações demonstrativas ou dependências externas estiverem claramente informadas.
+
+Documentação, pacote local, branch ou pull request isolado não equivalem a recurso publicado.
 
 ## Marco 1 — Base comercial confiável
 
-**Estado:** concluído e validado.
+**Estado:** concluído e validado, com uma pendência operacional isolada.
 
 Entregas confirmadas:
 
@@ -25,144 +38,146 @@ Entregas confirmadas:
 - segurança, auditoria e testes automatizados;
 - build e deploy validados.
 
-Pendência operacional isolada:
+Pendência:
 
-- atualizar o domínio/remetente usado na recuperação de senha e repetir o teste com destinatário real no Resend.
-
-Essa pendência não bloqueia a evolução do CRM.
+- atualizar o domínio/remetente da recuperação de senha e repetir o teste com destinatário real no Resend.
 
 ## Marco 2 — CRM 360
 
-**Estado:** concluído na versão 27.0.0.
+**Estado corrigido:** implementação disponível em pacote de desenvolvimento, mas ainda não integrada com segurança à `main`.
 
-Entregas:
+O antigo PR de publicação contém um artefato fragmentado corrompido e não deve ser mesclado. A integração será refeita sobre uma branch limpa baseada na versão atual, preservando simultaneamente o CRM, a Central de Conversas, os dados existentes e os testes.
 
-- múltiplos pipelines por usuário;
-- nomes, probabilidades e requisitos personalizados por etapa;
-- campos personalizados de texto, número, data, seleção e booleano;
+Escopo que deverá ser validado na integração:
+
+- múltiplos pipelines;
+- etapas, probabilidades e requisitos personalizados;
+- campos personalizados;
 - filtros salvos;
-- etiquetas, segmentos e serviços;
-- visualizações Kanban e lista;
-- previsão ponderada de receita;
+- visualizações Kanban e Lista;
+- catálogo de produtos e serviços;
+- valor de contrato, recorrência e receita fechada;
+- previsão ponderada;
 - metas mensais e trimestrais;
 - relatórios por período;
-- importação CSV com mapeamento e prévia;
-- deduplicação por domínio, telefone, e-mail ou nome/endereço;
-- exportação completa do CRM;
-- catálogo de produtos e serviços;
-- valor de contrato, receita recorrente e valor fechado;
+- importação CSV com prévia e mapeamento;
+- deduplicação;
+- exportação completa;
 - motivos estruturados de perda;
-- reativação de leads perdidos ou parados;
-- histórico comercial preservado por adição;
-- validação de campos obrigatórios antes de avançar etapas;
-- interface responsiva para configuração e operação;
-- 185 testes automatizados aprovados.
+- reativação de oportunidades;
+- histórico comercial aditivo;
+- validação antes da mudança de etapa.
 
-### Validação de produção do Marco 2
-
-1. criar um segundo pipeline;
-2. personalizar uma etapa;
-3. adicionar um campo personalizado;
-4. definir metas;
-5. importar um CSV de teste;
-6. confirmar a detecção de duplicidades;
-7. registrar produto, contrato e recorrência em um lead;
-8. mover o lead até Fechado respeitando os campos obrigatórios;
-9. alternar entre Kanban e Lista;
-10. salvar e aplicar um filtro;
-11. conferir previsão, metas e reativação.
+Critério de conclusão: todos os itens acima presentes na `main`, aprovados pela suíte completa e testados no Render.
 
 ## Marco 3 — Comunicação integrada
 
-**Próxima execução recomendada.**
+**Estado:** fundação e Central de Conversas demonstrativa publicadas; canais reais ainda pendentes.
 
-- WhatsApp Business oficial;
+Concluído:
+
+- modelos MongoDB do domínio omnichannel;
+- contratos de IA e mensageria;
+- criptografia de credenciais;
+- isolamento por proprietário;
+- Central de Conversas;
+- histórico, notas internas, não lidas e transferência humana;
+- provedor demonstrativo explicitamente identificado;
+- base do agente SDR e playground seguro.
+
+Pendente:
+
+- Meta WhatsApp Cloud API;
+- Evolution API e UaiZapi como adaptadores opcionais;
+- webhook seguro com idempotência;
+- processamento assíncrono, retentativas e fila de falhas;
+- criação ou vinculação automática de lead;
 - Gmail e Outlook;
-- caixa de entrada centralizada;
-- histórico de mensagens no lead;
-- modelos e sequências;
-- captura de respostas;
-- Google Calendar e Microsoft Calendar;
-- página de agendamento;
-- resumo de reuniões por IA;
+- calendário e agendamento;
+- agente SDR atuando em mensagens reais conforme modo publicado;
 - limites, descadastro e proteção de reputação.
 
-## Marco 4 — Dados e Auditor Digital
+## Marco 4 — Auditor Digital e mapa de oportunidades
 
-- enriquecimento autorizado de contatos;
-- validação de e-mail e telefone;
-- dados empresariais com fonte e data;
-- auditoria automática de site, SEO, desempenho e presença digital;
-- comparação com concorrentes locais;
-- mapa de oportunidades;
-- recomendação de serviço e faixa de preço.
+Esta é a principal vantagem competitiva planejada.
+
+- auditoria de site, responsividade, HTTPS, desempenho, SEO, acessibilidade, formulários, WhatsApp, analytics, pixels, reputação e presença social;
+- comparação local por segmento e região;
+- evidências e data de coleta em cada diagnóstico;
+- tradução automática da deficiência em serviço vendável;
+- oferta, escopo, faixa de preço e argumento comercial sugeridos;
+- mapa territorial de oportunidades;
+- reauditoria para demonstrar resultado depois da venda.
 
 ## Marco 5 — Scoring explicável
 
-- Fit Score;
-- Opportunity Score;
-- Intent Score;
-- Close Score;
-- explicação detalhada dos fatores da nota;
+- Fit Score: aderência ao cliente ideal;
+- Opportunity Score: intensidade da deficiência digital;
+- Reachability Score: possibilidade real de contato;
+- Intent Score: sinais de interesse observados;
+- Close Score: probabilidade operacional de fechamento;
+- componentes, evidências e incerteza visíveis;
 - aprendizado com ganhos e perdas reais;
-- revisão humana e ausência de dados inventados.
+- ausência de dados ou probabilidades inventadas.
 
-## Marco 6 — Agente comercial controlado
+## Marco 6 — Venda guiada por IA
 
+- fila diária de prioridades;
+- próxima melhor ação explicada;
+- preparação para contato e reunião;
+- geração de mensagens baseada apenas em evidências disponíveis;
+- análise de respostas e objeções;
+- atualização assistida do CRM;
 - modos assistido, semiautônomo e autônomo controlado;
-- criação de ICP;
-- priorização diária;
-- abordagem e follow-up;
-- interpretação de objeções;
-- atualização automática do CRM;
-- memória comercial por conta;
 - aprovação obrigatória para ações sensíveis.
 
 ## Marco 7 — Automação visual
 
-- construtor Gatilho → Condição → Ação → Espera → Decisão;
+- Gatilho → Condição → Ação → Espera → Decisão;
 - criação por linguagem natural;
-- testes de fluxo antes da publicação;
+- simulação antes da publicação;
 - versionamento, auditoria e reversão;
-- webhooks e filas de execução.
+- limites por plano;
+- filas, retentativas e dead-letter queue.
 
 ## Marco 8 — Propostas, contratos e receita
 
-- catálogo e pacotes;
-- propostas personalizadas;
+- catálogo, pacotes e precificação;
+- proposta gerada a partir da auditoria;
 - assinatura eletrônica;
-- Pix, cartão e recorrência;
+- Pix, cartão, recorrência e parcelamento;
 - rastreamento de abertura;
-- cobrança, renovação, upsell e cross-sell;
-- geração de proposta baseada na auditoria digital.
+- renovação, upsell, cross-sell e indicação;
+- ligação entre oportunidade, venda, entrega e resultado.
 
 ## Marco 9 — Equipes e multiempresa
 
 - workspaces e organizações;
 - convites, papéis e permissões;
 - metas por pessoa e equipe;
-- distribuição de leads;
+- distribuição e territórios;
 - isolamento por tenant;
-- MFA, sessões, logs e LGPD;
+- MFA, sessões, auditoria e LGPD;
 - white label e subcontas para agências.
 
-## Marco 10 — Analytics e inteligência de receita
+## Marco 10 — Inteligência de receita
 
 - velocidade de vendas;
 - ciclo, ticket, recorrência e churn;
-- cohorts e forecasting;
+- cohorts e previsão;
 - atribuição por origem e canal;
-- desempenho de mensagens e sequências;
-- respostas gerenciais em linguagem natural.
+- desempenho de mensagens, ofertas e sequências;
+- explicações gerenciais em linguagem natural;
+- recomendações associadas a dados verificáveis.
 
 ## Marco 11 — Mobile e produtividade
 
 - PWA instalável;
 - notificações push;
-- uso offline básico;
+- operação offline básica;
 - registro por voz;
-- agenda, tarefas e CRM em poucos toques;
-- aplicativos nativos após validação da PWA.
+- agenda, conversas, tarefas e CRM em poucos toques;
+- aplicativos nativos somente depois da validação da PWA.
 
 ## Marco 12 — Plataforma e ecossistema
 
@@ -174,6 +189,17 @@ Entregas:
 - Google Workspace e Microsoft 365;
 - marketplace de integrações e templates.
 
+## Ordem de execução para liderança do segmento
+
+1. verdade de versão, rastreabilidade de deploy e recuperação segura;
+2. integração limpa do CRM 360;
+3. Auditor Digital e Opportunity Score;
+4. WhatsApp oficial e caixa de entrada real;
+5. venda guiada e agente SDR controlado;
+6. propostas, contratos e pagamentos;
+7. automação visual;
+8. equipes, analytics avançado e ecossistema.
+
 ## Regras de execução
 
 Toda evolução deve:
@@ -183,5 +209,7 @@ Toda evolução deve:
 3. incluir testes de unidade, integração e regressão;
 4. manter segredos fora do Git;
 5. documentar variáveis e migrações;
-6. executar smoke test após o deploy;
-7. medir adoção e resultado antes de ampliar o escopo.
+6. publicar uma entrega pequena na `main` depois da validação;
+7. confirmar o commit implantado pelo `/api/health`;
+8. executar smoke test no Render;
+9. medir adoção e resultado antes de ampliar o escopo.
