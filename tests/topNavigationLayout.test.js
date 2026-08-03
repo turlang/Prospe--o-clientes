@@ -1,5 +1,5 @@
 /**
- * @fileoverview Regressões da barra superior única do dashboard autenticado.
+ * @fileoverview Regressões da barra superior e da Visão Geral.
  */
 
 const test = require('node:test');
@@ -16,41 +16,37 @@ test('carrega a navegação superior depois das regras responsivas', () => {
   assert.ok(topNavigation > responsive);
 });
 
-test('remove a coluna lateral e entrega largura total ao workspace', () => {
+test('mantém somente uma superfície superior e remove a coluna lateral', () => {
   assert.match(css, /body\.is-authenticated \.app-shell,[\s\S]*body\.is-authenticated \.sidebar[\s\S]*display:\s*contents\s*!important/);
-  assert.match(css, /body\.is-authenticated \.workspace[\s\S]*grid-row:\s*2/);
-  assert.match(css, /body\.is-authenticated \.workspace[\s\S]*width:\s*100%/);
-});
-
-test('menu e cabeçalho ocupam a mesma barra visual', () => {
-  assert.match(css, /body\.is-authenticated \.session-bar[\s\S]*grid-row:\s*1/);
-  assert.match(css, /body\.is-authenticated \.sidebar nav[\s\S]*grid-row:\s*1/);
-  assert.match(css, /body\.is-authenticated \.sidebar nav[\s\S]*border:\s*0\s*!important/);
+  assert.match(css, /body\.is-authenticated \.session-bar[\s\S]*min-height:\s*126px/);
   assert.match(css, /body\.is-authenticated \.sidebar nav[\s\S]*background:\s*transparent\s*!important/);
   assert.match(css, /body\.is-authenticated \.sidebar nav[\s\S]*box-shadow:\s*none\s*!important/);
+  assert.match(css, /body\.is-authenticated \.workspace[\s\S]*grid-row:\s*2/);
 });
 
-test('menu principal permanece horizontal e rolável sem atropelar itens', () => {
-  assert.match(css, /body\.is-authenticated \.sidebar nav[\s\S]*display:\s*flex\s*!important/);
-  assert.match(css, /body\.is-authenticated \.sidebar nav[\s\S]*overflow-x:\s*auto\s*!important/);
-  assert.match(css, /body\.is-authenticated \.nav-list[\s\S]*display:\s*flex\s*!important/);
+test('uso diário possui área própria e não invade o botão de saída', () => {
+  assert.match(css, /body\.is-authenticated \.sidebar-account[\s\S]*top:\s*50px/);
+  assert.match(css, /body\.is-authenticated \.sidebar-account[\s\S]*right:\s*140px/);
+  assert.match(css, /body\.is-authenticated \.sidebar-account[\s\S]*width:\s*164px/);
+  assert.match(css, /body\.is-authenticated \.session-logout[\s\S]*margin-left:\s*12px/);
+  assert.match(css, /body\.is-authenticated \.session-user[\s\S]*padding:\s*0/);
+});
+
+test('menu não mostra scrollbar em desktop e continua responsivo em telas menores', () => {
+  assert.match(css, /body\.is-authenticated \.sidebar nav[\s\S]*overflow-x:\s*hidden\s*!important/);
+  assert.match(css, /@media \(max-width: 1320px\)[\s\S]*overflow-x:\s*auto\s*!important/);
+  assert.match(css, /body\.is-authenticated \.nav-list[\s\S]*justify-content:\s*space-between/);
   assert.match(css, /body\.is-authenticated \.nav-btn[\s\S]*white-space:\s*nowrap/);
 });
 
-test('remove saudação e badge e mantém uso diário abaixo do plano', () => {
-  assert.match(css, /\.sidebar-account__content > \.tag,[\s\S]*#welcome[\s\S]*display:\s*none\s*!important/);
-  assert.match(css, /body\.is-authenticated \.sidebar-account[\s\S]*grid-row:\s*1/);
-  assert.match(css, /body\.is-authenticated \.sidebar-account[\s\S]*justify-self:\s*end/);
-  assert.match(css, /margin:\s*43px\s+126px\s+0\s+0/);
+test('Visão Geral não cria rolagem interna', () => {
+  assert.match(css, /#view-dashboard\.active-view,[\s\S]*overflow:\s*visible\s*!important/);
+  assert.match(css, /#view-dashboard \*::-webkit-scrollbar[\s\S]*width:\s*0/);
+  assert.match(css, /#view-dashboard \*::-webkit-scrollbar[\s\S]*height:\s*0/);
 });
 
-test('Painel Master participa da barra única sem ocupar a largura inteira', () => {
-  assert.match(css, /#adminShortcut[\s\S]*width:\s*auto\s*!important/);
-  assert.match(css, /#adminShortcut[\s\S]*white-space:\s*nowrap/);
-});
-
-test('responsividade mantém um único cartão mesmo quando o menu muda de linha', () => {
-  assert.match(css, /@media \(max-width:\s*1180px\)[\s\S]*body\.is-authenticated \.session-bar[\s\S]*min-height:\s*142px/);
-  assert.match(css, /@media \(max-width:\s*1180px\)[\s\S]*body\.is-authenticated \.sidebar nav[\s\S]*align-self:\s*end/);
-  assert.doesNotMatch(css, /body\.is-authenticated \.sidebar nav[\s\S]*background:\s*rgba\(255,\s*255,\s*255/);
+test('link Abrir Sales OS possui aparência real de botão', () => {
+  assert.match(css, /\.admin-dashboard-link[\s\S]*display:\s*inline-flex/);
+  assert.match(css, /\.admin-dashboard-link[\s\S]*border-radius:\s*10px/);
+  assert.match(css, /\.admin-dashboard-link[\s\S]*text-decoration:\s*none/);
 });
