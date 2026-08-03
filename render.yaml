@@ -20,6 +20,8 @@ services:
         value: 8.8.8.8,1.1.1.1
       - key: JWT_SECRET
         generateValue: true
+      - key: INTEGRATION_ENCRYPTION_KEY
+        generateValue: true
       - key: MONGODB_URI
         sync: false
       - key: GOOGLE_PLACES_API_KEY
