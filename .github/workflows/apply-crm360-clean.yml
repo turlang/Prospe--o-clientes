@@ -6,6 +6,11 @@ on:
       - integration/crm360-clean-v27
     paths:
       - .release/crm360-patch/READY
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .release/crm360-patch/READY
 
 permissions:
   contents: write
