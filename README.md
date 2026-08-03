@@ -1,179 +1,277 @@
 # LeadHunter Pro
 
+> Sistema operacional comercial para encontrar empresas com deficiência digital, priorizar oportunidades, conduzir o relacionamento e organizar receita em um CRM 360.
+
 **Versão:** 27.0.0  
-**Estado:** publicado e operacional  
-**Público:** desenvolvedores, freelancers e agências que vendem sites, sistemas, automações e soluções com IA
+**Estado:** aplicação publicada; CRM 360 operacional; Central de Conversas em modo demonstrativo  
+**Público principal:** freelancers, desenvolvedores, agências e pequenas equipes B2B que vendem sites, sistemas, automações e soluções com IA  
+**Produção:** `https://prospe-o-clientes.onrender.com/`
 
-O LeadHunter Pro é um sistema operacional comercial para freelancers, agências e pequenas equipes que vendem sites, automações e soluções digitais. A plataforma conecta descoberta de oportunidades, auditoria digital, CRM 360, tarefas, inteligência comercial, relatórios, planos, administração e uma Central de Conversas omnichannel em modo demonstrativo.
+## Sumário
 
+- [Visão geral](#visão-geral)
+- [Proposta de valor](#proposta-de-valor)
+- [Estado dos módulos](#estado-dos-módulos)
+- [Funcionalidades](#funcionalidades)
+- [Arquitetura](#arquitetura)
+- [Estrutura de pastas](#estrutura-de-pastas)
+- [Tecnologias](#tecnologias)
+- [Requisitos](#requisitos)
+- [Instalação local](#instalação-local)
+- [Variáveis de ambiente](#variáveis-de-ambiente)
+- [Comandos](#comandos)
+- [Rotas principais](#rotas-principais)
+- [Banco de dados](#banco-de-dados)
+- [Qualidade e testes](#qualidade-e-testes)
+- [Segurança](#segurança)
+- [Deploy no Render](#deploy-no-render)
+- [Diagnóstico e solução de problemas](#diagnóstico-e-solução-de-problemas)
+- [Limitações atuais](#limitações-atuais)
+- [Documentação](#documentação)
+- [Contribuição](#contribuição)
+- [Uso responsável](#uso-responsável)
 
-## Release 27.0.0 — CRM 360 + Omnichannel
+## Visão geral
 
-A release integra o CRM 360 à base omnichannel já publicada, preservando autenticação, planos, dados, painel executivo e rastreabilidade do Render.
+O LeadHunter Pro reúne em uma única aplicação:
 
-Principais recursos:
+```text
+prospecção
+→ auditoria digital
+→ priorização
+→ abordagem comercial
+→ CRM 360
+→ tarefas e follow-ups
+→ conversas
+→ propostas
+→ clientes
+→ relatórios e receita
+```
 
-- múltiplos pipelines e etapas configuráveis;
-- probabilidades e campos obrigatórios por etapa;
-- campos personalizados e filtros salvos;
-- Kanban e visualização em lista;
-- catálogo de produtos e serviços;
-- contrato, receita recorrente, valor fechado e motivos de perda;
-- previsão ponderada, metas e relatórios por período;
-- importação CSV com prévia, mapeamento e deduplicação;
-- exportação completa e reativação de oportunidades;
-- Central de Conversas vinculada ao CRM;
-- histórico, notas internas, não lidas e transferência humana;
-- identificação explícita do modo demonstrativo;
-- commit e branch implantados expostos pelo `/api/health`.
+O produto foi desenhado para reduzir o tempo entre encontrar uma empresa e executar a próxima ação comercial. Em vez de funcionar apenas como um cadastro genérico de contatos, ele conecta sinais públicos da presença digital ao serviço que o vendedor pode oferecer.
 
-## Produto entregue
+## Proposta de valor
 
-A aplicação está publicada no Render, conectada ao MongoDB Atlas e validada com os principais fluxos de leitura e operação.
+O principal diferencial é transformar deficiência digital em oportunidade comercial explicável.
 
-| Área | Estado |
-|---|---|
-| Landing comercial | Operacional |
-| Cadastro, login e sessão | Operacional |
-| Recuperação de senha | Implementada |
-| CRM e gestão de leads | Operacional |
-| Tarefas e follow-ups | Operacional |
-| Plano de ação diário | Operacional |
-| Histórico e auditoria | Operacional |
-| Relatórios comerciais | Operacional |
-| Painel administrativo | Operacional |
-| Planos dinâmicos | Persistidos no MongoDB |
-| Copiloto comercial | Implementado com fallback local |
-| MongoDB Atlas | Conectado em produção |
-| Render | Deploy validado |
-| Qualidade automatizada | 172 testes aprovados |
+Exemplos:
+
+- site ausente ou desatualizado;
+- experiência ruim no celular;
+- ausência de formulário ou WhatsApp claro;
+- baixa presença digital;
+- oportunidade de modernização;
+- necessidade de automação ou captação de leads.
+
+A plataforma combina essas evidências com score, serviço sugerido, faixa comercial, abordagem e próxima ação.
+
+## Estado dos módulos
+
+| Módulo | Estado | Observação |
+|---|---|---|
+| Landing comercial | Operacional | React/Vite com contingência estática |
+| Cadastro, login e sessão | Operacional | JWT, bcrypt e controle de usuário ativo |
+| Recuperação de senha | Implementada | envio real depende de Resend e domínio verificado |
+| Prospecção | Operacional | Google Places e auditoria pública configuráveis |
+| CRM 360 | Operacional | pipelines, Kanban, lista, metas, forecast e importação |
+| Visão executiva | Operacional | funil, receita ponderada, gargalos e conversão |
+| Central de Inteligência | Operacional | plano de ação e copiloto comercial |
+| Tarefas e follow-ups | Operacional | agenda, atrasos e prioridade |
+| Propostas e clientes | Operacional | geração assistida e carteira comercial |
+| Relatórios | Operacional | indicadores, segmentos e oportunidades paradas |
+| Planos e limites | Operacional | Trial, Pro e Agência configuráveis |
+| Pagamentos | Estrutura pronta | produção depende de credenciais e webhook do Mercado Pago |
+| Painel administrativo | Operacional | usuários, planos, segurança, economia e auditoria |
+| Central de Conversas | Demonstração funcional | canais externos reais ainda não estão ativados |
+| Agente SDR | Fundação implementada | operação real depende de canal e provedor configurados |
+| WhatsApp oficial | Pendente | Meta Cloud API ainda será integrada |
+| Gmail/Outlook e calendário | Pendente | previstos no roadmap |
 
 ## Funcionalidades
 
-### Prospecção e CRM
+### Prospecção e auditoria
 
-- cadastro, edição, classificação e movimentação de leads;
-- funil comercial com sete etapas;
-- tarefas, lembretes e follow-ups;
-- histórico de pesquisas e atividades;
-- priorização de oportunidades;
-- plano de ação diário;
-- leitura executiva do pipeline;
-- indicadores de conversão e receita potencial.
+- busca de empresas por segmento e região;
+- coleta por provedor configurável;
+- auditoria de site público;
+- identificação de dores digitais;
+- score de oportunidade;
+- serviço recomendado;
+- abordagem comercial sugerida;
+- armazenamento no CRM;
+- histórico das pesquisas.
+
+### CRM 360
+
+- múltiplos pipelines;
+- etapas configuráveis;
+- probabilidade por etapa;
+- campos obrigatórios antes da movimentação;
+- campos personalizados;
+- filtros salvos;
+- visualizações Kanban e Lista;
+- catálogo de produtos e serviços;
+- valor de contrato;
+- receita recorrente;
+- valor fechado;
+- motivos estruturados de perda;
+- metas mensais e trimestrais;
+- previsão ponderada;
+- importação CSV com prévia e mapeamento;
+- deduplicação;
+- exportação completa;
+- reativação de oportunidades;
+- histórico comercial aditivo.
 
 ### Inteligência comercial
 
-- geração de abordagens personalizadas;
-- sugestões de próximos passos;
-- identificação de gargalos;
-- recomendações de follow-up;
-- estratégias comerciais por contexto;
-- suporte a Groq, Gemini ou OpenAI;
-- motor local de contingência quando o provedor externo não estiver disponível.
+- plano de ação diário;
+- prioridade do momento;
+- identificação de gargalo;
+- leads sem avanço;
+- próximas ações;
+- geração de abordagem;
+- geração de proposta;
+- copiloto com contexto do CRM;
+- suporte a Groq, Gemini e OpenAI;
+- fallback local quando o provedor externo estiver indisponível.
 
-### Administração e planos
+### Conversas e omnichannel
 
-- visão geral de usuários, uso, segurança e operação;
-- planos Trial, Pro e Agência configuráveis;
-- publicação das alterações de planos sem novo deploy;
-- persistência das configurações no MongoDB;
-- registros de auditoria administrativa;
-- limites de uso por plano;
-- acesso protegido por autenticação e autorização administrativa.
+- caixa de entrada;
+- histórico por contato;
+- vínculo com lead;
+- mensagens não lidas;
+- notas internas;
+- transferência entre IA, híbrido e humano;
+- registro de atividade comercial;
+- playground seguro;
+- contratos desacoplados para IA e mensageria;
+- criptografia de credenciais de integração.
 
-### Landing comercial
+O módulo atual usa provedor demonstrativo e não deve ser apresentado como canal externo real.
 
-A página pública ocupa uma única viewport e alterna o conteúdo sem rolagem da página.
+### Administração
 
-Painéis disponíveis:
-
-- Início;
-- Como funciona;
-- Ferramentas;
-- Para quem é;
-- Planos.
-
-No desktop, a navegação utiliza o cabeçalho e controles sequenciais. No mobile, a navegação principal utiliza uma barra inferior fixa.
-
-## Interface
-
-O design system inclui:
-
-- tokens de cor, tipografia, espaçamento e elevação;
-- CSS modular por responsabilidade;
-- componentes responsivos;
-- profundidade 3D discreta;
-- tratamento para touch e movimento reduzido;
-- gráficos em HTML e CSS sem dependência obrigatória de biblioteca externa.
-
-Consulte [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md).
+- usuários ativos;
+- assinantes e distribuição de planos;
+- uso de leads;
+- receita e pagamentos;
+- edição do catálogo de planos;
+- promoção e suspensão de usuários;
+- auditoria administrativa;
+- segurança e antiabuso;
+- reinicialização protegida do banco;
+- diagnóstico do ambiente.
 
 ## Arquitetura
 
+Fluxo principal:
+
 ```text
-frontend/landing/
-  src/app/                 composição da landing React
-  src/features/            painéis comerciais
-  src/shared/              layout e componentes reutilizáveis
-  src/hooks/               estado e navegação
-  src/services/            comunicação com a API pública
-  src/data/                conteúdo estruturado
-  static/                  contingência equivalente ao bundle React
-
-src/
-  app.js                   Application Factory do Express
-  server.js                bootstrap e conexão com o banco
-  config/                  configuração da aplicação
-  domain/                  regras de negócio
-  repositories/            persistência MongoDB e contingência local
-  integrations/            IA, e-mail e pagamentos
-  services/                casos de uso
-  routes/                  rotas HTTP
-  middleware/              autenticação, autorização e limites
-  infrastructure/          conexões e detalhes técnicos
-
-public/
-  pages/                   páginas da aplicação
-  assets/                  CSS e JavaScript por contexto
-  landing-react/           build público da landing
-
-tests/                     testes automatizados
-scripts/                   build e gates de qualidade
+HTTP
+→ middleware
+→ routes
+→ services/use cases
+→ domain
+→ repositories/integrations
+→ MongoDB ou provedor externo
 ```
 
-Documentação complementar:
+Princípios:
 
-- [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md)
-- [`docs/CODING_STANDARDS.md`](docs/CODING_STANDARDS.md)
-- [`docs/PLANOS_DINAMICOS.md`](docs/PLANOS_DINAMICOS.md)
-- [`ROADMAP.md`](ROADMAP.md)
-- [`CHANGELOG.md`](CHANGELOG.md)
+- regras de negócio fora do Express;
+- persistência atrás de repositórios;
+- provedores externos atrás de contratos;
+- segredos somente no ambiente;
+- isolamento por usuário;
+- Application Factory testável;
+- bootstrap separado da aplicação;
+- módulos documentados com `@fileoverview`;
+- testes de regressão para bugs corrigidos;
+- build e deploy reproduzíveis.
+
+Leia [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md) e [`docs/MAPA_DO_CODIGO.md`](docs/MAPA_DO_CODIGO.md).
+
+## Estrutura de pastas
+
+```text
+.
+├── frontend/landing/          landing React e contingência estática
+├── public/
+│   ├── pages/                 HTML da aplicação e do admin
+│   ├── assets/dashboard/      controlador e CSS modular do dashboard
+│   ├── assets/admin/          controlador e tema administrativo
+│   └── landing-react/         bundle gerado da landing
+├── src/
+│   ├── app.js                 Application Factory
+│   ├── server.js              bootstrap do processo
+│   ├── config/                configuração e caminhos
+│   ├── domain/                regras puras
+│   ├── services/              casos de uso
+│   ├── repositories/          persistência
+│   ├── models/                schemas Mongoose
+│   ├── routes/                contratos HTTP
+│   ├── middleware/            políticas HTTP
+│   ├── integrations/          IA, e-mail, billing e mensageria
+│   └── infrastructure/        conexões e inicialização técnica
+├── scripts/                   build e gates de qualidade
+├── tests/                     testes automatizados
+├── docs/                      documentação técnica e de produto
+├── render.yaml                Blueprint do Render
+├── .env.example               catálogo de configuração
+└── package.json               comandos e dependências
+```
 
 ## Tecnologias
 
+### Backend
+
 - Node.js 20;
-- Express;
-- MongoDB Atlas e Mongoose;
-- React e Vite;
-- JavaScript CommonJS;
-- JWT e bcryptjs;
-- Helmet e CORS;
+- Express 4;
+- MongoDB Atlas;
+- Mongoose 8;
+- JWT;
+- bcryptjs;
+- Helmet;
+- CORS;
+- Fast CSV.
+
+### Frontend
+
+- HTML semântico;
+- JavaScript modular;
+- CSS modular;
+- React;
+- Vite;
+- Tailwind na landing;
+- gráficos construídos sem dependência obrigatória de biblioteca externa.
+
+### Integrações
+
+- Google Places;
+- Groq;
+- Gemini;
+- OpenAI;
 - Resend;
 - Mercado Pago;
-- Groq, Gemini ou OpenAI.
+- contratos preparados para Meta Cloud API, Evolution API e UaiZapi.
 
 ## Requisitos
 
 - Node.js `>=20.19 <23`;
-- npm 10 ou superior;
-- MongoDB obrigatório em produção;
-- variáveis externas configuradas fora do repositório.
+- npm `>=10`;
+- MongoDB para produção;
+- Git;
+- variáveis de ambiente configuradas fora do repositório.
 
-## Instalação
+## Instalação local
 
 ### Bash
 
 ```bash
+git clone https://github.com/turlang/Prospe--o-clientes.git
+cd Prospe--o-clientes
 npm ci
 npm --prefix frontend/landing install --include=dev
 cp .env.example .env
@@ -185,99 +283,166 @@ npm start
 ### PowerShell
 
 ```powershell
-Copy-Item .env.example .env
+git clone https://github.com/turlang/Prospe--o-clientes.git
+Set-Location Prospe--o-clientes
 npm ci
 npm --prefix frontend/landing install --include=dev
+Copy-Item .env.example .env
 npm run build
 npm run quality
 npm start
 ```
 
-A aplicação usa `http://localhost:3000` por padrão.
+Endereço padrão:
+
+```text
+http://localhost:3000
+```
+
+Páginas:
+
+```text
+/        landing
+/app     aplicação autenticada
+/admin   administração
+```
+
+## Variáveis de ambiente
+
+Use `.env.example` como fonte de verdade. Não publique `.env`.
+
+### Aplicação e banco
+
+| Variável | Obrigatória | Descrição |
+|---|---:|---|
+| `PORT` | não | porta HTTP, padrão 3000 |
+| `NODE_ENV` | produção | ambiente da aplicação |
+| `REQUIRE_MONGODB` | produção | bloqueia fallback local |
+| `MONGODB_URI` | produção | conexão MongoDB |
+| `DNS_SERVERS` | não | resolvers alternativos separados por vírgula |
+| `PUBLIC_APP_URL` | produção | URL pública usada em links e callbacks |
+| `CORS_ORIGINS` | produção | origens adicionais permitidas |
+| `APP_NAME` | não | nome exibido e usado em integrações |
+
+### Autenticação
+
+| Variável | Obrigatória | Descrição |
+|---|---:|---|
+| `JWT_SECRET` | sim | segredo longo e exclusivo |
+| `JWT_EXPIRES_IN` | não | duração do token |
+| `JWT_ISSUER` | sim | emissor esperado |
+| `JWT_AUDIENCE` | sim | audiência esperada |
+| `REGISTER_IP_DAILY_LIMIT` | não | limite diário de cadastros por IP |
+
+### Prospecção
+
+| Variável | Obrigatória | Descrição |
+|---|---:|---|
+| `GOOGLE_PLACES_API_KEY` | para busca real | chave do Google Places |
+| `PLACES_PROVIDER` | não | versão/adaptador do provedor |
+| `ALLOW_INCOMPLETE_CONTACTS` | não | aceita contatos sem dados mínimos |
+| `AUDIT_WEBSITES` | não | habilita auditoria pública |
+
+### Recuperação de senha
+
+| Variável | Obrigatória | Descrição |
+|---|---:|---|
+| `RESEND_API_KEY` | produção | chave da conta Resend |
+| `MAIL_FROM` | produção | remetente com domínio verificado |
+| `EXPOSE_PASSWORD_RESET_LINK` | somente desenvolvimento | devolve link de teste no navegador |
+
+### Inteligência artificial
+
+| Variável | Obrigatória | Descrição |
+|---|---:|---|
+| `AI_PROVIDER` | não | `groq`, `gemini` ou `openai` |
+| `GROQ_API_KEY` | por provedor | chave Groq |
+| `GROQ_MODEL` | não | modelo Groq |
+| `GEMINI_API_KEY` | por provedor | chave Gemini |
+| `GEMINI_MODEL` | não | modelo Gemini |
+| `GEMINI_AUTO_MODEL` | não | procura alternativa compatível |
+| `OPENAI_API_KEY` | por provedor | chave OpenAI |
+| `OPENAI_APPROACH_MODEL` | não | modelo OpenAI |
+| `AI_APPROACHES_ENABLED` | não | habilita geração externa |
+| `AI_APPROACH_TIMEOUT_MS` | não | timeout da chamada |
+| `AI_APPROACH_TEMPERATURE` | não | variação das respostas |
+| `AI_MAX_TOKENS` | não | limite de saída |
+
+### Omnichannel
+
+| Variável | Obrigatória | Descrição |
+|---|---:|---|
+| `INTEGRATION_ENCRYPTION_KEY` | produção | chave independente usada para criptografar credenciais |
+
+### Billing
+
+| Variável | Obrigatória | Descrição |
+|---|---:|---|
+| `ALLOW_SIMULATED_BILLING` | desenvolvimento | nunca habilitar em produção |
+| `MERCADO_PAGO_PUBLIC_KEY` | produção | chave pública |
+| `MERCADO_PAGO_ACCESS_TOKEN` | produção | token privado |
+| `MERCADO_PAGO_SUCCESS_URL` | produção | retorno aprovado |
+| `MERCADO_PAGO_FAILURE_URL` | produção | retorno recusado |
+| `MERCADO_PAGO_PENDING_URL` | produção | retorno pendente |
+| `MERCADO_PAGO_WEBHOOK_URL` | produção | endpoint público do webhook |
+| `PLAN_DURATION_DAYS` | não | duração padrão do ciclo |
 
 ## Comandos
 
 | Comando | Finalidade |
 |---|---|
-| `npm start` | inicia a aplicação |
-| `npm run dev` | inicia o backend em modo watch |
-| `npm run dev:landing` | inicia a landing pelo Vite |
-| `npm run build` | gera e valida os artefatos de produção |
-| `npm run build:react` | gera o bundle React |
-| `npm run build:static` | sincroniza a landing estática |
-| `npm run verify:landing` | valida a landing publicada |
-| `npm run check:syntax` | valida a sintaxe JavaScript |
-| `npm run check:architecture` | valida a arquitetura |
-| `npm run check:frontend` | valida o frontend |
-| `npm run check:styles` | valida os estilos |
-| `npm run check:docs` | valida a documentação |
-| `npm test` | executa os testes |
-| `npm run quality` | executa todos os gates |
+| `npm start` | inicia em modo de produção |
+| `npm run dev` | backend com watch |
+| `npm run dev:landing` | landing React pelo Vite |
+| `npm run build` | gera e valida artefatos |
+| `npm run build:react` | gera bundle React |
+| `npm run build:static` | sincroniza contingência estática |
+| `npm run check:hygiene` | procura resíduos, dados locais e segredos óbvios |
+| `npm run check:syntax` | valida sintaxe JavaScript |
+| `npm run check:docs` | valida módulos e documentos obrigatórios |
+| `npm run check:architecture` | valida limites arquiteturais |
+| `npm run check:frontend` | valida contratos do frontend |
+| `npm run check:styles` | valida arquitetura CSS |
+| `npm run verify:landing` | valida o artefato público |
+| `npm test` | executa a suíte automatizada |
+| `npm run quality` | executa todos os gates obrigatórios |
 
 ## Rotas principais
 
-| Rota | Finalidade |
+### Públicas
+
+| Método | Rota | Finalidade |
+|---|---|---|
+| `GET` | `/` | landing |
+| `GET` | `/app` | aplicação principal |
+| `GET` | `/admin` | painel administrativo |
+| `GET` | `/api/health` | versão, banco, landing e commit implantado |
+| `GET` | `/api/plans` | catálogo público de planos |
+| `POST` | `/api/auth/register` | cadastro |
+| `POST` | `/api/auth/login` | login |
+| `POST` | `/api/auth/forgot-password` | solicitação de recuperação |
+
+### Autenticadas
+
+| Grupo | Exemplos |
 |---|---|
-| `/` | landing comercial |
-| `/app` | autenticação e aplicação principal |
-| `/admin` | painel administrativo |
-| `/api/health` | saúde e versão da aplicação |
-| `/api/plans` | catálogo público de planos |
-| `/api/leads` | gestão autenticada de leads |
-| `/api/reports/commercial` | relatório comercial |
-| `/api/billing/usage` | consumo e limites do plano |
+| Leads | `/api/leads`, `/api/prospectar` |
+| CRM 360 | `/api/crm/config`, `/api/crm/leads`, `/api/crm/forecast`, `/api/crm/reports` |
+| Importação | `/api/crm/import/preview`, `/api/crm/import` |
+| Conversas | `/api/omnichannel/conversations` |
+| Agentes | `/api/omnichannel/agents` |
+| Relatórios | `/api/reports/commercial` |
+| Billing | `/api/billing/usage` |
+| Propostas | `/api/proposals` |
+| Clientes | `/api/customers` |
 
-## Configuração de produção
-
-```env
-NODE_ENV=production
-REQUIRE_MONGODB=true
-MONGODB_URI=mongodb+srv://usuario:senha@cluster/banco
-JWT_SECRET=uma-chave-longa-aleatoria-e-exclusiva
-JWT_EXPIRES_IN=7d
-JWT_ISSUER=leadhunter-pro
-JWT_AUDIENCE=leadhunter-web
-PUBLIC_APP_URL=https://seu-servico.onrender.com
-CORS_ORIGINS=https://seu-servico.onrender.com
-```
-
-### Recuperação de senha
-
-```env
-RESEND_API_KEY=re_...
-MAIL_FROM=LeadHunter Pro <noreply@seu-dominio-verificado.com>
-EXPOSE_PASSWORD_RESET_LINK=false
-```
-
-### Inteligência artificial
-
-```env
-AI_PROVIDER=groq
-GROQ_API_KEY=
-GROQ_MODEL=llama-3.3-70b-versatile
-AI_APPROACHES_ENABLED=true
-AI_APPROACH_TIMEOUT_MS=25000
-AI_APPROACH_TEMPERATURE=0.9
-AI_MAX_TOKENS=1400
-```
-
-### Pagamentos
-
-```env
-ALLOW_SIMULATED_BILLING=false
-MERCADO_PAGO_PUBLIC_KEY=
-MERCADO_PAGO_ACCESS_TOKEN=
-MERCADO_PAGO_SUCCESS_URL=https://seu-servico.onrender.com/app?pagamento=sucesso
-MERCADO_PAGO_FAILURE_URL=https://seu-servico.onrender.com/app?pagamento=falha
-MERCADO_PAGO_PENDING_URL=https://seu-servico.onrender.com/app?pagamento=pendente
-MERCADO_PAGO_WEBHOOK_URL=https://seu-servico.onrender.com/api/billing/webhook
-```
-
-Nunca publique `.env`, tokens, senhas, chaves de API ou dados reais no Git.
+Consulte [`docs/API.md`](docs/API.md) para contratos detalhados.
 
 ## Banco de dados
 
-Principais coleções:
+Principais coleções e contextos:
+
+### Núcleo
 
 - `users`;
 - `leads`;
@@ -288,60 +453,243 @@ Principais coleções:
 - `payments`;
 - `passwordresets`;
 - `adminauditlogs`;
-- `copilotconversations`;
-- `trialguards`.
+- `trialguards`;
+- `copilotconversations`.
 
-Em produção, `REQUIRE_MONGODB=true` impede a inicialização acidental com persistência local.
+### CRM 360
 
-## Deploy no Render
+- configuração de pipelines;
+- campos personalizados;
+- metas;
+- catálogo;
+- atividades comerciais;
+- dados comerciais anexados aos leads.
 
-```text
-Runtime: Node
-Build Command: npm ci && npm run build
-Start Command: npm start
-Health Check Path: /api/health
+### Omnichannel
+
+- `conversations`;
+- `messages`;
+- `messagingintegrations`;
+- `agentconfigurations`;
+- `agentconfigurationversions`;
+- `agentsessions`;
+- `agentevaluations`;
+- `leadqualifications`;
+- `crmactivities`;
+- `followuppolicies`;
+- `followupexecutions`;
+- `integrationevents`;
+- `webhookevents`;
+- `demoworkspaces`.
+
+Os nomes físicos podem seguir a pluralização do Mongoose.
+
+Em produção, mantenha:
+
+```env
+REQUIRE_MONGODB=true
 ```
 
-Depois de alterações estruturais, utilize **Clear build cache & deploy**.
+Isso impede que o serviço inicie silenciosamente usando persistência local.
 
-## Validação
+## Qualidade e testes
 
-Fluxos já confirmados em produção:
+O pipeline verifica:
 
-- carregamento da landing;
-- carregamento da aplicação;
-- carregamento do painel administrativo;
-- leitura de usuários, planos, segurança e auditoria;
-- leitura de leads e relatórios;
-- leitura de uso e limites;
-- persistência no MongoDB Atlas.
+1. higiene do repositório;
+2. sintaxe;
+3. documentação dos módulos;
+4. arquitetura;
+5. contratos do frontend;
+6. organização dos estilos;
+7. build da landing;
+8. testes automatizados.
 
-Validações externas recomendadas antes da cobrança comercial real:
+Execute antes de todo push:
 
-- recuperação de senha com domínio verificado;
-- pagamento completo no Mercado Pago;
-- recebimento do webhook e atualização do plano;
-- geração de abordagem pelo provedor de IA configurado;
-- persistência após reinicialização do serviço.
+```bash
+npm run quality
+```
+
+A suíte inclui testes de:
+
+- autenticação e autorização;
+- segurança;
+- planos e limites;
+- scoring;
+- CRM;
+- importação e forecast;
+- omnichannel;
+- frontend;
+- estilos;
+- deploy e metadados;
+- regressões visuais estruturais.
 
 ## Segurança
 
-- senhas protegidas com bcrypt;
-- autenticação JWT com issuer e audience;
+Medidas atuais:
+
+- senhas com bcrypt;
+- JWT com issuer e audience;
+- verificação de usuário ativo;
 - autorização administrativa;
-- Helmet e política de segurança de conteúdo;
+- Helmet e CSP;
 - CORS configurável;
-- limites contra abuso;
+- rate limit;
+- limite de body;
+- MongoDB obrigatório em produção;
+- tokens de recuperação de uso único;
+- credenciais de integração criptografadas;
+- isolamento de dados por proprietário;
+- mascaramento de segredos;
+- logs sem credenciais;
 - auditoria administrativa;
-- segredos e dados locais excluídos pelo `.gitignore`;
-- testes de regressão de autenticação e segurança.
+- gate automático de higiene.
+
+Leia [`docs/SEGURANCA_E_HIGIENE.md`](docs/SEGURANCA_E_HIGIENE.md).
+
+## Deploy no Render
+
+O Blueprint está em `render.yaml`.
+
+Configuração esperada:
+
+```text
+Runtime: Node
+Branch: main
+Build: npm ci --omit=dev ... && npm run build
+Start: npm start
+Health check: /api/health
+Auto deploy: ativo
+```
+
+Fluxo de publicação:
+
+```text
+branch
+→ pull request
+→ npm run quality
+→ merge na main
+→ Render
+→ /api/health
+→ smoke test
+```
+
+O `/api/health` expõe o commit e a branch fornecidos pelo Render. Uma entrega só deve ser considerada publicada quando o commit esperado aparecer no endpoint e o fluxo tiver sido conferido na interface.
+
+Depois de mudanças de CSS ou JavaScript, faça recarga forçada com `Ctrl + F5`.
+
+## Diagnóstico e solução de problemas
+
+### O Render mostra código antigo
+
+1. confirme o commit Live;
+2. consulte `/api/health`;
+3. confirme o parâmetro de versão do asset;
+4. use `Ctrl + F5`;
+5. use `Clear build cache & deploy` somente se necessário.
+
+### O serviço demora para responder
+
+A instância gratuita pode desligar por inatividade. A primeira requisição após o período ocioso pode demorar.
+
+### MongoDB não conecta
+
+Verifique:
+
+- `MONGODB_URI`;
+- Network Access no Atlas;
+- usuário e senha;
+- DNS;
+- `REQUIRE_MONGODB`;
+- logs de inicialização sem copiar a URI.
+
+### Recuperação de senha não envia
+
+Verifique:
+
+- `RESEND_API_KEY`;
+- domínio verificado;
+- `MAIL_FROM`;
+- `PUBLIC_APP_URL`;
+- destinatário permitido pela conta.
+
+### IA usa motor local
+
+Verifique chave, provedor, modelo, timeout e disponibilidade externa. O fallback é intencional e deve continuar claramente identificado.
+
+### Pipeline financeiro aparece inflado
+
+Valores textuais em faixa devem ser normalizados pelo serviço de CRM. Não converta `R$ 3.000 a R$ 15.000` removendo todos os caracteres, pois isso concatenaria os extremos.
+
+### Interface continua com scroll interno
+
+Busque regras de `overflow`, `max-height` e containers aninhados. A Visão Geral usa rolagem natural da página, não rolagem interna.
+
+## Limitações atuais
+
+- Central de Conversas ainda usa modo demonstrativo;
+- WhatsApp real ainda não foi ativado;
+- Gmail, Outlook e calendário ainda não estão integrados;
+- automação visual ainda está no roadmap;
+- multiempresa e permissões avançadas ainda não foram entregues;
+- scoring ainda será separado em Fit, Opportunity, Reachability, Intent e Close;
+- pagamentos reais precisam de validação completa no ambiente do proprietário;
+- recuperação de senha depende de remetente verificado.
+
+Consulte [`ROADMAP.md`](ROADMAP.md).
+
+## Documentação
+
+| Documento | Conteúdo |
+|---|---|
+| [`docs/GUIA_DO_DESENVOLVEDOR.md`](docs/GUIA_DO_DESENVOLVEDOR.md) | instalação, fluxo de trabalho e diagnóstico |
+| [`docs/MAPA_DO_CODIGO.md`](docs/MAPA_DO_CODIGO.md) | responsabilidade de diretórios e módulos |
+| [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md) | camadas e decisões técnicas |
+| [`docs/CODING_STANDARDS.md`](docs/CODING_STANDARDS.md) | convenções de código |
+| [`docs/SEGURANCA_E_HIGIENE.md`](docs/SEGURANCA_E_HIGIENE.md) | segredos, dados e sanitização |
+| [`docs/API.md`](docs/API.md) | contratos HTTP |
+| [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) | tokens, componentes e estilos |
+| [`docs/PLANOS_DINAMICOS.md`](docs/PLANOS_DINAMICOS.md) | catálogo e persistência de planos |
+| [`docs/RELEASE_27.0.0.md`](docs/RELEASE_27.0.0.md) | escopo da release |
+| [`docs/VALIDATION_27.0.0.md`](docs/VALIDATION_27.0.0.md) | evidências técnicas |
+| [`docs/PRODUCT_AUDIT_2026.md`](docs/PRODUCT_AUDIT_2026.md) | auditoria estratégica |
+| [`ROADMAP.md`](ROADMAP.md) | evolução planejada |
+| [`CHANGELOG.md`](CHANGELOG.md) | histórico |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | regras de contribuição |
+
+## Contribuição
+
+Antes de abrir um PR:
+
+```bash
+git status
+git diff --check
+npm run quality
+```
+
+A descrição deve informar:
+
+- problema;
+- solução;
+- contratos afetados;
+- testes;
+- risco de dados e segurança;
+- evidência visual quando houver interface;
+- rollback.
+
+Leia [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## Uso responsável
 
-A prospecção deve respeitar a legislação aplicável, a privacidade, os termos dos provedores e os mecanismos de descadastro. Informações públicas não autorizam coleta excessiva ou disparos abusivos.
+A prospecção deve respeitar:
 
-## Documentos da release
+- LGPD e legislação aplicável;
+- privacidade;
+- termos dos provedores;
+- mecanismos de descadastro;
+- limites de contato;
+- reputação dos canais;
+- uso proporcional de dados públicos.
 
-- [`docs/RELEASE_27.0.0.md`](docs/RELEASE_27.0.0.md)
-- [`docs/VALIDATION_27.0.0.md`](docs/VALIDATION_27.0.0.md)
-- [`docs/PRODUCT_AUDIT_2026.md`](docs/PRODUCT_AUDIT_2026.md)
+Dados públicos não autorizam coleta excessiva, perfilamento abusivo ou disparos indiscriminados.
