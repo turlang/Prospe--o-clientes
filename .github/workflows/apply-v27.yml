@@ -40,7 +40,9 @@ jobs:
           from pathlib import Path
           import base64
           import hashlib
+          import io
           import re
+          import tarfile
 
           release_dir = Path('.release/v27')
           chunks = sorted(
@@ -50,18 +52,41 @@ jobs:
           if len(chunks) != 13:
               raise SystemExit(f'Expected 13 canonical chunks, found {len(chunks)}')
 
+          encoded = ''
           for path in chunks:
               raw = path.read_bytes()
               print(path.name, len(raw), hashlib.sha256(raw).hexdigest())
-
-          encoded = ''.join(path.read_text(encoding='utf-8-sig') for path in chunks)
+              encoded += path.read_text(encoding='utf-8-sig')
           encoded = ''.join(encoded.split())
-          archive = base64.b64decode(encoded, validate=True)
+
+          # A release antiga contém blocos base64 independentes concatenados.
+          # Cada bloco termina quando seu padding fecha um quarteto completo.
+          segments = []
+          current = ''
+          for character in encoded:
+              current += character
+              if character == '=' and len(current) % 4 == 0:
+                  segments.append(current)
+                  current = ''
+          if current:
+              current += '=' * ((4 - len(current) % 4) % 4)
+              segments.append(current)
+
+          archive = b''.join(base64.b64decode(segment, validate=True) for segment in segments)
+          if not archive.startswith(b'\x1f\x8b'):
+              raise SystemExit('Rebuilt payload is not a gzip archive')
+
+          with tarfile.open(fileobj=io.BytesIO(archive), mode='r:gz') as package:
+              members = package.getmembers()
+              if not members:
+                  raise SystemExit('Release archive is empty')
+              print('members', len(members))
+
           output = Path('/tmp/leadhunter-v27-delta.tar.gz')
           output.write_bytes(archive)
+          print('segments', len(segments))
           print('archive', len(archive), hashlib.sha256(archive).hexdigest())
           PY
-          tar -tzf /tmp/leadhunter-v27-delta.tar.gz >/dev/null
           tar -xzf /tmp/leadhunter-v27-delta.tar.gz
           rm -rf .release .github/workflows/apply-v27.yml
 
