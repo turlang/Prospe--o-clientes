@@ -1,0 +1,27 @@
+name: Validate Top Navigation
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - public/assets/dashboard/styles.css
+      - public/assets/dashboard/css/95-top-navigation.css
+      - tests/topNavigationLayout.test.js
+      - .github/workflows/validate-top-navigation.yml
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci
+      - run: node --test tests/topNavigationLayout.test.js
+      - run: npm run quality
