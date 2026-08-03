@@ -1,7 +1,7 @@
 {
   "name": "agente-prospeccao-real",
-  "version": "26.3.0",
-  "description": "LeadHunter Pro: prospecção local, inteligência comercial, CRM e central omnichannel segura",
+  "version": "26.2.0",
+  "description": "SaaS de prospecção tech com design system modular, analytics executivo e profundidade 3D acessível",
   "main": "src/server.js",
   "type": "commonjs",
   "scripts": {
