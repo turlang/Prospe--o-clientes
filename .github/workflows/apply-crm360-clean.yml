@@ -1,0 +1,74 @@
+name: Apply CRM 360 Clean Integration
+
+on:
+  push:
+    branches:
+      - integration/crm360-clean-v27
+    paths:
+      - .release/crm360-patch/READY
+
+permissions:
+  contents: write
+
+concurrency:
+  group: leadhunter-crm360-clean
+  cancel-in-progress: false
+
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: integration/crm360-clean-v27
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: Rebuild and verify integration patch
+        shell: bash
+        run: |
+          cat .release/crm360-patch/patch-*.b64 | tr -d '\r\n\t ' | base64 --decode > /tmp/crm360.patch.xz
+          echo "630509afc736561bfe40f82d8b9612e5af8e197d4983298495f4f66842dc4d2f  /tmp/crm360.patch.xz" | sha256sum --check --strict
+          xz --test /tmp/crm360.patch.xz
+          xz --decompress --stdout /tmp/crm360.patch.xz > /tmp/crm360.patch
+          git apply --check --binary /tmp/crm360.patch
+
+      - name: Apply CRM 360 over current Omnichannel main
+        shell: bash
+        run: |
+          git apply --binary /tmp/crm360.patch
+          rm -rf .release
+          rm -f .github/workflows/export-main-source.yml
+          rm -f .github/workflows/apply-crm360-clean.yml
+          git diff --check
+
+      - name: Verify both product domains survived reconciliation
+        shell: bash
+        run: |
+          grep -q "createOmnichannelRoutes" src/app.js
+          grep -q "registerCrmRoutes" src/app.js
+          grep -q "data-view=\"crm\"" public/pages/app.html
+          grep -q "data-view=\"conversations\"" public/pages/app.html
+          grep -q "CRM 360" public/pages/app.html
+          test -f src/routes/crmRoutes.js
+          test -f src/routes/omnichannelRoutes.js
+          test -f tests/crmAdvancedService.test.js
+          test -f tests/omnichannelService.test.js
+
+      - name: Install and validate full product
+        run: |
+          npm ci
+          npm run quality
+
+      - name: Commit validated integration
+        shell: bash
+        run: |
+          git config user.name "LeadHunter Release Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git commit -m "feat: integrar CRM 360 preservando Omnichannel"
+          git push origin HEAD:integration/crm360-clean-v27
