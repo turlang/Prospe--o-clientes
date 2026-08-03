@@ -57,22 +57,25 @@ jobs:
               raw = path.read_bytes()
               print(path.name, len(raw), hashlib.sha256(raw).hexdigest())
               encoded += path.read_text(encoding='utf-8-sig')
+
+          encoded = encoded.replace('\ufeff', '')
           encoded = ''.join(encoded.split())
+          if re.search(r'[^A-Za-z0-9+/=]', encoded):
+              raise SystemExit('Release contains invalid base64 characters')
 
-          # A release antiga contém blocos base64 independentes concatenados.
-          # Cada bloco termina quando seu padding fecha um quarteto completo.
+          # O pacote histórico possui vários blocos base64 completos concatenados.
+          # O regex separa cada bloco no padding, sem misturar o início do próximo.
+          raw_segments = re.findall(r'[A-Za-z0-9+/]+={0,2}', encoded)
           segments = []
-          current = ''
-          for character in encoded:
-              current += character
-              if character == '=' and len(current) % 4 == 0:
-                  segments.append(current)
-                  current = ''
-          if current:
-              current += '=' * ((4 - len(current) % 4) % 4)
-              segments.append(current)
+          for index, segment in enumerate(raw_segments):
+              segment += '=' * ((4 - len(segment) % 4) % 4)
+              try:
+                  decoded = base64.b64decode(segment, validate=True)
+              except Exception as error:
+                  raise SystemExit(f'Invalid base64 segment {index}: {error}') from error
+              segments.append(decoded)
 
-          archive = b''.join(base64.b64decode(segment, validate=True) for segment in segments)
+          archive = b''.join(segments)
           if not archive.startswith(b'\x1f\x8b'):
               raise SystemExit('Rebuilt payload is not a gzip archive')
 
