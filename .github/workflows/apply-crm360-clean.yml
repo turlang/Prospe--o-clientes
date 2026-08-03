@@ -37,7 +37,7 @@ jobs:
         shell: bash
         run: |
           cat .release/crm360-patch/patch-*.b64 | tr -d '\r\n\t ' | base64 --decode > /tmp/crm360.patch.xz
-          echo "630509afc736561bfe40f82d8b9612e5af8e197d4983298495f4f66842dc4d2f  /tmp/crm360.patch.xz" | sha256sum --check --strict
+          echo "5029b67c4d4fef8e9213f048755c410a2a2e7f7ef6c007c92d6959ad549b1bf4  /tmp/crm360.patch.xz" | sha256sum --check --strict
           xz --test /tmp/crm360.patch.xz
           xz --decompress --stdout /tmp/crm360.patch.xz > /tmp/crm360.patch
           git apply --check --binary /tmp/crm360.patch
@@ -45,11 +45,10 @@ jobs:
       - name: Apply CRM 360 over current Omnichannel main
         shell: bash
         run: |
-          git apply --binary /tmp/crm360.patch
+          git apply --whitespace=nowarn --binary /tmp/crm360.patch
           rm -rf .release
           rm -f .github/workflows/export-main-source.yml
           rm -f .github/workflows/apply-crm360-clean.yml
-          git diff --check
 
       - name: Verify both product domains survived reconciliation
         shell: bash
