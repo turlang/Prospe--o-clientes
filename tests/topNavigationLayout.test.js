@@ -11,7 +11,6 @@ const fs = require('node:fs');
 
 const entry = fs.readFileSync('public/assets/dashboard/styles.css', 'utf8');
 const css = fs.readFileSync('public/assets/dashboard/css/95-top-navigation.css', 'utf8');
-const page = fs.readFileSync('public/pages/app.html', 'utf8');
 
 test('carrega a navegação superior depois das regras responsivas', () => {
   const responsive = entry.indexOf('./css/90-responsive.css');
@@ -23,17 +22,17 @@ test('carrega a navegação superior depois das regras responsivas', () => {
 
 test('mantém somente uma superfície superior e remove a coluna lateral', () => {
   assert.match(css, /body\.is-authenticated \.app-shell,[\s\S]*body\.is-authenticated \.sidebar[\s\S]*display:\s*contents\s*!important/);
-  assert.match(css, /body\.is-authenticated \.session-bar[\s\S]*min-height:\s*88px/);
+  assert.match(css, /body\.is-authenticated \.session-bar[\s\S]*min-height:\s*96px/);
   assert.match(css, /body\.is-authenticated \.session-bar[\s\S]*grid-template-columns:\s*150px minmax\(0, 1fr\) 184px 112px/);
   assert.match(css, /body\.is-authenticated \.sidebar nav[\s\S]*background:\s*transparent\s*!important/);
   assert.match(css, /body\.is-authenticated \.workspace[\s\S]*grid-row:\s*2/);
 });
 
-test('uso diário pertence ao bloco da conta e não usa posição absoluta', () => {
-  assert.match(page, /class="session-user"[\s\S]*id="sessionPlanName"[\s\S]*id="usageBox"/);
-  assert.doesNotMatch(page, /class="sidebar-account"[\s\S]*id="usageBox"/);
-  assert.match(css, /body\.is-authenticated \.session-user \.usage-box[\s\S]*width:\s*176px/);
-  assert.match(css, /body\.is-authenticated \.sidebar-account[\s\S]*display:\s*none\s*!important/);
+test('uso diário ocupa célula própria e não usa posição absoluta', () => {
+  assert.match(css, /body\.is-authenticated \.sidebar-account[\s\S]*grid-row:\s*1/);
+  assert.match(css, /body\.is-authenticated \.sidebar-account[\s\S]*justify-self:\s*end/);
+  assert.match(css, /body\.is-authenticated \.sidebar-account[\s\S]*align-self:\s*end/);
+  assert.match(css, /body\.is-authenticated \.sidebar-account[\s\S]*margin:\s*0 126px 9px 0/);
   assert.doesNotMatch(css, /body\.is-authenticated \.sidebar-account[\s\S]*position:\s*absolute/);
 });
 
@@ -44,7 +43,7 @@ test('conta e saída possuem colunas independentes', () => {
 });
 
 test('menu ocupa a faixa central sem criar segunda barra ou scrollbar visível', () => {
-  assert.match(css, /body\.is-authenticated \.sidebar nav[\s\S]*top:\s*21px/);
+  assert.match(css, /body\.is-authenticated \.sidebar nav[\s\S]*top:\s*27px/);
   assert.match(css, /body\.is-authenticated \.sidebar nav[\s\S]*left:\s*174px/);
   assert.match(css, /body\.is-authenticated \.sidebar nav[\s\S]*right:\s*326px/);
   assert.match(css, /body\.is-authenticated \.sidebar nav[\s\S]*overflow-x:\s*auto\s*!important/);
