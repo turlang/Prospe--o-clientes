@@ -1,5 +1,5 @@
 /**
- * @fileoverview Regressões da barra superior e da Visão Geral.
+ * @fileoverview Regressões da barra superior compacta e da Visão Geral.
  *
  * Este contrato permanece no gate global porque a navegação reúne marca, conta,
  * uso diário, atalhos e menu dentro da mesma superfície responsiva.
@@ -17,29 +17,39 @@ test('carrega a navegação superior depois das regras responsivas', () => {
   const topNavigation = entry.indexOf('./css/95-top-navigation.css');
   assert.ok(responsive >= 0);
   assert.ok(topNavigation > responsive);
+  assert.match(entry, /95-top-navigation\.css\?v=27\.0\.2/);
 });
 
 test('mantém somente uma superfície superior e remove a coluna lateral', () => {
   assert.match(css, /body\.is-authenticated \.app-shell,[\s\S]*body\.is-authenticated \.sidebar[\s\S]*display:\s*contents\s*!important/);
-  assert.match(css, /body\.is-authenticated \.session-bar[\s\S]*min-height:\s*126px/);
+  assert.match(css, /body\.is-authenticated \.session-bar[\s\S]*min-height:\s*82px/);
+  assert.match(css, /body\.is-authenticated \.session-bar[\s\S]*grid-template-columns:\s*150px minmax\(0, 1fr\) 176px 112px/);
   assert.match(css, /body\.is-authenticated \.sidebar nav[\s\S]*background:\s*transparent\s*!important/);
-  assert.match(css, /body\.is-authenticated \.sidebar nav[\s\S]*box-shadow:\s*none\s*!important/);
   assert.match(css, /body\.is-authenticated \.workspace[\s\S]*grid-row:\s*2/);
 });
 
-test('uso diário possui área própria e não invade o botão de saída', () => {
-  assert.match(css, /body\.is-authenticated \.sidebar-account[\s\S]*top:\s*50px/);
-  assert.match(css, /body\.is-authenticated \.sidebar-account[\s\S]*right:\s*140px/);
-  assert.match(css, /body\.is-authenticated \.sidebar-account[\s\S]*width:\s*164px/);
-  assert.match(css, /body\.is-authenticated \.session-logout[\s\S]*margin-left:\s*12px/);
-  assert.match(css, /body\.is-authenticated \.session-user[\s\S]*padding:\s*0/);
+test('barra desktop não mantém o grande espaço vazio anterior', () => {
+  assert.doesNotMatch(css, /min-height:\s*126px/);
+  assert.doesNotMatch(css, /min-height:\s*160px/);
+  assert.doesNotMatch(css, /padding:\s*14px 16px 62px/);
+  assert.match(css, /@media \(max-width: 1400px\)[\s\S]*min-height:\s*82px/);
 });
 
-test('menu não mostra scrollbar em desktop e continua responsivo em telas menores', () => {
-  assert.match(css, /body\.is-authenticated \.sidebar nav[\s\S]*overflow-x:\s*hidden\s*!important/);
-  assert.match(css, /@media \(max-width: 1320px\)[\s\S]*overflow-x:\s*auto\s*!important/);
-  assert.match(css, /body\.is-authenticated \.nav-list[\s\S]*justify-content:\s*space-between/);
-  assert.match(css, /body\.is-authenticated \.nav-btn[\s\S]*white-space:\s*nowrap/);
+test('uso diário fica abaixo do plano e separado do botão de saída', () => {
+  assert.match(css, /body\.is-authenticated \.sidebar-account[\s\S]*top:\s*39px/);
+  assert.match(css, /body\.is-authenticated \.sidebar-account[\s\S]*right:\s*134px/);
+  assert.match(css, /body\.is-authenticated \.sidebar-account[\s\S]*width:\s*176px/);
+  assert.match(css, /body\.is-authenticated \.session-user[\s\S]*grid-column:\s*3/);
+  assert.match(css, /body\.is-authenticated \.session-logout[\s\S]*grid-column:\s*4/);
+});
+
+test('menu ocupa a faixa central sem criar segunda barra ou scrollbar visível', () => {
+  assert.match(css, /body\.is-authenticated \.sidebar nav[\s\S]*top:\s*18px/);
+  assert.match(css, /body\.is-authenticated \.sidebar nav[\s\S]*left:\s*174px/);
+  assert.match(css, /body\.is-authenticated \.sidebar nav[\s\S]*right:\s*326px/);
+  assert.match(css, /body\.is-authenticated \.sidebar nav[\s\S]*overflow-x:\s*auto\s*!important/);
+  assert.match(css, /body\.is-authenticated \.sidebar nav::-webkit-scrollbar[\s\S]*display:\s*none/);
+  assert.match(css, /body\.is-authenticated \.nav-list[\s\S]*min-width:\s*max-content/);
 });
 
 test('Visão Geral não cria rolagem interna', () => {
