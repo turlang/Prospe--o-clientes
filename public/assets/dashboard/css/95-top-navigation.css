@@ -1,9 +1,9 @@
 /**
- * @fileoverview Barra superior única e navegação sem sobreposição.
+ * @fileoverview Barra superior única, compacta e sem sobreposição.
  *
  * Mantém logo, navegação, conta, uso diário e saída dentro da mesma superfície
  * visual. A antiga sidebar permanece apenas como contrato de DOM para preservar
- * os controladores existentes.
+ * os controladores existentes enquanto a apresentação é reorganizada por CSS.
  *
  * @module public/assets/dashboard/css/top-navigation
  */
@@ -20,67 +20,94 @@ body.is-authenticated .sidebar {
   display: contents !important;
 }
 
-/* Superfície única do topo. */
+/*
+ * A superfície principal ocupa somente a altura necessária para os controles.
+ * A navegação utiliza a faixa central e o contexto da conta permanece à direita.
+ */
 body.is-authenticated .session-bar {
   grid-column: 1;
   grid-row: 1;
   position: relative;
   z-index: 2;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) 164px auto;
-  grid-template-areas: "brand spacer user logout";
-  align-items: start;
-  min-height: 126px;
-  padding: 14px 16px 62px;
+  grid-template-columns: 150px minmax(0, 1fr) 176px 112px;
+  align-items: center;
+  min-height: 82px;
+  padding: 10px 14px;
   overflow: hidden;
 }
 
 body.is-authenticated .session-brand {
-  grid-area: brand;
+  grid-column: 1;
   position: relative;
   z-index: 6;
-  align-self: start;
-  margin-top: 3px;
+  align-self: center;
+  min-width: 0;
+  margin: 0;
+}
+
+body.is-authenticated .session-brand strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 body.is-authenticated .session-user {
-  grid-area: user;
+  grid-column: 3;
   position: relative;
   z-index: 6;
   display: grid;
+  align-self: start;
   justify-items: end;
   align-content: start;
-  min-width: 164px;
-  padding: 0;
-  line-height: 1.2;
+  min-width: 0;
+  padding: 1px 8px 0 0;
+  line-height: 1.12;
   text-align: right;
 }
 
 body.is-authenticated .session-user > span,
-body.is-authenticated .session-user > small { display: block; }
+body.is-authenticated .session-user > small {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.is-authenticated .session-user > span {
+  font-size: .74rem;
+  font-weight: 800;
+}
+
+body.is-authenticated .session-user > small {
+  margin-top: 2px;
+  font-size: .63rem;
+}
 
 body.is-authenticated .session-logout {
-  grid-area: logout;
+  grid-column: 4;
   position: relative;
   z-index: 6;
-  align-self: start;
+  align-self: center;
   min-height: 40px;
-  margin-left: 12px;
+  margin: 0;
+  padding-inline: 12px;
   white-space: nowrap;
 }
 
 /*
- * Uso diário fica abaixo do plano e possui espaço reservado próprio. Não invade
- * o botão de saída nem depende de margens calculadas pela largura do texto.
+ * Uso diário fica diretamente abaixo do plano, dentro da mesma coluna visual.
+ * A largura e o deslocamento reservam espaço real para o botão de saída.
  */
 body.is-authenticated .sidebar-account {
   position: absolute;
   z-index: 7;
-  top: 50px;
-  right: 140px;
-  width: 164px;
+  top: 39px;
+  right: 134px;
+  width: 176px;
   margin: 0;
-  padding: 0;
+  padding: 0 8px 0 0;
   border: 0;
   background: transparent;
   box-shadow: none;
@@ -89,41 +116,44 @@ body.is-authenticated .sidebar-account {
 
 body.is-authenticated .sidebar-account__content > .tag,
 body.is-authenticated .sidebar-account__content > h2,
-body.is-authenticated #welcome { display: none !important; }
+body.is-authenticated #welcome {
+  display: none !important;
+}
 
 body.is-authenticated .sidebar-account__content .usage-box {
   display: grid;
   gap: 1px;
   width: 100%;
-  min-height: 36px;
+  min-height: 30px;
   margin: 0 !important;
-  padding: 5px 9px !important;
+  padding: 4px 8px !important;
   overflow: hidden;
   border: 1px solid #dbe6f3;
-  border-radius: 10px;
+  border-radius: 9px;
   background: linear-gradient(145deg, #f8fbff, #eef5ff);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .92);
-  font-size: .59rem;
-  line-height: 1.18;
+  font-size: .55rem;
+  line-height: 1.12;
   text-overflow: ellipsis;
 }
 
 body.is-authenticated .sidebar-account__content .usage-box strong,
 body.is-authenticated .sidebar-account__content .usage-box b {
-  font-size: .66rem;
-  line-height: 1.15;
+  font-size: .62rem;
+  line-height: 1.1;
 }
 
 /*
- * Navegação dentro da mesma superfície. Em desktop todos os itens permanecem
- * visíveis sem barra de rolagem; larguras menores recebem rolagem horizontal.
+ * O menu ocupa a faixa central da mesma barra. Quando a largura disponível não
+ * comporta todos os módulos, continua navegável horizontalmente sem exibir uma
+ * segunda barra visual ou aumentar a altura do cabeçalho.
  */
 body.is-authenticated .sidebar nav {
   position: absolute;
   z-index: 5;
-  top: 68px;
-  left: 16px;
-  right: 332px;
+  top: 18px;
+  left: 174px;
+  right: 326px;
   display: flex !important;
   align-items: center;
   gap: 4px;
@@ -132,13 +162,21 @@ body.is-authenticated .sidebar nav {
   height: 46px;
   margin: 0;
   padding: 3px 0;
-  overflow-x: hidden !important;
+  overflow-x: auto !important;
   overflow-y: hidden !important;
   border: 0 !important;
   border-radius: 0 !important;
   background: transparent !important;
   box-shadow: none !important;
   backdrop-filter: none !important;
+  scrollbar-width: none;
+  overscroll-behavior-inline: contain;
+}
+
+body.is-authenticated .sidebar nav::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 body.is-authenticated .sidebar nav > #adminShortcut {
@@ -153,32 +191,34 @@ body.is-authenticated .sidebar nav > #adminShortcut {
 body.is-authenticated .nav-list {
   order: 1;
   display: flex !important;
-  flex: 1 1 auto;
+  flex: 0 0 max-content;
   align-items: center;
-  justify-content: space-between;
-  min-width: 0;
-  gap: 2px;
+  justify-content: flex-start;
+  min-width: max-content;
+  gap: 3px;
   margin: 0;
   padding: 0;
 }
 
 body.is-authenticated .nav-list > li {
-  flex: 0 1 auto;
+  flex: 0 0 auto;
   min-width: 0;
 }
 
 body.is-authenticated .nav-btn {
   width: auto !important;
   min-height: 36px;
-  padding: 7px clamp(6px, .7vw, 10px);
-  overflow: hidden;
-  font-size: clamp(.66rem, .68vw, .76rem);
+  padding: 7px clamp(6px, .55vw, 9px);
+  overflow: visible;
+  font-size: clamp(.64rem, .62vw, .72rem);
   text-align: center;
-  text-overflow: ellipsis;
+  text-overflow: clip;
   white-space: nowrap;
 }
 
-body.is-authenticated .nav-btn:hover { transform: translateY(-1px); }
+body.is-authenticated .nav-btn:hover {
+  transform: translateY(-1px);
+}
 
 body.is-authenticated .workspace {
   grid-column: 1;
@@ -231,92 +271,124 @@ body .admin-header .admin-actions .admin-dashboard-link:hover {
   transform: translateY(-1px);
 }
 
-@media (max-width: 1320px) {
+@media (max-width: 1400px) {
   body.is-authenticated .session-bar {
-    min-height: 160px;
-    padding-bottom: 68px;
+    grid-template-columns: 142px minmax(0, 1fr) 166px 104px;
+    min-height: 82px;
+    padding-inline: 12px;
   }
 
   body.is-authenticated .sidebar nav {
-    top: 104px;
-    left: 16px;
-    right: 16px;
-    overflow-x: auto !important;
-    scrollbar-width: thin;
-    scrollbar-color: #a8bad1 transparent;
-    overscroll-behavior-inline: contain;
-  }
-
-  body.is-authenticated .sidebar nav::-webkit-scrollbar { height: 5px; }
-  body.is-authenticated .sidebar nav::-webkit-scrollbar-track { background: transparent; }
-  body.is-authenticated .sidebar nav::-webkit-scrollbar-thumb {
-    border-radius: 999px;
-    background: #a8bad1;
-  }
-
-  body.is-authenticated .nav-list {
-    flex: 1 0 max-content;
-    min-width: max-content;
-    justify-content: flex-start;
-    gap: 4px;
-  }
-
-  body.is-authenticated .nav-list > li { flex: 0 0 auto; }
-  body.is-authenticated .nav-btn { overflow: visible; font-size: .73rem; text-overflow: clip; }
-}
-
-@media (max-width: 760px) {
-  body.is-authenticated .session-bar {
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas:
-      "brand logout"
-      "user user";
-    min-height: 198px;
-    padding: 12px 12px 62px;
-    row-gap: 7px;
-  }
-
-  body.is-authenticated .session-user {
-    justify-self: end;
-    min-width: 150px;
+    left: 158px;
+    right: 304px;
   }
 
   body.is-authenticated .sidebar-account {
-    top: 98px;
-    right: 12px;
-    width: min(220px, calc(100% - 24px));
+    right: 116px;
+    width: 166px;
+  }
+
+  body.is-authenticated .nav-btn {
+    padding-inline: 7px;
+    font-size: .66rem;
+  }
+}
+
+@media (max-width: 980px) {
+  body.is-authenticated .session-bar {
+    grid-template-columns: 150px minmax(0, 1fr) 104px;
+    min-height: 132px;
+    padding: 10px 12px 58px;
+  }
+
+  body.is-authenticated .session-brand {
+    grid-column: 1;
+  }
+
+  body.is-authenticated .session-user {
+    grid-column: 2;
+    justify-self: end;
+    width: 166px;
+    padding-right: 8px;
+  }
+
+  body.is-authenticated .session-logout {
+    grid-column: 3;
+  }
+
+  body.is-authenticated .sidebar-account {
+    top: 39px;
+    right: 116px;
+    width: 166px;
   }
 
   body.is-authenticated .sidebar nav {
-    top: 144px;
+    top: 79px;
+    left: 12px;
+    right: 12px;
+  }
+}
+
+@media (max-width: 700px) {
+  body.is-authenticated .session-bar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    min-height: 174px;
+    padding: 10px 12px 58px;
+    align-items: start;
+  }
+
+  body.is-authenticated .session-brand {
+    grid-column: 1;
+    align-self: center;
+  }
+
+  body.is-authenticated .session-user {
+    grid-column: 1 / -1;
+    justify-self: end;
+    width: min(210px, calc(100% - 24px));
+    margin-top: 48px;
+    padding-right: 0;
+  }
+
+  body.is-authenticated .session-logout {
+    grid-column: 2;
+    align-self: center;
+    margin-left: 8px;
+  }
+
+  body.is-authenticated .sidebar-account {
+    top: 84px;
+    right: 12px;
+    width: min(210px, calc(100% - 24px));
+    padding-right: 0;
+  }
+
+  body.is-authenticated .sidebar nav {
+    top: 121px;
     left: 10px;
     right: 10px;
   }
 }
 
-@media (max-width: 620px) {
+@media (max-width: 480px) {
   body.is-authenticated .session-bar {
-    min-height: 204px;
+    min-height: 184px;
     border-radius: 16px;
   }
 
   body.is-authenticated .session-brand strong {
-    max-width: 8.5rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    max-width: 7.4rem;
   }
 
   body.is-authenticated .session-logout {
     min-height: 38px;
-    margin-left: 8px;
-    padding-inline: 10px;
+    padding-inline: 9px;
   }
 
   body.is-authenticated .sidebar nav > #adminShortcut,
   body.is-authenticated .nav-btn {
     min-height: 35px;
     padding: 7px 9px;
-    font-size: .71rem;
+    font-size: .7rem;
   }
 }
