@@ -3,7 +3,7 @@
  *
  * Comentários são exigidos em nível de módulo e em decisões não óbvias. O
  * projeto não impõe comentários linha a linha, pois isso costuma duplicar o
- * código e degradar a manutenção.
+ * código, esconder a intenção real e degradar a manutenção.
  *
  * @module scripts/check-documentation
  */
@@ -18,9 +18,12 @@ const IGNORED = new Set(['node_modules', '.git', 'coverage', 'dist']);
 const REQUIRED_DOCUMENTS = [
   'README.md',
   'CONTRIBUTING.md',
+  'docs/GUIA_DO_DESENVOLVEDOR.md',
+  'docs/MAPA_DO_CODIGO.md',
   'docs/ARQUITETURA.md',
   'docs/API.md',
   'docs/CODING_STANDARDS.md',
+  'docs/SEGURANCA_E_HIGIENE.md',
   'docs/ESPECIFICACAO_REQUISITOS.md',
   'docs/MATRIZ_RASTREABILIDADE.md',
   'docs/PLANO_DE_TESTES.md',
@@ -29,9 +32,17 @@ const REQUIRED_DOCUMENTS = [
   'docs/RELEASE_26.0.0.md',
   'docs/RELEASE_26.1.0.md',
   'docs/RELEASE_27.0.0.md',
-  'docs/VALIDATION_27.0.0.md'
+  'docs/VALIDATION_27.0.0.md',
+  'docs/PRODUCT_AUDIT_2026.md'
 ];
 
+/**
+ * Coleta módulos JavaScript mantidos sem entrar em dependências ou builds.
+ *
+ * @param {string} entry Arquivo ou diretório inicial.
+ * @param {string[]} output Acumulador de caminhos.
+ * @returns {string[]} Módulos encontrados.
+ */
 function collectModules(entry, output = []) {
   if (!fs.existsSync(entry)) return output;
   const stat = fs.statSync(entry);
@@ -60,6 +71,8 @@ for (const file of files) {
   if (!source.slice(0, 1400).includes('@fileoverview')) failures.push(`Módulo sem @fileoverview: ${relative}`);
 }
 
+// Entry points devem permanecer pequenos; crescimento excessivo normalmente
+// indica que composição ou bootstrap recebeu uma regra de negócio indevida.
 const lineLimits = new Map([
   ['src/server.js', 150],
   ['src/app.js', 450]

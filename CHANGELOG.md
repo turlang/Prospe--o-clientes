@@ -1,5 +1,30 @@
 # Changelog
 
+## Não publicado — Higiene, documentação e manutenção
+
+### Repositório
+
+- gate automático contra segredos óbvios, dados locais, logs, backups e pacotes temporários;
+- `.gitignore` ampliado;
+- `.editorconfig` e `.gitattributes` consolidados;
+- workflow global de qualidade para todo pull request e push na `main`;
+- remoção do workflow específico de navegação, agora coberto pelo gate geral.
+
+### Documentação
+
+- README reescrito com produto, arquitetura, instalação, variáveis, rotas, banco, segurança, deploy e diagnóstico;
+- novo guia de onboarding para desenvolvedores;
+- novo mapa da base de código;
+- nova política de segurança e higiene;
+- arquitetura atualizada para a versão 27.0.0;
+- padrões de código e contribuição ampliados;
+- novos testes para garantir a permanência da documentação e dos gates.
+
+### Comentários
+
+- política reforçada para `@fileoverview`, JSDoc e comentários de intenção;
+- comentários linha a linha continuam proibidos por criarem ruído e documentação obsoleta.
+
 ## 27.0.0 — CRM 360 integrado ao Omnichannel
 
 ### CRM
