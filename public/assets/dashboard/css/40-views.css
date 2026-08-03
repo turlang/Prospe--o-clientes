@@ -141,6 +141,11 @@
 .crm-table td { color: var(--text); font-size: .82rem; }
 .crm-table td:first-child { display: grid; gap: 3px; }
 .crm-table td small { color: var(--text-muted); }
+.crm-table th:nth-child(4),
+.crm-table td:nth-child(4) { min-width: 220px; }
+.crm-table th:last-child,
+.crm-table td:last-child { width: 86px; min-width: 86px; text-align: center; }
+.crm-open-button { min-width: 68px; white-space: nowrap; word-break: normal; }
 .crm-stage-chip { display: inline-flex; padding: 5px 8px; border-radius: 999px; background: #edf4ff; color: #2455a6; font-size: .72rem; font-weight: 700; white-space: nowrap; }
 .crm-dialog {
   width: min(1180px, calc(100vw - 32px));

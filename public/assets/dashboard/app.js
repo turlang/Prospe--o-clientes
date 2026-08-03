@@ -1764,7 +1764,31 @@ function normalizeStatus(status) {
   const canonical = aliases[value] || value;
   return PIPELINE.some((item) => item.key === canonical) ? canonical : 'NOVO';
 }
-function estimateTicket(value) { const text = String(value || '0').replace(/\./g, '').replace(',', '.'); const match = text.match(/\d+(?:\.\d+)?/); return match ? Number(match[0]) : 0; }
+function parseUiMoneyToken(value) {
+  let text = String(value || '').trim().replace(/[^0-9.,]/g, '');
+  if (!text) return 0;
+  const lastComma = text.lastIndexOf(',');
+  const lastDot = text.lastIndexOf('.');
+  if (lastComma >= 0 && lastDot >= 0) {
+    text = lastComma > lastDot ? text.replace(/\./g, '').replace(',', '.') : text.replace(/,/g, '');
+  } else if (lastComma >= 0) {
+    const decimals = text.length - lastComma - 1;
+    text = decimals > 0 && decimals <= 2 ? text.replace(/\./g, '').replace(',', '.') : text.replace(/,/g, '');
+  } else if (lastDot >= 0) {
+    const dots = (text.match(/\./g) || []).length;
+    if (dots > 1 || text.length - lastDot - 1 === 3) text = text.replace(/\./g, '');
+  }
+  const number = Number(text);
+  return Number.isFinite(number) ? Math.max(0, number) : 0;
+}
+function estimateTicket(value) {
+  if (typeof value === 'number') return Number.isFinite(value) ? Math.max(0, value) : 0;
+  const text = String(value || '').trim();
+  const amounts = (text.match(/\d[\d.,]*/g) || []).map(parseUiMoneyToken).filter(Number.isFinite);
+  if (!amounts.length) return 0;
+  const isRange = amounts.length >= 2 && /(?:\bentre\b.*\be\b|\b(?:a|até|ate)\b|[-–—])/i.test(text);
+  return isRange ? (amounts[0] + amounts[1]) / 2 : amounts[0];
+}
 /** Formata valores monetários conforme a localidade brasileira. */
 function formatMoney(value) {
   return Number(value || 0).toLocaleString('pt-BR', {
@@ -3342,10 +3366,10 @@ function renderCrmList(leads) {
             <td><span class="crm-stage-chip">${escapeHtml(PIPELINE.find((stage) => stage.key === normalizeStatus(lead.status))?.label || normalizeStatus(lead.status))}</span></td>
             <td>${escapeHtml(lead.segmentoComercial || lead.tipo || '-')}</td>
             <td>${escapeHtml(lead.servicoPrincipal || lead.servico || '-')}</td>
-            <td>${formatMoney(Number(lead.contractValue || lead.ticketEstimado || 0))}</td>
-            <td>${formatMoney(Number(lead.monthlyRecurringRevenue || 0))}/mês</td>
+            <td>${formatMoney(estimateTicket(lead.contractValue || lead.ticketEstimado || 0))}</td>
+            <td>${formatMoney(estimateTicket(lead.monthlyRecurringRevenue || 0))}/mês</td>
             <td>${Number(lead.score || 0)}/100</td>
-            <td><button type="button" class="secondary mini" onclick="openLeadDetail(${jsArg(getLeadId(lead))})">Abrir</button></td>
+            <td><button type="button" class="secondary mini crm-open-button" onclick="openLeadDetail(${jsArg(getLeadId(lead))})">Abrir</button></td>
           </tr>`).join('')}</tbody>
       </table>
     </div>`;

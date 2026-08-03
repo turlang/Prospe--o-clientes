@@ -79,6 +79,17 @@ test('filtros avançados combinam pipeline, segmento, serviço e valor', () => {
   assert.equal(result[0].nome, 'Clínica Alfa');
 });
 
+test('faixas monetárias usam o ponto médio sem concatenar os extremos', () => {
+  const config = createDefaultCrmConfiguration();
+  const forecast = buildForecast([
+    { status: 'NOVO', pipelineId: 'sales', ticketEstimado: 'R$ 3.000 a R$ 15.000' },
+    { status: 'CONTATADO', pipelineId: 'sales', ticketEstimado: 'R$ 800 a R$ 5.000' }
+  ], config, new Date('2026-08-15T12:00:00.000Z'));
+
+  assert.equal(forecast.pipelineRevenue, 11900);
+  assert.equal(forecast.weightedRevenue, 1184);
+});
+
 test('previsão inclui receita ponderada, MRR e progresso de metas', () => {
   const config = createDefaultCrmConfiguration();
   const now = new Date('2026-08-15T12:00:00.000Z');
