@@ -1,0 +1,47 @@
+name: Validate Product Evolution
+
+on:
+  push:
+    branches:
+      - integration/crm360-omnichannel-v27
+    paths:
+      - .release/product-evolution/READY
+
+permissions:
+  contents: write
+
+concurrency:
+  group: leadhunter-product-evolution
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: integration/crm360-omnichannel-v27
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate release observability and regression suite
+        run: |
+          node --test tests/deployment-metadata.test.js
+          npm run quality
+
+      - name: Commit validated state
+        shell: bash
+        run: |
+          rm -rf .release/product-evolution .github/workflows/validate-product-evolution.yml
+          git config user.name "LeadHunter Release Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git commit -m "feat: release observability and secure Render configuration"
+          git push origin HEAD:integration/crm360-omnichannel-v27
