@@ -56,12 +56,15 @@ jobs:
           grep -q "createOmnichannelRoutes" src/app.js
           grep -q "registerCrmRoutes" src/app.js
           grep -q "data-view=\"crm\"" public/pages/app.html
-          grep -q "data-view=\"conversations\"" public/pages/app.html
+          grep -q "data-view=\"conversas\"" public/assets/dashboard/omnichannel.js
           grep -q "CRM 360" public/pages/app.html
+          test -f public/assets/dashboard/omnichannel.js
           test -f src/routes/crmRoutes.js
           test -f src/routes/omnichannelRoutes.js
           test -f tests/crmAdvancedService.test.js
-          test -f tests/omnichannelService.test.js
+          test -f tests/omnichannel-conversations.test.js
+          test -f tests/omnichannel-domain.test.js
+          test -f tests/omnichannel-security.test.js
 
       - name: Install and validate full product
         run: |
