@@ -102,9 +102,9 @@ body.is-authenticated .sidebar-account {
   grid-row: 1;
   z-index: 7;
   justify-self: end;
-  align-self: end;
-  width: 184px;
-  margin: 0 126px 10px 0;
+  align-self: start;
+  width: 220px;
+  margin: 35px 126px 0 0;
   padding: 0 8px 0 0;
   border: 0;
   background: transparent;
@@ -126,9 +126,10 @@ body.is-authenticated #welcome {
 
 body.is-authenticated .sidebar-account__content .usage-box {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 1px;
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 3px;
   width: 100%;
   min-height: 0;
   margin: 0 !important;
@@ -143,6 +144,12 @@ body.is-authenticated .sidebar-account__content .usage-box {
   line-height: 1.14;
   text-align: right;
   text-overflow: clip;
+  white-space: nowrap;
+}
+
+body.is-authenticated .sidebar-account__content .usage-box strong::after,
+body.is-authenticated .sidebar-account__content .usage-box b::after {
+  content: ':';
 }
 
 body.is-authenticated .sidebar-account__content .usage-box strong,
@@ -290,8 +297,8 @@ body .admin-header .admin-actions .admin-dashboard-link:hover {
   }
 
   body.is-authenticated .sidebar-account {
-    width: 174px;
-    margin-right: 114px;
+    width: 205px;
+    margin: 35px 114px 0 0;
   }
 
   body.is-authenticated .nav-btn {
@@ -323,8 +330,8 @@ body .admin-header .admin-actions .admin-dashboard-link:hover {
   }
 
   body.is-authenticated .sidebar-account {
-    width: 174px;
-    margin: 0 114px 62px 0;
+    width: 205px;
+    margin: 35px 114px 0 0;
   }
 
   body.is-authenticated .sidebar nav {
@@ -362,8 +369,8 @@ body .admin-header .admin-actions .admin-dashboard-link:hover {
   }
 
   body.is-authenticated .sidebar-account {
-    width: min(210px, calc(100% - 24px));
-    margin: 0 12px 62px 0;
+    width: min(220px, calc(100% - 24px));
+    margin: 84px 12px 0 0;
     padding-right: 0;
   }
 

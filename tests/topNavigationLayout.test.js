@@ -24,7 +24,7 @@ test('carrega a navegação superior depois das regras responsivas', () => {
   const topNavigation = entry.indexOf('./css/95-top-navigation.css');
   assert.ok(responsive >= 0);
   assert.ok(topNavigation > responsive);
-  assert.match(entry, /95-top-navigation\.css\?v=27\.0\.4/);
+  assert.match(entry, /95-top-navigation\.css\?v=27\.0\.5/);
 });
 
 test('mantém somente uma superfície superior e remove a coluna lateral', () => {
@@ -42,8 +42,8 @@ test('uso diário é texto simples abaixo do plano, sem aparência de cartão', 
 
   assert.match(accountRule, /grid-row:\s*1/);
   assert.match(accountRule, /justify-self:\s*end/);
-  assert.match(accountRule, /align-self:\s*end/);
-  assert.match(accountRule, /margin:\s*0 126px 10px 0/);
+  assert.match(accountRule, /align-self:\s*start/);
+  assert.match(accountRule, /margin:\s*35px 126px 0 0/);
   assert.doesNotMatch(accountRule, /position:\s*absolute/);
 
   assert.match(usageRule, /border:\s*0\s*!important/);
@@ -51,6 +51,8 @@ test('uso diário é texto simples abaixo do plano, sem aparência de cartão', 
   assert.match(usageRule, /box-shadow:\s*none\s*!important/);
   assert.match(usageRule, /padding:\s*0\s*!important/);
   assert.match(usageRule, /text-align:\s*right/);
+  assert.match(usageRule, /flex-direction:\s*row/);
+  assert.match(usageRule, /white-space:\s*nowrap/);
   assert.match(meterRule, /display:\s*none\s*!important/);
 });
 
