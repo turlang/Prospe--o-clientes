@@ -24,24 +24,34 @@ test('carrega a navegação superior depois das regras responsivas', () => {
   const topNavigation = entry.indexOf('./css/95-top-navigation.css');
   assert.ok(responsive >= 0);
   assert.ok(topNavigation > responsive);
-  assert.match(entry, /95-top-navigation\.css\?v=27\.0\.3/);
+  assert.match(entry, /95-top-navigation\.css\?v=27\.0\.4/);
 });
 
 test('mantém somente uma superfície superior e remove a coluna lateral', () => {
   assert.match(css, /body\.is-authenticated \.app-shell,[\s\S]*body\.is-authenticated \.sidebar[\s\S]*display:\s*contents\s*!important/);
-  assert.match(css, /body\.is-authenticated \.session-bar[\s\S]*min-height:\s*96px/);
+  assert.match(css, /body\.is-authenticated \.session-bar[\s\S]*min-height:\s*82px/);
   assert.match(css, /body\.is-authenticated \.session-bar[\s\S]*grid-template-columns:\s*150px minmax\(0, 1fr\) 184px 112px/);
   assert.match(css, /body\.is-authenticated \.sidebar nav[\s\S]*background:\s*transparent\s*!important/);
   assert.match(css, /body\.is-authenticated \.workspace[\s\S]*grid-row:\s*2/);
 });
 
-test('uso diário ocupa célula própria e não usa posição absoluta', () => {
-  const rule = getCssRule('body.is-authenticated .sidebar-account');
-  assert.match(rule, /grid-row:\s*1/);
-  assert.match(rule, /justify-self:\s*end/);
-  assert.match(rule, /align-self:\s*end/);
-  assert.match(rule, /margin:\s*0 126px 9px 0/);
-  assert.doesNotMatch(rule, /position:\s*absolute/);
+test('uso diário é texto simples abaixo do plano, sem aparência de cartão', () => {
+  const accountRule = getCssRule('body.is-authenticated .sidebar-account');
+  const usageRule = getCssRule('body.is-authenticated .sidebar-account__content .usage-box');
+  const meterRule = getCssRule('body.is-authenticated .sidebar-account__content .usage-meter');
+
+  assert.match(accountRule, /grid-row:\s*1/);
+  assert.match(accountRule, /justify-self:\s*end/);
+  assert.match(accountRule, /align-self:\s*end/);
+  assert.match(accountRule, /margin:\s*0 126px 10px 0/);
+  assert.doesNotMatch(accountRule, /position:\s*absolute/);
+
+  assert.match(usageRule, /border:\s*0\s*!important/);
+  assert.match(usageRule, /background:\s*transparent\s*!important/);
+  assert.match(usageRule, /box-shadow:\s*none\s*!important/);
+  assert.match(usageRule, /padding:\s*0\s*!important/);
+  assert.match(usageRule, /text-align:\s*right/);
+  assert.match(meterRule, /display:\s*none\s*!important/);
 });
 
 test('conta e saída possuem colunas independentes', () => {
@@ -51,7 +61,7 @@ test('conta e saída possuem colunas independentes', () => {
 });
 
 test('menu ocupa a faixa central sem criar segunda barra ou scrollbar visível', () => {
-  assert.match(css, /body\.is-authenticated \.sidebar nav[\s\S]*top:\s*27px/);
+  assert.match(css, /body\.is-authenticated \.sidebar nav[\s\S]*top:\s*18px/);
   assert.match(css, /body\.is-authenticated \.sidebar nav[\s\S]*left:\s*174px/);
   assert.match(css, /body\.is-authenticated \.sidebar nav[\s\S]*right:\s*326px/);
   assert.match(css, /body\.is-authenticated \.sidebar nav[\s\S]*overflow-x:\s*auto\s*!important/);
