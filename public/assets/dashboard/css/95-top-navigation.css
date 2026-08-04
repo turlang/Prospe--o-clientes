@@ -2,8 +2,8 @@
  * @fileoverview Barra superior única, compacta e sem sobreposição.
  *
  * Mantém logo, navegação, conta, uso diário e saída dentro da mesma superfície.
- * O uso diário ocupa uma célula própria da grade superior e não utiliza posição
- * absoluta, evitando sobreposição com nome, plano ou botão de saída.
+ * O consumo da conta é exibido como texto simples abaixo do plano, sem cartão,
+ * borda, fundo ou medidor competindo com as demais informações.
  *
  * @module public/assets/dashboard/css/top-navigation
  */
@@ -28,7 +28,7 @@ body.is-authenticated .session-bar {
   display: grid;
   grid-template-columns: 150px minmax(0, 1fr) 184px 112px;
   align-items: start;
-  min-height: 96px;
+  min-height: 82px;
   padding: 10px 14px;
   overflow: hidden;
 }
@@ -93,9 +93,9 @@ body.is-authenticated .session-logout {
 }
 
 /*
- * O bloco de uso diário é um item real da grade do appRoot. Ele compartilha a
- * primeira linha com o header, mas fica alinhado ao rodapé e reserva a largura
- * do botão de saída por margem, sem coordenadas absolutas.
+ * O elemento continua preservando o contrato atual do DOM, mas visualmente é
+ * apenas uma extensão textual do bloco da conta. O alinhamento pela grade evita
+ * que a informação invada o nome, o plano ou o botão de saída.
  */
 body.is-authenticated .sidebar-account {
   grid-column: 1;
@@ -103,13 +103,19 @@ body.is-authenticated .sidebar-account {
   z-index: 7;
   justify-self: end;
   align-self: end;
-  width: 176px;
-  margin: 0 126px 9px 0;
-  padding: 0;
+  width: 184px;
+  margin: 0 126px 10px 0;
+  padding: 0 8px 0 0;
   border: 0;
   background: transparent;
   box-shadow: none;
   pointer-events: none;
+}
+
+body.is-authenticated .sidebar-account__content {
+  display: block;
+  width: 100%;
+  text-align: right;
 }
 
 body.is-authenticated .sidebar-account__content > .tag,
@@ -119,33 +125,41 @@ body.is-authenticated #welcome {
 }
 
 body.is-authenticated .sidebar-account__content .usage-box {
-  display: grid;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
   gap: 1px;
   width: 100%;
-  min-height: 30px;
+  min-height: 0;
   margin: 0 !important;
-  padding: 4px 8px !important;
-  overflow: hidden;
-  border: 1px solid #dbe6f3;
-  border-radius: 9px;
-  background: linear-gradient(145deg, #f8fbff, #eef5ff);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .92);
-  font-size: .55rem;
-  line-height: 1.12;
-  text-align: left;
-  text-overflow: ellipsis;
+  padding: 0 !important;
+  overflow: visible;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--ink-soft, #526173);
+  font-size: .52rem;
+  line-height: 1.14;
+  text-align: right;
+  text-overflow: clip;
 }
 
 body.is-authenticated .sidebar-account__content .usage-box strong,
 body.is-authenticated .sidebar-account__content .usage-box b {
-  font-size: .62rem;
+  color: var(--ink, #132238);
+  font-size: .56rem;
   line-height: 1.1;
+}
+
+body.is-authenticated .sidebar-account__content .usage-meter {
+  display: none !important;
 }
 
 body.is-authenticated .sidebar nav {
   position: absolute;
   z-index: 5;
-  top: 27px;
+  top: 18px;
   left: 174px;
   right: 326px;
   display: flex !important;
@@ -266,7 +280,7 @@ body .admin-header .admin-actions .admin-dashboard-link:hover {
 @media (max-width: 1400px) {
   body.is-authenticated .session-bar {
     grid-template-columns: 142px minmax(0, 1fr) 174px 104px;
-    min-height: 96px;
+    min-height: 82px;
     padding-inline: 12px;
   }
 
@@ -276,7 +290,7 @@ body .admin-header .admin-actions .admin-dashboard-link:hover {
   }
 
   body.is-authenticated .sidebar-account {
-    width: 166px;
+    width: 174px;
     margin-right: 114px;
   }
 
@@ -289,7 +303,7 @@ body .admin-header .admin-actions .admin-dashboard-link:hover {
 @media (max-width: 980px) {
   body.is-authenticated .session-bar {
     grid-template-columns: 150px minmax(0, 1fr) 104px;
-    min-height: 150px;
+    min-height: 132px;
     padding: 10px 12px 58px;
   }
 
@@ -309,12 +323,12 @@ body .admin-header .admin-actions .admin-dashboard-link:hover {
   }
 
   body.is-authenticated .sidebar-account {
-    width: 166px;
+    width: 174px;
     margin: 0 114px 62px 0;
   }
 
   body.is-authenticated .sidebar nav {
-    top: 97px;
+    top: 79px;
     left: 12px;
     right: 12px;
   }
@@ -323,7 +337,7 @@ body .admin-header .admin-actions .admin-dashboard-link:hover {
 @media (max-width: 700px) {
   body.is-authenticated .session-bar {
     grid-template-columns: minmax(0, 1fr) auto;
-    min-height: 192px;
+    min-height: 174px;
     padding: 10px 12px 58px;
     align-items: start;
   }
@@ -350,10 +364,11 @@ body .admin-header .admin-actions .admin-dashboard-link:hover {
   body.is-authenticated .sidebar-account {
     width: min(210px, calc(100% - 24px));
     margin: 0 12px 62px 0;
+    padding-right: 0;
   }
 
   body.is-authenticated .sidebar nav {
-    top: 139px;
+    top: 121px;
     left: 10px;
     right: 10px;
   }
@@ -361,7 +376,7 @@ body .admin-header .admin-actions .admin-dashboard-link:hover {
 
 @media (max-width: 480px) {
   body.is-authenticated .session-bar {
-    min-height: 202px;
+    min-height: 184px;
     border-radius: 16px;
   }
 
