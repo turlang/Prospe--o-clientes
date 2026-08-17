@@ -21,6 +21,10 @@ function retryDelayMs(attempt) {
   return Math.min(15 * 60 * 1000, base * (2 ** Math.max(0, attempt - 1)));
 }
 
+function liveSendEnabled() {
+  return String(process.env.OUTBOUND_LIVE_SEND || '').toLowerCase() === 'true';
+}
+
 async function scanProspectedLeads() {
   if (String(process.env.OUTBOUND_AFTER_PROSPECTING || 'true').toLowerCase() === 'false') {
     return { scanned: 0, queued: 0 };
@@ -29,12 +33,12 @@ async function scanProspectedLeads() {
   const now = new Date();
   const lookbackMinutes = Math.max(1, Number(process.env.OUTBOUND_DISCOVERY_LOOKBACK_MINUTES || 1440));
   const since = lastLeadScanAt || new Date(now.getTime() - lookbackMinutes * 60_000);
-  lastLeadScanAt = now;
+  const batchSize = Math.max(10, Math.min(500, Number(process.env.OUTBOUND_DISCOVERY_BATCH || 100)));
 
   const leads = await Lead.find({ updatedAt: { $gt: since, $lte: now } })
     .select('userId data updatedAt')
-    .sort({ updatedAt: 1 })
-    .limit(Math.max(10, Math.min(500, Number(process.env.OUTBOUND_DISCOVERY_BATCH || 100))))
+    .sort({ updatedAt: 1, _id: 1 })
+    .limit(batchSize)
     .lean();
 
   let queued = 0;
@@ -43,6 +47,12 @@ async function scanProspectedLeads() {
     if (lead.fonte === 'whatsapp_inbound') continue;
     const result = await enqueueProspectedLeads({ userId: document.userId, leads: [lead] });
     queued += Number(result.queued || 0) + Number(result.review || 0) + Number(result.blocked || 0);
+  }
+
+  if (leads.length) {
+    lastLeadScanAt = new Date(leads[leads.length - 1].updatedAt);
+  } else {
+    lastLeadScanAt = now;
   }
 
   return { scanned: leads.length, queued };
@@ -65,6 +75,7 @@ async function claimNextJob() {
 }
 
 async function processOne() {
+  if (!liveSendEnabled()) return false;
   const job = await claimNextJob();
   if (!job) return false;
 
@@ -108,8 +119,10 @@ function startOutboundWorker() {
     running = true;
     try {
       await scanProspectedLeads();
-      let processed = 0;
-      while (processed < 10 && await processOne()) processed += 1;
+      if (liveSendEnabled()) {
+        let processed = 0;
+        while (processed < 10 && await processOne()) processed += 1;
+      }
     } catch (error) {
       console.error('[OUTBOUND] Falha no worker:', error.message);
     } finally {
@@ -124,4 +137,11 @@ function startOutboundWorker() {
   return { enabled: true, stop() { clearInterval(timer); } };
 }
 
-module.exports = { retryDelayMs, scanProspectedLeads, claimNextJob, processOne, startOutboundWorker };
+module.exports = {
+  retryDelayMs,
+  liveSendEnabled,
+  scanProspectedLeads,
+  claimNextJob,
+  processOne,
+  startOutboundWorker
+};
