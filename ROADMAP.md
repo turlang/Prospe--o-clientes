@@ -1,8 +1,8 @@
 # Roadmap — LeadHunter Pro
 
 **Versão identificada no código:** 27.0.0  
-**Estado da release:** CRM 360 integrado à fundação omnichannel e aprovado localmente; publicação depende de merge e validação no Render  
-**Próxima evolução planejada:** scoring explicável e Auditor Digital comercial
+**Estado da release:** CRM 360 integrado; fundação omnichannel e Motor de Outbound + SDR incorporados; ativação real do WhatsApp depende de configuração e validação no Render  
+**Próxima evolução planejada:** ativação controlada do WhatsApp em produção, scoring explicável e Auditor Digital comercial
 
 ## Objetivo estratégico
 
@@ -70,11 +70,11 @@ Escopo que deverá ser validado na integração:
 
 Critério de conclusão: arquivos integrados e suíte completa aprovada. O marco será considerado validado em produção quando o Render executar o commit final e o checklist funcional for concluído.
 
-## Marco 3 — Comunicação integrada
+## Marco 3 — Comunicação integrada e Motor de Outbound + SDR
 
-**Estado:** fundação e Central de Conversas demonstrativa publicadas; canais reais ainda pendentes.
+**Estado:** fundação técnica integrada; envio real permanece protegido até configuração e smoke test do canal.
 
-Concluído:
+Concluído no código:
 
 - modelos MongoDB do domínio omnichannel;
 - contratos de IA e mensageria;
@@ -83,19 +83,36 @@ Concluído:
 - Central de Conversas;
 - histórico, notas internas, não lidas e transferência humana;
 - provedor demonstrativo explicitamente identificado;
-- base do agente SDR e playground seguro.
+- base do agente SDR e playground seguro;
+- fila persistente `OutboundJob` com deduplicação;
+- modos assistido, semiautomático e autônomo controlado;
+- descoberta automática de leads novos/atualizados depois da prospecção;
+- score mínimo, bloqueio `DO_NOT_CONTACT` e consentimento obrigatório para modos automáticos;
+- worker com claim atômico, retentativas, backoff e estado `DEAD`;
+- kill-switch `OUTBOUND_LIVE_SEND` para impedir envio acidental;
+- adaptador `MetaWhatsAppProvider` para WhatsApp Cloud API;
+- verificação e assinatura do webhook quando o segredo do app estiver configurado;
+- deduplicação de eventos de webhook;
+- associação autenticada do `phoneNumberId` à conta correta;
+- mensagem recebida → lead/conversa → análise → atualização do CRM;
+- resposta sugerida retornando para a fila, com revisão humana por padrão;
+- endpoints para listar, aprovar e cancelar jobs outbound;
+- testes de regressão das políticas de consentimento, kill-switch e parsing de webhook.
 
-Pendente:
+Ainda depende de ativação/validação externa:
 
-- Meta WhatsApp Cloud API;
-- Evolution API e UaiZapi como adaptadores opcionais;
-- webhook seguro com idempotência;
-- processamento assíncrono, retentativas e fila de falhas;
-- criação ou vinculação automática de lead;
+- cadastrar as credenciais reais do WhatsApp no Render;
+- associar o `phoneNumberId` da conta real;
+- configurar o callback público do webhook;
+- executar teste real de entrada, saída, status e retorno;
+- manter `OUTBOUND_LIVE_SEND=false` até o smoke test estar aprovado;
+- validar regras comerciais, templates e reputação do canal antes de ampliar volume;
 - Gmail e Outlook;
 - calendário e agendamento;
-- agente SDR atuando em mensagens reais conforme modo publicado;
-- limites, descadastro e proteção de reputação.
+- tela administrativa específica para configuração do canal;
+- Evolution API e UaiZapi como adaptadores opcionais.
+
+Critério para declarar WhatsApp operacional em produção: commit presente na `main`, `npm run quality` verde, Render no commit esperado, integração Meta configurada, webhook real validado e pelo menos um fluxo controlado de envio e resposta concluído sem bypass de segurança.
 
 ## Marco 4 — Auditor Digital e mapa de oportunidades
 
@@ -128,7 +145,7 @@ Esta é a principal vantagem competitiva planejada.
 - geração de mensagens baseada apenas em evidências disponíveis;
 - análise de respostas e objeções;
 - atualização assistida do CRM;
-- modos assistido, semiautônomo e autônomo controlado;
+- evolução dos modos assistido, semiautônomo e autônomo controlado;
 - aprovação obrigatória para ações sensíveis.
 
 ## Marco 7 — Automação visual
@@ -138,7 +155,7 @@ Esta é a principal vantagem competitiva planejada.
 - simulação antes da publicação;
 - versionamento, auditoria e reversão;
 - limites por plano;
-- filas, retentativas e dead-letter queue.
+- filas, retentativas e dead-letter queue sobre a fundação outbound existente.
 
 ## Marco 8 — Propostas, contratos e receita
 
@@ -193,12 +210,13 @@ Esta é a principal vantagem competitiva planejada.
 
 1. verdade de versão, rastreabilidade de deploy e recuperação segura;
 2. integração limpa do CRM 360;
-3. Auditor Digital e Opportunity Score;
-4. WhatsApp oficial e caixa de entrada real;
-5. venda guiada e agente SDR controlado;
-6. propostas, contratos e pagamentos;
-7. automação visual;
-8. equipes, analytics avançado e ecossistema.
+3. Motor de Outbound em modo assistido e fila observável;
+4. ativação controlada do WhatsApp oficial em produção;
+5. Auditor Digital e Opportunity Score;
+6. venda guiada e agente SDR controlado;
+7. propostas, contratos e pagamentos;
+8. automação visual;
+9. equipes, analytics avançado e ecossistema.
 
 ## Regras de execução
 

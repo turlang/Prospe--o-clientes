@@ -2,7 +2,8 @@
  * @fileoverview Rotas autenticadas do domínio omnichannel e agente SDR.
  *
  * O roteador aplica rate limit geral e limites específicos para envio de
- * mensagens e simulações, mantendo todos os recursos sob autenticação.
+ * mensagens e simulações. O webhook do WhatsApp é público, mas validado pelo
+ * provedor antes de encaminhar eventos para o domínio.
  *
  * @module src/routes/omnichannelRoutes
  */
@@ -18,11 +19,17 @@ function createOmnichannelRoutes({ requireAuth, simpleRateLimit }) {
   const router = express.Router();
   const mutationLimit = simpleRateLimit({ windowMs: 60_000, max: 30 });
   const messageLimit = simpleRateLimit({ windowMs: 60_000, max: 20 });
+  const webhookLimit = simpleRateLimit({ windowMs: 60_000, max: 120 });
+
+  router.get('/webhooks/whatsapp', webhookLimit, asyncHandler(controller.verifyWhatsAppWebhook));
+  router.post('/webhooks/whatsapp', webhookLimit, asyncHandler(controller.receiveWhatsAppWebhook));
 
   router.use(requireAuth);
   router.use(simpleRateLimit({ windowMs: 60_000, max: 90 }));
 
   router.get('/providers', asyncHandler(controller.listProviders));
+  router.get('/integrations', asyncHandler(controller.listMessagingIntegrations));
+  router.post('/integrations/meta', mutationLimit, asyncHandler(controller.configureMetaIntegration));
 
   router.get('/agents', asyncHandler(controller.listAgentConfigurations));
   router.post('/agents', mutationLimit, asyncHandler(controller.createAgentConfiguration));
@@ -40,6 +47,11 @@ function createOmnichannelRoutes({ requireAuth, simpleRateLimit }) {
   router.post('/conversations/:id/messages', messageLimit, asyncHandler(controller.sendConversationMessage));
   router.post('/conversations/:id/demo-inbound', messageLimit, asyncHandler(controller.simulateInboundMessage));
   router.post('/conversations/:id/notes', mutationLimit, asyncHandler(controller.addConversationNote));
+
+  router.get('/outbound/jobs', asyncHandler(controller.listOutboundJobs));
+  router.get('/outbound/summary', asyncHandler(controller.getOutboundSummary));
+  router.post('/outbound/jobs/:id/approve', mutationLimit, asyncHandler(controller.approveOutboundJob));
+  router.post('/outbound/jobs/:id/cancel', mutationLimit, asyncHandler(controller.cancelOutboundJob));
 
   return router;
 }
