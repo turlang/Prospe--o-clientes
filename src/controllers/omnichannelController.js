@@ -8,6 +8,7 @@
  */
 
 const AgentConfiguration = require('../models/AgentConfiguration');
+const MessagingIntegration = require('../models/MessagingIntegration');
 const { compileAgentPrompt } = require('../domain/omnichannel/promptCompiler');
 const { runPlayground } = require('../services/agentSdrService');
 const conversationService = require('../services/conversationService');
@@ -81,6 +82,54 @@ async function listProviders(_req, res) {
   res.json({ providers, messagingStatus });
 }
 
+async function listMessagingIntegrations(req, res) {
+  const items = await MessagingIntegration.find(scope(req))
+    .select('-credentialsEncrypted')
+    .sort({ updatedAt: -1 })
+    .lean();
+  return res.json({ items });
+}
+
+async function configureMetaIntegration(req, res) {
+  const currentScope = scope(req);
+  const name = String(req.body?.name || 'WhatsApp Cloud API').trim().slice(0, 120);
+  const externalInstanceId = String(req.body?.phoneNumberId || process.env.WHATSAPP_PHONE_NUMBER_ID || '').trim().slice(0, 240);
+  const phone = String(req.body?.phone || '').trim().slice(0, 80);
+  if (!externalInstanceId) {
+    return res.status(400).json({ error: 'Informe o phoneNumberId do WhatsApp Cloud API.' });
+  }
+
+  const conflict = await MessagingIntegration.findOne({
+    provider: 'meta',
+    externalInstanceId,
+    enabled: true
+  }).select('userId organizationId').lean();
+  if (conflict && String(conflict.userId) !== String(currentScope.userId)) {
+    return res.status(409).json({ error: 'Este phoneNumberId já está associado a outra conta.' });
+  }
+
+  const providerStatus = await providerRegistry.getMessaging('meta').testConnection();
+  const item = await MessagingIntegration.findOneAndUpdate(
+    { ...currentScope, provider: 'meta', name },
+    {
+      $set: {
+        externalInstanceId,
+        phone,
+        status: providerStatus.ok ? 'connecting' : 'not_configured',
+        credentialPreview: `phone_number_id ••••${externalInstanceId.slice(-4)}`,
+        enabled: req.body?.enabled !== false,
+        lastConnectionTestAt: new Date(),
+        lastErrorCode: providerStatus.ok ? '' : 'WHATSAPP_NOT_CONFIGURED',
+        lastErrorMessage: providerStatus.ok ? '' : providerStatus.message
+      },
+      $setOnInsert: { ...currentScope, provider: 'meta', name }
+    },
+    { upsert: true, new: true, runValidators: true }
+  ).select('-credentialsEncrypted').lean();
+
+  return res.status(200).json({ item, providerStatus });
+}
+
 async function listAgentConfigurations(req, res) {
   const items = await AgentConfiguration.find(scope(req)).select('-compiledPrompt').sort({ updatedAt: -1 }).lean();
   res.json({ items });
@@ -110,12 +159,7 @@ async function updateAgentConfiguration(req, res) {
 
   const item = await AgentConfiguration.findOneAndUpdate(
     { _id: existing._id, ...scope(req), status: { $ne: 'archived' } },
-    {
-      $set: {
-        ...input,
-        compiledPrompt: compileAgentPrompt({ ...existing, ...input })
-      }
-    },
+    { $set: { ...input, compiledPrompt: compileAgentPrompt({ ...existing, ...input }) } },
     { new: true, runValidators: true }
   ).select('-compiledPrompt').lean();
 
@@ -163,31 +207,17 @@ async function getConversation(req, res) {
 }
 
 async function sendConversationMessage(req, res) {
-  const result = await conversationService.sendMessage(
-    scope(req),
-    req.params.id,
-    req.body || {},
-    { userId: req.user.sub }
-  );
+  const result = await conversationService.sendMessage(scope(req), req.params.id, req.body || {}, { userId: req.user.sub });
   res.status(201).json(result);
 }
 
 async function simulateInboundMessage(req, res) {
-  const result = await conversationService.simulateInboundMessage(
-    scope(req),
-    req.params.id,
-    req.body || {}
-  );
+  const result = await conversationService.simulateInboundMessage(scope(req), req.params.id, req.body || {});
   res.status(201).json(result);
 }
 
 async function updateConversation(req, res) {
-  const item = await conversationService.updateConversation(
-    scope(req),
-    req.params.id,
-    req.body || {},
-    { userId: req.user.sub }
-  );
+  const item = await conversationService.updateConversation(scope(req), req.params.id, req.body || {}, { userId: req.user.sub });
   res.json({ item });
 }
 
@@ -197,12 +227,7 @@ async function markConversationRead(req, res) {
 }
 
 async function addConversationNote(req, res) {
-  const item = await conversationService.addInternalNote(
-    scope(req),
-    req.params.id,
-    req.body || {},
-    { userId: req.user.sub }
-  );
+  const item = await conversationService.addInternalNote(scope(req), req.params.id, req.body || {}, { userId: req.user.sub });
   res.status(201).json({ item });
 }
 
@@ -234,6 +259,8 @@ module.exports = {
   verifyWhatsAppWebhook,
   receiveWhatsAppWebhook,
   listProviders,
+  listMessagingIntegrations,
+  configureMetaIntegration,
   listAgentConfigurations,
   createAgentConfiguration,
   updateAgentConfiguration,
