@@ -11,6 +11,8 @@ const AgentConfiguration = require('../models/AgentConfiguration');
 const { compileAgentPrompt } = require('../domain/omnichannel/promptCompiler');
 const { runPlayground } = require('../services/agentSdrService');
 const conversationService = require('../services/conversationService');
+const outboundService = require('../services/outboundService');
+const { ingestMetaWebhook } = require('../services/whatsappWebhookService');
 const { providerRegistry } = require('../integrations/providerRegistry');
 
 const AGENT_MUTABLE_FIELDS = Object.freeze([
@@ -45,8 +47,38 @@ function pickAgentInput(input = {}) {
   }, {});
 }
 
+async function verifyWhatsAppWebhook(req, res) {
+  const provider = providerRegistry.getMessaging('meta');
+  const valid = provider.validateWebhook({
+    mode: req.query['hub.mode'],
+    verifyToken: req.query['hub.verify_token']
+  });
+  if (!valid) return res.status(403).send('forbidden');
+  return res.status(200).send(String(req.query['hub.challenge'] || ''));
+}
+
+async function receiveWhatsAppWebhook(req, res) {
+  const provider = providerRegistry.getMessaging('meta');
+  const appSecretConfigured = Boolean(String(process.env.WHATSAPP_APP_SECRET || '').trim());
+  if (appSecretConfigured) {
+    const valid = provider.validateWebhook({
+      rawBody: req.rawBody,
+      signature: req.get('x-hub-signature-256')
+    });
+    if (!valid) return res.status(401).json({ error: 'Assinatura do webhook inválida.' });
+  }
+
+  const result = await ingestMetaWebhook(req.body || {});
+  return res.status(200).json({ received: true, ...result });
+}
+
 async function listProviders(_req, res) {
-  res.json({ providers: providerRegistry.list() });
+  const providers = providerRegistry.list();
+  const messagingStatus = {};
+  for (const id of providers.messaging) {
+    messagingStatus[id] = await providerRegistry.getMessaging(id).testConnection().catch(() => ({ ok: false, status: 'error' }));
+  }
+  res.json({ providers, messagingStatus });
 }
 
 async function listAgentConfigurations(req, res) {
@@ -174,10 +206,33 @@ async function addConversationNote(req, res) {
   res.status(201).json({ item });
 }
 
+async function listOutboundJobs(req, res) {
+  const items = await outboundService.listJobs(req.user.sub, req.query || {});
+  res.json({ items });
+}
+
+async function getOutboundSummary(req, res) {
+  res.json({ summary: await outboundService.getSummary(req.user.sub) });
+}
+
+async function approveOutboundJob(req, res) {
+  const item = await outboundService.approveJob(req.user.sub, req.params.id);
+  if (!item) return res.status(404).json({ error: 'Job pendente de revisão não encontrado.' });
+  return res.json({ item });
+}
+
+async function cancelOutboundJob(req, res) {
+  const item = await outboundService.cancelJob(req.user.sub, req.params.id);
+  if (!item) return res.status(404).json({ error: 'Job outbound não encontrado ou não cancelável.' });
+  return res.json({ item });
+}
+
 module.exports = {
   AGENT_MUTABLE_FIELDS,
   scope,
   pickAgentInput,
+  verifyWhatsAppWebhook,
+  receiveWhatsAppWebhook,
   listProviders,
   listAgentConfigurations,
   createAgentConfiguration,
@@ -193,5 +248,9 @@ module.exports = {
   simulateInboundMessage,
   updateConversation,
   markConversationRead,
-  addConversationNote
+  addConversationNote,
+  listOutboundJobs,
+  getOutboundSummary,
+  approveOutboundJob,
+  cancelOutboundJob
 };
