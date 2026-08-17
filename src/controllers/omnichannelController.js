@@ -60,15 +60,15 @@ async function verifyWhatsAppWebhook(req, res) {
 async function receiveWhatsAppWebhook(req, res) {
   const provider = providerRegistry.getMessaging('meta');
   const appSecretConfigured = Boolean(String(process.env.WHATSAPP_APP_SECRET || '').trim());
-  if (appSecretConfigured) {
-    const valid = provider.validateWebhook({
-      rawBody: req.rawBody,
-      signature: req.get('x-hub-signature-256')
-    });
-    if (!valid) return res.status(401).json({ error: 'Assinatura do webhook inválida.' });
+  const signatureValid = appSecretConfigured
+    ? provider.validateWebhook({ rawBody: req.rawBody, signature: req.get('x-hub-signature-256') })
+    : false;
+
+  if (appSecretConfigured && !signatureValid) {
+    return res.status(401).json({ error: 'Assinatura do webhook inválida.' });
   }
 
-  const result = await ingestMetaWebhook(req.body || {});
+  const result = await ingestMetaWebhook(req.body || {}, { signatureValid });
   return res.status(200).json({ received: true, ...result });
 }
 
