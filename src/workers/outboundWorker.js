@@ -5,6 +5,9 @@
  * Também detecta leads recém-criados/atualizados e os encaminha para o motor
  * outbound, mantendo a prospecção desacoplada da mensageria.
  *
+ * A fila continua sendo preparada com a automação parada. O envio só é
+ * consumido quando o usuário acionou Start e seu estado está RUNNING.
+ *
  * @module src/workers/outboundWorker
  */
 
@@ -13,6 +16,11 @@ const OutboundJob = require('../models/OutboundJob');
 const { providerRegistry } = require('../integrations/providerRegistry');
 const { hasMongoUri } = require('../infrastructure/database/mongoConnection');
 const { enqueueProspectedLeads } = require('../services/outboundService');
+const {
+  getAutomationState,
+  getRunningUserIds,
+  isAutomationRunning
+} = require('../services/outboundAutomationService');
 
 let lastLeadScanAt = null;
 
@@ -36,7 +44,7 @@ async function scanProspectedLeads() {
   const batchSize = Math.max(10, Math.min(500, Number(process.env.OUTBOUND_DISCOVERY_BATCH || 100)));
 
   const leads = await Lead.find({ updatedAt: { $gt: since, $lte: now } })
-    .select('userId data updatedAt')
+    .select('userId organizationId data updatedAt')
     .sort({ updatedAt: 1, _id: 1 })
     .limit(batchSize)
     .lean();
@@ -45,7 +53,15 @@ async function scanProspectedLeads() {
   for (const document of leads) {
     const lead = document.data || {};
     if (lead.fonte === 'whatsapp_inbound') continue;
-    const result = await enqueueProspectedLeads({ userId: document.userId, leads: [lead] });
+
+    const automation = await getAutomationState(document.userId, document.organizationId || null);
+    const result = await enqueueProspectedLeads({
+      userId: document.userId,
+      leads: [lead],
+      mode: automation.mode,
+      channel: automation.channel,
+      minScore: automation.minScore
+    });
     queued += Number(result.queued || 0) + Number(result.review || 0) + Number(result.blocked || 0);
   }
 
@@ -58,10 +74,13 @@ async function scanProspectedLeads() {
   return { scanned: leads.length, queued };
 }
 
-async function claimNextJob() {
+async function claimNextJob(userIds = []) {
+  if (!Array.isArray(userIds) || userIds.length === 0) return null;
+
   const now = new Date();
   return OutboundJob.findOneAndUpdate(
     {
+      userId: { $in: userIds },
       status: 'PENDING',
       scheduledAt: { $lte: now },
       $or: [{ nextAttemptAt: null }, { nextAttemptAt: { $lte: now } }]
@@ -76,8 +95,18 @@ async function claimNextJob() {
 
 async function processOne() {
   if (!liveSendEnabled()) return false;
-  const job = await claimNextJob();
+
+  const runningUserIds = await getRunningUserIds();
+  const job = await claimNextJob(runningUserIds);
   if (!job) return false;
+
+  if (!await isAutomationRunning(job.userId)) {
+    job.status = 'PENDING';
+    job.lockedAt = null;
+    job.attempts = Math.max(0, Number(job.attempts || 0) - 1);
+    await job.save();
+    return false;
+  }
 
   try {
     const provider = providerRegistry.getMessaging(job.providerId);

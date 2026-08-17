@@ -50,6 +50,9 @@ function createOmnichannelRoutes({ requireAuth, simpleRateLimit }) {
 
   router.get('/outbound/jobs', asyncHandler(controller.listOutboundJobs));
   router.get('/outbound/summary', asyncHandler(controller.getOutboundSummary));
+  router.get('/outbound/automation', asyncHandler(controller.getOutboundAutomation));
+  router.post('/outbound/automation/start', mutationLimit, asyncHandler(controller.startOutboundAutomation));
+  router.post('/outbound/automation/stop', mutationLimit, asyncHandler(controller.stopOutboundAutomation));
   router.post('/outbound/jobs/:id/approve', mutationLimit, asyncHandler(controller.approveOutboundJob));
   router.post('/outbound/jobs/:id/cancel', mutationLimit, asyncHandler(controller.cancelOutboundJob));
 

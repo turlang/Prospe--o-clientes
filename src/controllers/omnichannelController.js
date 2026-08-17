@@ -13,6 +13,7 @@ const { compileAgentPrompt } = require('../domain/omnichannel/promptCompiler');
 const { runPlayground } = require('../services/agentSdrService');
 const conversationService = require('../services/conversationService');
 const outboundService = require('../services/outboundService');
+const outboundAutomationService = require('../services/outboundAutomationService');
 const { ingestMetaWebhook } = require('../services/whatsappWebhookService');
 const { providerRegistry } = require('../integrations/providerRegistry');
 
@@ -46,6 +47,37 @@ function pickAgentInput(input = {}) {
     if (Object.prototype.hasOwnProperty.call(input, field)) result[field] = input[field];
     return result;
   }, {});
+}
+
+async function getOutboundRuntime(channel = 'whatsapp') {
+  const normalizedChannel = String(channel || 'whatsapp').trim().toLowerCase();
+  const workerEnabled = String(process.env.OUTBOUND_WORKER_ENABLED || '').toLowerCase() === 'true';
+  const liveSend = String(process.env.OUTBOUND_LIVE_SEND || '').toLowerCase() === 'true';
+  const afterProspecting = String(process.env.OUTBOUND_AFTER_PROSPECTING || 'true').toLowerCase() !== 'false';
+
+  if (normalizedChannel !== 'whatsapp') {
+    return {
+      ready: false,
+      workerEnabled,
+      liveSend,
+      afterProspecting,
+      channel: normalizedChannel,
+      providerStatus: { ok: false, status: 'not_supported', message: 'Envio automático de e-mail ainda não possui provider real.' }
+    };
+  }
+
+  const providerStatus = await providerRegistry.getMessaging('meta')
+    .testConnection()
+    .catch(() => ({ ok: false, status: 'error', message: 'Falha ao validar o provedor WhatsApp.' }));
+
+  return {
+    ready: Boolean(workerEnabled && liveSend && afterProspecting && providerStatus.ok),
+    workerEnabled,
+    liveSend,
+    afterProspecting,
+    channel: 'whatsapp',
+    providerStatus
+  };
 }
 
 async function verifyWhatsAppWebhook(req, res) {
@@ -240,6 +272,48 @@ async function getOutboundSummary(req, res) {
   res.json({ summary: await outboundService.getSummary(req.user.sub) });
 }
 
+async function getOutboundAutomation(req, res) {
+  const currentScope = scope(req);
+  const item = await outboundAutomationService.getAutomationState(currentScope.userId, currentScope.organizationId);
+  const [runtime, summary] = await Promise.all([
+    getOutboundRuntime(item.channel),
+    outboundService.getSummary(currentScope.userId)
+  ]);
+  return res.json({ item, runtime, summary });
+}
+
+async function startOutboundAutomation(req, res) {
+  const currentScope = scope(req);
+  const channel = String(req.body?.channel || 'whatsapp').trim().toLowerCase();
+  const runtime = await getOutboundRuntime(channel);
+
+  if (!runtime.ready) {
+    return res.status(409).json({
+      error: 'O Start não foi liberado porque o canal de envio ainda não está pronto para produção.',
+      runtime
+    });
+  }
+
+  const result = await outboundAutomationService.startAutomation(
+    currentScope.userId,
+    {
+      mode: req.body?.mode || 'autonomous',
+      channel,
+      minScore: req.body?.minScore
+    },
+    req.user.sub,
+    currentScope.organizationId
+  );
+
+  return res.json({ ...result, runtime, summary: await outboundService.getSummary(currentScope.userId) });
+}
+
+async function stopOutboundAutomation(req, res) {
+  const currentScope = scope(req);
+  const result = await outboundAutomationService.stopAutomation(currentScope.userId, currentScope.organizationId);
+  return res.json({ ...result, runtime: await getOutboundRuntime(result.state.channel), summary: await outboundService.getSummary(currentScope.userId) });
+}
+
 async function approveOutboundJob(req, res) {
   const item = await outboundService.approveJob(req.user.sub, req.params.id);
   if (!item) return res.status(404).json({ error: 'Job pendente de revisão não encontrado.' });
@@ -256,6 +330,7 @@ module.exports = {
   AGENT_MUTABLE_FIELDS,
   scope,
   pickAgentInput,
+  getOutboundRuntime,
   verifyWhatsAppWebhook,
   receiveWhatsAppWebhook,
   listProviders,
@@ -278,6 +353,9 @@ module.exports = {
   addConversationNote,
   listOutboundJobs,
   getOutboundSummary,
+  getOutboundAutomation,
+  startOutboundAutomation,
+  stopOutboundAutomation,
   approveOutboundJob,
   cancelOutboundJob
 };
