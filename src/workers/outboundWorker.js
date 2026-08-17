@@ -2,18 +2,50 @@
  * @fileoverview Worker leve para processar a fila OutboundJob no MongoDB.
  *
  * O worker usa claim atômico, retentativa com backoff e dead-letter lógico.
- * Ele só inicia quando OUTBOUND_WORKER_ENABLED=true e o MongoDB está ativo.
+ * Também detecta leads recém-criados/atualizados e os encaminha para o motor
+ * outbound, mantendo a prospecção desacoplada da mensageria.
  *
  * @module src/workers/outboundWorker
  */
 
+const Lead = require('../models/Lead');
 const OutboundJob = require('../models/OutboundJob');
 const { providerRegistry } = require('../integrations/providerRegistry');
 const { hasMongoUri } = require('../infrastructure/database/mongoConnection');
+const { enqueueProspectedLeads } = require('../services/outboundService');
+
+let lastLeadScanAt = null;
 
 function retryDelayMs(attempt) {
   const base = Math.max(1000, Number(process.env.OUTBOUND_RETRY_BASE_MS || 15000));
   return Math.min(15 * 60 * 1000, base * (2 ** Math.max(0, attempt - 1)));
+}
+
+async function scanProspectedLeads() {
+  if (String(process.env.OUTBOUND_AFTER_PROSPECTING || 'true').toLowerCase() === 'false') {
+    return { scanned: 0, queued: 0 };
+  }
+
+  const now = new Date();
+  const lookbackMinutes = Math.max(1, Number(process.env.OUTBOUND_DISCOVERY_LOOKBACK_MINUTES || 1440));
+  const since = lastLeadScanAt || new Date(now.getTime() - lookbackMinutes * 60_000);
+  lastLeadScanAt = now;
+
+  const leads = await Lead.find({ updatedAt: { $gt: since, $lte: now } })
+    .select('userId data updatedAt')
+    .sort({ updatedAt: 1 })
+    .limit(Math.max(10, Math.min(500, Number(process.env.OUTBOUND_DISCOVERY_BATCH || 100))))
+    .lean();
+
+  let queued = 0;
+  for (const document of leads) {
+    const lead = document.data || {};
+    if (lead.fonte === 'whatsapp_inbound') continue;
+    const result = await enqueueProspectedLeads({ userId: document.userId, leads: [lead] });
+    queued += Number(result.queued || 0) + Number(result.review || 0) + Number(result.blocked || 0);
+  }
+
+  return { scanned: leads.length, queued };
 }
 
 async function claimNextJob() {
@@ -71,10 +103,11 @@ function startOutboundWorker() {
 
   const intervalMs = Math.max(1000, Number(process.env.OUTBOUND_WORKER_INTERVAL_MS || 5000));
   let running = false;
-  const timer = setInterval(async () => {
+  const tick = async () => {
     if (running) return;
     running = true;
     try {
+      await scanProspectedLeads();
       let processed = 0;
       while (processed < 10 && await processOne()) processed += 1;
     } catch (error) {
@@ -82,10 +115,13 @@ function startOutboundWorker() {
     } finally {
       running = false;
     }
-  }, intervalMs);
+  };
+
+  const timer = setInterval(tick, intervalMs);
   timer.unref?.();
+  setImmediate(tick);
 
   return { enabled: true, stop() { clearInterval(timer); } };
 }
 
-module.exports = { retryDelayMs, claimNextJob, processOne, startOutboundWorker };
+module.exports = { retryDelayMs, scanProspectedLeads, claimNextJob, processOne, startOutboundWorker };
