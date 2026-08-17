@@ -5,7 +5,8 @@
  * 1. carregar as variáveis de ambiente;
  * 2. estabelecer a conexão com o mecanismo de persistência;
  * 3. iniciar o servidor HTTP;
- * 4. encerrar o processo quando uma dependência obrigatória falhar.
+ * 4. iniciar workers operacionais explicitamente habilitados;
+ * 5. encerrar o processo quando uma dependência obrigatória falhar.
  *
  * A composição da aplicação está em `app.js`, conforme o princípio de
  * responsabilidade única e o padrão Application Factory.
@@ -20,6 +21,7 @@ const { createApp } = require('./app');
 const PlanConfiguration = require('./models/PlanConfiguration');
 const { initializePlanCatalog } = require('./domain/plans/planCatalog');
 const { connectDatabase, hasMongoUri, mustRequireMongo } = require('./infrastructure/database/mongoConnection');
+const { startOutboundWorker } = require('./workers/outboundWorker');
 
 const DEFAULT_PORT = 3000;
 
@@ -54,7 +56,10 @@ async function startServer({ port = process.env.PORT || DEFAULT_PORT } = {}) {
 
   return new Promise((resolve, reject) => {
     const server = app.listen(port, () => {
+      const outboundWorker = startOutboundWorker();
+      server.once('close', () => outboundWorker.stop());
       console.log(`[HTTP] LeadHunter Pro ativo na porta ${port} com ${storageLabel}.`);
+      console.log(`[OUTBOUND] Worker ${outboundWorker.enabled ? 'ativo' : 'desativado'}.`);
       resolve(server);
     });
 
