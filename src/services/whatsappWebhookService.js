@@ -56,7 +56,7 @@ async function findOrCreateLead(integration, event) {
 }
 
 async function findOrCreateConversation(scope, lead, event, integration) {
-  let conversation = await Conversation.findOne({
+  const existing = await Conversation.findOne({
     userId: scope.userId,
     organizationId: scope.organizationId || null,
     leadId: lead._id,
@@ -64,7 +64,7 @@ async function findOrCreateConversation(scope, lead, event, integration) {
     status: { $in: ['open', 'waiting_lead', 'waiting_human'] }
   }).populate('leadId', 'leadKey data updatedAt').lean();
 
-  if (conversation) return conversationRepository.mapConversation(conversation);
+  if (existing) return conversationRepository.mapConversation(existing);
 
   return conversationRepository.createConversation(scope, {
     leadId: lead._id,
@@ -77,20 +77,30 @@ async function findOrCreateConversation(scope, lead, event, integration) {
   });
 }
 
-async function recordWebhookEvent(integration, event, status = 'processed') {
+async function recordWebhookEvent(integration, event, signatureValid) {
   const externalEventId = event.externalMessageId || `meta_${crypto.randomUUID()}`;
+  const payloadHash = crypto.createHash('sha256').update(JSON.stringify(event)).digest('hex');
+  const fingerprint = crypto
+    .createHash('sha256')
+    .update(`${String(integration._id)}:${externalEventId}:${payloadHash}`)
+    .digest('hex');
+  const correlationId = crypto.randomUUID();
+  const retentionDays = Math.max(1, Math.min(365, Number(process.env.WEBHOOK_EVENT_RETENTION_DAYS || 30)));
+
   try {
     await WebhookEvent.create({
-      userId: integration.userId,
-      organizationId: integration.organizationId || null,
       integrationId: integration._id,
       provider: 'meta',
+      fingerprint,
       externalEventId,
-      eventType: 'message_received',
-      status,
-      payloadHash: crypto.createHash('sha256').update(JSON.stringify(event)).digest('hex'),
+      signatureValid: Boolean(signatureValid),
+      status: 'processed',
+      correlationId,
+      payloadHash,
       receivedAt: new Date(),
-      processedAt: status === 'processed' ? new Date() : null
+      processedAt: new Date(),
+      expiresAt: new Date(Date.now() + retentionDays * 24 * 60 * 60 * 1000),
+      errorCode: ''
     });
     return true;
   } catch (error) {
@@ -99,7 +109,7 @@ async function recordWebhookEvent(integration, event, status = 'processed') {
   }
 }
 
-async function ingestMetaWebhook(payload = {}) {
+async function ingestMetaWebhook(payload = {}, options = {}) {
   const provider = providerRegistry.getMessaging('meta');
   const events = await provider.processWebhook(payload);
   const result = { received: events.length, processed: 0, duplicates: 0, ignored: 0, repliesQueued: 0 };
@@ -112,7 +122,7 @@ async function ingestMetaWebhook(payload = {}) {
     }).lean();
     if (!integration) { result.ignored += 1; continue; }
 
-    const isNew = await recordWebhookEvent(integration, event);
+    const isNew = await recordWebhookEvent(integration, event, options.signatureValid === true);
     if (!isNew) { result.duplicates += 1; continue; }
 
     const scope = { userId: integration.userId, organizationId: integration.organizationId || null };
@@ -172,4 +182,4 @@ async function ingestMetaWebhook(payload = {}) {
   return result;
 }
 
-module.exports = { findLeadByPhone, findOrCreateLead, ingestMetaWebhook };
+module.exports = { findLeadByPhone, findOrCreateLead, recordWebhookEvent, ingestMetaWebhook };
