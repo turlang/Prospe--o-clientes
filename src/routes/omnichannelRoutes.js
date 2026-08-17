@@ -28,6 +28,8 @@ function createOmnichannelRoutes({ requireAuth, simpleRateLimit }) {
   router.use(simpleRateLimit({ windowMs: 60_000, max: 90 }));
 
   router.get('/providers', asyncHandler(controller.listProviders));
+  router.get('/integrations', asyncHandler(controller.listMessagingIntegrations));
+  router.post('/integrations/meta', mutationLimit, asyncHandler(controller.configureMetaIntegration));
 
   router.get('/agents', asyncHandler(controller.listAgentConfigurations));
   router.post('/agents', mutationLimit, asyncHandler(controller.createAgentConfiguration));
