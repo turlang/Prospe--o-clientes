@@ -8,6 +8,7 @@
 
 const DemoAiProvider = require('./ai/DemoAiProvider');
 const DemoMessagingProvider = require('./messaging/DemoMessagingProvider');
+const MetaWhatsAppProvider = require('./messaging/MetaWhatsAppProvider');
 
 class ProviderRegistry {
   constructor() {
@@ -37,6 +38,7 @@ class ProviderRegistry {
 
 const providerRegistry = new ProviderRegistry()
   .registerAi(new DemoAiProvider())
-  .registerMessaging(new DemoMessagingProvider());
+  .registerMessaging(new DemoMessagingProvider())
+  .registerMessaging(new MetaWhatsAppProvider());
 
 module.exports = { ProviderRegistry, providerRegistry };
