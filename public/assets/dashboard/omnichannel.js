@@ -1,8 +1,8 @@
 /**
  * @fileoverview Interface da Central de Conversas omnichannel.
  *
- * Injeta a nova view no painel autenticado e consome exclusivamente os
- * endpoints protegidos do domínio omnichannel.
+ * Injeta a view de conversas e o controle explícito de Start/Stop do outbound
+ * no painel autenticado, consumindo exclusivamente endpoints protegidos.
  *
  * @module public/assets/dashboard/omnichannel
  */
@@ -16,7 +16,10 @@
     selectedId: '',
     detail: null,
     loading: false,
-    searchTimer: null
+    searchTimer: null,
+    automation: null,
+    automationRuntime: null,
+    outboundSummary: {}
   };
 
   const STATUS_LABELS = Object.freeze({
@@ -106,6 +109,46 @@
       activateView();
       loadWorkspace();
     });
+  }
+
+  function injectOutboundControl() {
+    if (document.querySelector('#outboundAutomationControl')) return;
+    const campaigns = document.querySelector('#view-campanhas');
+    if (!campaigns) return;
+
+    const header = campaigns.querySelector('.dashboard-header');
+    const panel = document.createElement('section');
+    panel.id = 'outboundAutomationControl';
+    panel.className = 'card-panel';
+    panel.setAttribute('aria-label', 'Controle da automação de contatos');
+    panel.innerHTML = `
+      <div class="section-title">
+        <div>
+          <p class="tag dark">Controle de envio</p>
+          <h3>Automação pós-prospecção</h3>
+          <p class="meta">A prospecção prepara os contatos e a fila. Nenhum envio automático começa até você clicar em <strong>Iniciar contatos</strong>.</p>
+        </div>
+        <div class="actions-row">
+          <button id="outboundStartButton" type="button">Iniciar contatos</button>
+          <button id="outboundStopButton" type="button" class="secondary">Parar</button>
+        </div>
+      </div>
+      <div id="outboundAutomationStatus" class="info-grid" aria-live="polite"></div>
+      <p id="outboundAutomationHint" class="meta"></p>
+    `;
+
+    if (header) header.after(panel);
+    else campaigns.prepend(panel);
+
+    const headline = campaigns.querySelector('.dashboard-header .meta');
+    if (headline) {
+      headline.textContent = 'Crie cadências e prepare a fila após a prospecção. O envio automático só começa quando você aciona o Start abaixo.';
+    }
+
+    const infoCards = campaigns.querySelectorAll('.info-grid article');
+    if (infoCards[2]) {
+      infoCards[2].innerHTML = '<strong>Como funciona o envio?</strong><span>O sistema prepara os contatos, mas só inicia a execução automática depois do seu Start. Você pode parar a qualquer momento.</span>';
+    }
   }
 
   function injectView() {
@@ -223,6 +266,13 @@
     box.innerHTML = message ? `<div class="omni-${type || 'loading'}">${escapeHtml(message)}</div>` : '';
   }
 
+  function setOutboundHint(message = '', type = '') {
+    const hint = document.querySelector('#outboundAutomationHint');
+    if (!hint) return;
+    hint.textContent = message;
+    hint.dataset.state = type;
+  }
+
   function renderSummary(summary = {}) {
     const values = [
       ['Total', summary.total],
@@ -237,6 +287,105 @@
     }
     const badge = document.querySelector('#omniNavBadge');
     if (badge) badge.textContent = Number(summary.unread || 0) > 0 ? String(summary.unread) : '';
+  }
+
+  function renderAutomation(payload = {}) {
+    state.automation = payload.item || null;
+    state.automationRuntime = payload.runtime || null;
+    state.outboundSummary = payload.summary || {};
+
+    const running = state.automation?.status === 'RUNNING';
+    const runtime = state.automationRuntime || {};
+    const summary = state.outboundSummary || {};
+    const container = document.querySelector('#outboundAutomationStatus');
+
+    if (container) {
+      const values = [
+        ['Status', running ? 'ATIVO' : 'PARADO'],
+        ['Prontos na fila', Number(summary.PENDING || 0)],
+        ['Aguardando revisão', Number(summary.PENDING_REVIEW || 0)],
+        ['Enviados', Number(summary.SENT || 0)]
+      ];
+      container.innerHTML = values.map(([label, value]) => `<article><strong>${escapeHtml(label)}</strong><span>${escapeHtml(value)}</span></article>`).join('');
+    }
+
+    const startButton = document.querySelector('#outboundStartButton');
+    const stopButton = document.querySelector('#outboundStopButton');
+    if (startButton) startButton.disabled = running || (state.automationRuntime !== null && !runtime.ready);
+    if (stopButton) stopButton.disabled = !running;
+
+    if (running) {
+      setOutboundHint('Automação ativa. Novos jobs elegíveis podem ser processados pelo worker. Use Parar para interromper novos envios.', 'running');
+      return;
+    }
+
+    if (state.automationRuntime === null) {
+      setOutboundHint('Carregando estado da automação...', 'loading');
+      return;
+    }
+
+    if (!runtime.ready) {
+      const reasons = [];
+      if (!runtime.workerEnabled) reasons.push('worker outbound desativado');
+      if (!runtime.liveSend) reasons.push('envio real ainda bloqueado no servidor');
+      if (!runtime.afterProspecting) reasons.push('fila pós-prospecção desativada');
+      if (!runtime.providerStatus?.ok) reasons.push('WhatsApp Cloud API não configurada/validada');
+      setOutboundHint(`Start bloqueado até o ambiente estar pronto: ${reasons.join('; ') || 'valide o canal de envio'}.`, 'blocked');
+      return;
+    }
+
+    setOutboundHint('Tudo pronto. A fila pode receber leads após a prospecção; clique em Iniciar contatos para começar os envios elegíveis.', 'ready');
+  }
+
+  async function loadAutomation() {
+    try {
+      renderAutomation(await request('/api/omnichannel/outbound/automation'));
+    } catch (error) {
+      state.automation = null;
+      state.automationRuntime = null;
+      state.outboundSummary = {};
+      renderAutomation({});
+      setOutboundHint(error.message, 'error');
+    }
+  }
+
+  async function startAutomation() {
+    const button = document.querySelector('#outboundStartButton');
+    if (button) button.disabled = true;
+    setOutboundHint('Iniciando automação...', 'loading');
+
+    try {
+      const result = await request('/api/omnichannel/outbound/automation/start', {
+        method: 'POST',
+        body: JSON.stringify({ mode: 'autonomous', channel: 'whatsapp' })
+      });
+      renderAutomation(result);
+      const released = Number(result.releasedPendingReview || 0);
+      setOutboundHint(
+        released > 0
+          ? `Automação iniciada. ${released} contato(s) elegível(is) que aguardavam revisão foram liberados para a fila.`
+          : 'Automação iniciada. Os contatos elegíveis da fila já podem ser processados.',
+        'running'
+      );
+    } catch (error) {
+      setOutboundHint(error.message, 'error');
+      await loadAutomation();
+    }
+  }
+
+  async function stopAutomation() {
+    const button = document.querySelector('#outboundStopButton');
+    if (button) button.disabled = true;
+    setOutboundHint('Parando automação...', 'loading');
+
+    try {
+      const result = await request('/api/omnichannel/outbound/automation/stop', { method: 'POST' });
+      renderAutomation(result);
+      setOutboundHint('Automação parada. A prospecção continua preparando a fila, mas nenhum novo job desta conta será enviado até um novo Start.', 'stopped');
+    } catch (error) {
+      setOutboundHint(error.message, 'error');
+      await loadAutomation();
+    }
   }
 
   function renderLeadOptions() {
@@ -571,7 +720,7 @@
   }
 
   async function loadWorkspace() {
-    await Promise.all([loadSummary(), loadLeads()]);
+    await Promise.all([loadSummary(), loadLeads(), loadAutomation()]);
     await loadConversations();
   }
 
@@ -589,15 +738,21 @@
       clearTimeout(state.searchTimer);
       state.searchTimer = setTimeout(() => loadConversations({ preserveSelection: false }), 320);
     });
+    document.querySelector('#outboundStartButton')?.addEventListener('click', startAutomation);
+    document.querySelector('#outboundStopButton')?.addEventListener('click', stopAutomation);
+    document.querySelector('[data-view="campanhas"]')?.addEventListener('click', loadAutomation);
   }
 
   function initialize() {
     injectStylesheet();
     injectNavigation();
+    injectOutboundControl();
     injectView();
     bindEvents();
     renderSummary({});
+    renderAutomation({});
     renderEmptyThread();
+    if (localStorage.getItem('authToken')) loadAutomation();
   }
 
   if (document.readyState === 'loading') {
