@@ -35,6 +35,7 @@ const AdminAuditLog = require('./models/AdminAuditLog');
 const TrialGuard = require('./models/TrialGuard');
 const PasswordReset = require('./models/PasswordReset');
 const Lead = require('./models/Lead');
+const OutboundJob = require('./models/OutboundJob');
 const Task = require('./models/Task');
 const CopilotConversation = require('./models/CopilotConversation');
 const PlanConfiguration = require('./models/PlanConfiguration');
@@ -104,7 +105,6 @@ const { registerCommercialRoutes } = require('./routes/commercialRoutes');
 const { createOmnichannelRoutes } = require('./routes/omnichannelRoutes');
 const { registerCrmRoutes } = require('./routes/crmRoutes');
 
-
 /**
  * Cria uma aplicação Express configurada e pronta para receber requisições.
  *
@@ -129,6 +129,7 @@ function createApp() {
     models: {
       User,
       Lead,
+      OutboundJob,
       SearchHistory,
       Task,
       Usage,
@@ -189,11 +190,7 @@ function createApp() {
       useDefaults: true,
       directives: {
         defaultSrc: ["'self'"],
-        // O frontend legado usa handlers inline (onclick) em vários botões.
-        // Mantemos CSP ativa, mas liberamos inline scripts para preservar a UX até a migração completa para listeners externos.
         scriptSrc: ["'self'", "'unsafe-inline'"],
-        // Helmet 7 também cria script-src-attr. Sem esta diretiva,
-        // o navegador bloqueia onclick/ondrop/ondragstart do frontend legado.
         scriptSrcAttr: ["'unsafe-inline'"],
         styleSrc: ["'self'", "'unsafe-inline'"],
         imgSrc: ["'self'", 'data:', 'https:'],
@@ -208,7 +205,15 @@ function createApp() {
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Device-Id'],
     maxAge: 600
   }));
-  app.use(express.json({ limit: '1mb', strict: true }));
+  app.use(express.json({
+    limit: '1mb',
+    strict: true,
+    verify(req, _res, buffer) {
+      if (String(req.originalUrl || '').startsWith('/api/omnichannel/webhooks/whatsapp')) {
+        req.rawBody = Buffer.from(buffer);
+      }
+    }
+  }));
   app.use((req, _res, next) => { req.body = req.body && typeof req.body === 'object' ? req.body : {}; next(); });
   app.use(requestLogger);
   app.use('/api', simpleRateLimit({ windowMs: 60_000, max: 120 }));
@@ -229,9 +234,6 @@ function createApp() {
         return;
       }
 
-      // Assets do painel e da landing precisam ser revalidados após cada deploy.
-      // Isso evita que o navegador mantenha JavaScript/CSS de releases antigas,
-      // mesmo quando o HTML já foi atualizado pelo Render.
       if (/\.(?:css|js)$/i.test(filePath)) {
         res.setHeader('Cache-Control', 'no-cache, must-revalidate');
       }
@@ -348,7 +350,6 @@ function createApp() {
     escapeRegExp,
   };
 
-  // A ordem de registro preserva as rotas específicas antes dos fallbacks.
   registerSystemRoutes(app, routeContext);
   app.use('/api/auth', authRoutes);
   app.use('/api/v23', createSalesOsRoutes({ requireAuth }));
