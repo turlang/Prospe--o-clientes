@@ -5,7 +5,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $Repository = "turlang/Prospe--o-clientes"
-$TargetCommit = "eaad68ef31fe9ff9b0b9f5f24b0e7e6f1b6986fd"
+$TargetCommit = "bdc7f4f83eb0666e19a0930f328f596cc8b17307"
 
 function Assert-LastExitCode([string]$Message) {
   if ($LASTEXITCODE -ne 0) { throw $Message }
