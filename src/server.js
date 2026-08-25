@@ -1,4 +1,10 @@
 /**
+ * Copyright © 2026 Evandro Ricardo. All Rights Reserved.
+ * Proprietary software. Unauthorized copying, modification, distribution,
+ * or commercial use is prohibited. See LICENSE.md for terms.
+ */
+
+/**
  * @fileoverview Ponto de entrada da aplicação LeadHunter Pro.
  *
  * Responsabilidades exclusivas deste arquivo:
