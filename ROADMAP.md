@@ -1,233 +1,394 @@
-# Roadmap — LeadHunter Pro
+# Roadmap — LeadHunter Pro 28+
 
-**Versão identificada no código:** 27.0.0  
-**Estado da release:** CRM 360 integrado; fundação omnichannel e Motor de Outbound + SDR incorporados; ativação real do WhatsApp depende de configuração e validação no Render  
-**Próxima evolução planejada:** ativação controlada do WhatsApp em produção, scoring explicável e Auditor Digital comercial
+## Visão do produto
 
-## Objetivo estratégico
+O LeadHunter Pro evolui de uma ferramenta de prospecção e CRM para um **Sistema Operacional Comercial e de Presença Digital**.
 
-Transformar o LeadHunter Pro no sistema operacional comercial mais eficiente para freelancers, agências e pequenas equipes que vendem sites, automações e soluções digitais.
+```text
+Encontrar → Analisar → Identificar oportunidade → Recomendar solução
+→ Criar demonstração → Abordar → Negociar → Fechar → Publicar
+→ Promover → Medir resultados → Melhorar / Expandir
+```
 
-O diferencial não será copiar CRMs generalistas. O produto deve encontrar empresas com deficiência digital, comprovar a oportunidade, recomendar a oferta adequada, conduzir o contato e acompanhar receita e entrega em um único fluxo.
+O objetivo não é adicionar funcionalidades indiscriminadamente. A prioridade é tornar o produto mais simples, intuitivo, orientado à próxima ação, comercialmente demonstrável e capaz de gerar valor depois da venda.
 
-## Regra de verdade do produto
+## Princípios
 
-Uma funcionalidade só pode ser marcada como concluída quando:
+### Simplicidade primeiro
 
-1. os arquivos reais estiverem presentes na `main`;
-2. `npm run quality` estiver aprovado;
-3. o Render estiver executando o commit esperado;
-4. o fluxo tiver sido validado na interface;
-5. limitações demonstrativas ou dependências externas estiverem claramente informadas.
+A interface deve responder principalmente:
 
-Documentação, pacote local, branch ou pull request isolado não equivalem a recurso publicado.
+1. O que aconteceu?
+2. O que precisa da minha atenção?
+3. O que devo fazer agora?
 
-## Marco 1 — Base comercial confiável
+### Uma jornada comercial
 
-**Estado:** concluído e validado, com uma pendência operacional isolada.
+Experiência principal pretendida:
 
-Entregas confirmadas:
+```text
+Início | Prospecção | CRM | Conversas | Propostas | Relatórios
+```
 
-- aplicação publicada no Render;
-- MongoDB Atlas conectado;
-- cadastro, login e sessão;
-- planos e limites;
-- painel administrativo;
-- pagamento e estrutura de webhook;
-- IA com fallback local;
-- segurança, auditoria e testes automatizados;
-- build e deploy validados.
+Configurações, integrações, pipelines, campos personalizados, catálogo, usuários e administração ficam em áreas secundárias.
 
-Pendência:
+### Uma fonte de verdade
 
-- atualizar o domínio/remetente da recuperação de senha e repetir o teste com destinatário real no Resend.
+Lead, empresa, contato, oportunidade, negociação e cliente devem possuir relações e estados claros, sem cadastros concorrentes ou informações divergentes.
 
-## Marco 2 — CRM 360
+### IA como infraestrutura
 
-**Estado:** integrado na release 27.0.0, preservando a Central de Conversas e os dados existentes.
+A inteligência aparece dentro das ações normais: analisar empresa, criar abordagem, criar demonstração, responder cliente, criar proposta, planejar follow-up e criar campanha.
 
-A integração foi refeita sobre uma cópia exata da `main` publicada. O artefato legado corrompido permaneceu encerrado e não foi reutilizado.
+### Automação controlada
 
-Escopo que deverá ser validado na integração:
+A evolução seguirá três níveis: assistido, programado/semiautomático e automático controlado. Ações sensíveis exigem autorização, limites, auditoria, logs, interrupção e respeito às regras dos provedores.
 
-- múltiplos pipelines;
-- etapas, probabilidades e requisitos personalizados;
-- campos personalizados;
-- filtros salvos;
-- visualizações Kanban e Lista;
-- catálogo de produtos e serviços;
-- valor de contrato, recorrência e receita fechada;
-- previsão ponderada;
-- metas mensais e trimestrais;
-- relatórios por período;
-- importação CSV com prévia e mapeamento;
-- deduplicação;
-- exportação completa;
-- motivos estruturados de perda;
-- reativação de oportunidades;
-- histórico comercial aditivo;
-- validação antes da mudança de etapa.
+---
 
-Critério de conclusão: arquivos integrados e suíte completa aprovada. O marco será considerado validado em produção quando o Render executar o commit final e o checklist funcional for concluído.
+## Marco 0 — Verdade do produto
 
-## Marco 3 — Comunicação integrada e Motor de Outbound + SDR
+Confirmar o estado real antes de expandir:
 
-**Estado:** fundação técnica integrada; envio real permanece protegido até configuração e smoke test do canal.
+- versão e commit da `main`;
+- commit publicado no Render;
+- MongoDB e dependências externas;
+- módulos realmente funcionais;
+- módulos demonstrativos;
+- integrações reais e simuladas;
+- funcionalidades incompletas ou abandonadas;
+- documentação divergente.
 
-Concluído no código:
+Uma funcionalidade só é operacional quando está na `main`, passa pelos gates, está publicada, foi testada e funciona no ambiente de produção.
 
-- modelos MongoDB do domínio omnichannel;
-- contratos de IA e mensageria;
-- criptografia de credenciais;
-- isolamento por proprietário;
-- Central de Conversas;
-- histórico, notas internas, não lidas e transferência humana;
-- provedor demonstrativo explicitamente identificado;
-- base do agente SDR e playground seguro;
-- fila persistente `OutboundJob` com deduplicação;
-- modos assistido, semiautomático e autônomo controlado;
-- descoberta automática de leads novos/atualizados depois da prospecção;
-- score mínimo, bloqueio `DO_NOT_CONTACT` e consentimento obrigatório para modos automáticos;
-- worker com claim atômico, retentativas, backoff e estado `DEAD`;
-- kill-switch `OUTBOUND_LIVE_SEND` para impedir envio acidental;
-- adaptador `MetaWhatsAppProvider` para WhatsApp Cloud API;
-- verificação e assinatura do webhook quando o segredo do app estiver configurado;
-- deduplicação de eventos de webhook;
-- associação autenticada do `phoneNumberId` à conta correta;
-- mensagem recebida → lead/conversa → análise → atualização do CRM;
-- resposta sugerida retornando para a fila, com revisão humana por padrão;
-- endpoints para listar, aprovar e cancelar jobs outbound;
-- testes de regressão das políticas de consentimento, kill-switch e parsing de webhook.
+## Marco 1 — Limpeza e UX
 
-Ainda depende de ativação/validação externa:
+Primeiro grande trabalho do novo ciclo.
 
-- cadastrar as credenciais reais do WhatsApp no Render;
-- associar o `phoneNumberId` da conta real;
-- configurar o callback público do webhook;
-- executar teste real de entrada, saída, status e retorno;
-- manter `OUTBOUND_LIVE_SEND=false` até o smoke test estar aprovado;
-- validar regras comerciais, templates e reputação do canal antes de ampliar volume;
-- Gmail e Outlook;
-- calendário e agendamento;
-- tela administrativa específica para configuração do canal;
-- Evolution API e UaiZapi como adaptadores opcionais.
+Inventariar páginas, menus, submenus, modais, dashboards, formulários, tabelas, Kanbans, filtros, relatórios, configurações, ações e componentes duplicados.
 
-Critério para declarar WhatsApp operacional em produção: commit presente na `main`, `npm run quality` verde, Render no commit esperado, integração Meta configurada, webhook real validado e pelo menos um fluxo controlado de envio e resposta concluído sem bypass de segurança.
+Classificar cada item como:
 
-## Marco 4 — Auditor Digital e mapa de oportunidades
+```text
+MANTER | SIMPLIFICAR | FUNDIR | MOVER | REDESENHAR | REMOVER
+```
 
-Esta é a principal vantagem competitiva planejada.
+Reorganizar a arquitetura de informação e criar um dashboard orientado à ação, destacando acontecimentos, pendências e próxima melhor ação.
 
-- auditoria de site, responsividade, HTTPS, desempenho, SEO, acessibilidade, formulários, WhatsApp, analytics, pixels, reputação e presença social;
-- comparação local por segmento e região;
-- evidências e data de coleta em cada diagnóstico;
-- tradução automática da deficiência em serviço vendável;
-- oferta, escopo, faixa de preço e argumento comercial sugeridos;
-- mapa territorial de oportunidades;
-- reauditoria para demonstrar resultado depois da venda.
+Revisar sobreposição entre Lead/Empresa/Contato/Oportunidade/Cliente/Negociação; Atividade/Tarefa/Follow-up/Conversa; IA/Copiloto/SDR/Automação.
 
-## Marco 5 — Scoring explicável
+**Gate:** novo usuário consegue buscar empresa → analisar → salvar → abordar → mover no CRM → criar follow-up sem conhecimento prévio do sistema.
 
-- Fit Score: aderência ao cliente ideal;
-- Opportunity Score: intensidade da deficiência digital;
-- Reachability Score: possibilidade real de contato;
-- Intent Score: sinais de interesse observados;
-- Close Score: probabilidade operacional de fechamento;
-- componentes, evidências e incerteza visíveis;
-- aprendizado com ganhos e perdas reais;
-- ausência de dados ou probabilidades inventadas.
+## Marco 2 — Prospecção 2.0
 
-## Marco 6 — Venda guiada por IA
+Transformar busca em descoberta de oportunidades.
 
-- fila diária de prioridades;
-- próxima melhor ação explicada;
-- preparação para contato e reunião;
-- geração de mensagens baseada apenas em evidências disponíveis;
-- análise de respostas e objeções;
-- atualização assistida do CRM;
-- evolução dos modos assistido, semiautônomo e autônomo controlado;
-- aprovação obrigatória para ações sensíveis.
+Cada resultado deve enfatizar empresa, contato, presença digital, problemas encontrados, oportunidade, serviço sugerido e próxima ação, reduzindo dados brutos sem contexto.
 
-## Marco 7 — Automação visual
+## Marco 3 — Auditor Digital
 
-- Gatilho → Condição → Ação → Espera → Decisão;
-- criação por linguagem natural;
-- simulação antes da publicação;
-- versionamento, auditoria e reversão;
-- limites por plano;
-- filas, retentativas e dead-letter queue sobre a fundação outbound existente.
+Motor para identificar problemas comercialmente relevantes com evidência.
 
-## Marco 8 — Propostas, contratos e receita
+Analisar, quando aplicável: site, HTTPS, mobile, velocidade, SEO, acessibilidade, CTA, WhatsApp, formulário, agendamento, analytics, pixels, redes sociais, reputação e presença local.
 
-- catálogo, pacotes e precificação;
-- proposta gerada a partir da auditoria;
-- assinatura eletrônica;
-- Pix, cartão, recorrência e parcelamento;
-- rastreamento de abertura;
-- renovação, upsell, cross-sell e indicação;
-- ligação entre oportunidade, venda, entrega e resultado.
+Cada achado deve possuir evidência, impacto, confiança, data e serviço relacionado. Nunca inventar deficiência sem evidência suficiente.
 
-## Marco 9 — Equipes e multiempresa
+## Marco 4 — Scoring explicável
 
-- workspaces e organizações;
-- convites, papéis e permissões;
-- metas por pessoa e equipe;
-- distribuição e territórios;
-- isolamento por tenant;
-- MFA, sessões, auditoria e LGPD;
-- white label e subcontas para agências.
+Separar a avaliação em:
 
-## Marco 10 — Inteligência de receita
+- Fit Score;
+- Opportunity Score;
+- Reachability Score;
+- Intent Score;
+- Close Score.
 
-- velocidade de vendas;
-- ciclo, ticket, recorrência e churn;
-- cohorts e previsão;
-- atribuição por origem e canal;
-- desempenho de mensagens, ofertas e sequências;
-- explicações gerenciais em linguagem natural;
-- recomendações associadas a dados verificáveis.
+Componentes, evidências, ausência de dados e incerteza devem ser visíveis.
 
-## Marco 11 — Mobile e produtividade
+## Marco 5 — CRM simplificado
 
-- PWA instalável;
-- notificações push;
-- operação offline básica;
-- registro por voz;
-- agenda, conversas, tarefas e CRM em poucos toques;
-- aplicativos nativos somente depois da validação da PWA.
+Preservar o CRM 360 reduzindo a complexidade aparente.
 
-## Marco 12 — Plataforma e ecossistema
+Pipeline padrão:
 
-- API pública versionada;
-- OAuth e tokens com escopo;
-- webhooks;
-- SDK e sandbox;
-- n8n, Make e Zapier;
-- Google Workspace e Microsoft 365;
-- marketplace de integrações e templates.
+```text
+Novo → Analisado → Contatado → Respondeu → Proposta → Negociação → Fechado
+```
 
-## Ordem de execução para liderança do segmento
+Pipelines avançados continuam configuráveis. Cada oportunidade enfatiza estado, última interação, próxima ação, valor, probabilidade e responsável.
 
-1. verdade de versão, rastreabilidade de deploy e recuperação segura;
-2. integração limpa do CRM 360;
-3. Motor de Outbound em modo assistido e fila observável;
-4. ativação controlada do WhatsApp oficial em produção;
-5. Auditor Digital e Opportunity Score;
-6. venda guiada e agente SDR controlado;
-7. propostas, contratos e pagamentos;
-8. automação visual;
-9. equipes, analytics avançado e ecossistema.
+## Marco 6 — Comunicação real
 
-## Regras de execução
+Concluir e validar a infraestrutura existente de WhatsApp Cloud API: envio, recebimento, status, webhook, associação com lead, histórico, templates, consentimento e DO_NOT_CONTACT.
+
+Depois: Gmail, Outlook, calendário e agendamento.
+
+## Marco 7 — SDR assistido
+
+Transformar a fundação atual em assistente comercial utilizável.
+
+A IA prepara abordagem, analisa contexto e respostas, identifica objeções, sugere próxima ação/follow-up e auxilia atualização do CRM.
+
+Fluxo inicial:
+
+```text
+IA sugere → humano aprova → sistema executa
+```
+
+## Marco 8 — Demonstração comercial
+
+Criar o **LeadHunter Demo**.
+
+A partir da oportunidade, gerar demonstrações de site institucional, landing page, cardápio digital, catálogo, página de produto/serviço, captação, agendamento, página promocional ou integração WhatsApp.
+
+A demonstração deve permanecer vinculada ao lead/oportunidade e separada do projeto definitivo.
+
+## Marco 9 — Templates inteligentes
+
+Biblioteca inicial por segmentos, começando por restaurante/pizzaria, clínica, barbearia/salão, automotivo e serviços profissionais.
+
+Templates serão compostos por blocos reutilizáveis, como Hero, Serviços, Produtos, Galeria, Depoimentos, Mapa, Horário, WhatsApp, Formulário e CTA.
+
+## Marco 10 — Preview e link comercial
+
+Gerar endereço temporário compartilhável para a demonstração e registrar, quando permitido, criação, envio, abertura, visitas e interações relevantes.
+
+Esses eventos retornam ao CRM e ajudam a determinar a próxima ação.
+
+## Marco 11 — Proposta inteligente
+
+Fluxo:
+
+```text
+Auditoria → Problema → Serviço recomendado → Demonstração → Escopo → Preço → Proposta
+```
+
+Vincular proposta, demonstração, oportunidade e histórico comercial.
+
+## Marco 12 — Contratos e pagamento
+
+Adicionar contrato, assinatura eletrônica, Pix, cartão, parcelamento, recorrência, webhook e estado financeiro.
+
+```text
+Proposta → Aceite → Contrato → Pagamento → Cliente
+```
+
+## Marco 13 — Editor visual
+
+Somente após validar o gerador. Permitir editar texto, imagens, seções, cores, CTA e ordem dos blocos. O objetivo é edição rápida, não replicar um construtor genérico complexo.
+
+## Marco 14 — Publicação
+
+Transformar demonstração vendida em projeto real com publicação, domínio, SSL, versionamento, rollback e analytics.
+
+Manter separação explícita entre DEMO e SITE DO CLIENTE.
+
+## Marco 15 — Marketing Agent
+
+Após a publicação, permitir que o projeto continue ajudando o negócio a gerar demanda.
+
+```text
+Site → Marketing Agent → Conteúdo/Campanhas → Redes sociais
+→ Visitantes → Site → WhatsApp/Formulário → Leads/Vendas
+```
+
+O agente só opera contas e canais explicitamente autorizados.
+
+## Marco 16 — Social Media
+
+Integrações oficiais inicialmente com Instagram e Facebook. Avaliar LinkedIn, TikTok e outros canais conforme segmento, APIs e políticas disponíveis.
+
+Usar permissões mínimas e contas conectadas pelo próprio cliente.
+
+## Marco 17 — Gerador de campanhas
+
+Transformar promoções, produtos, serviços, eventos e conteúdo do negócio em conjuntos de campanha: posts, stories quando suportados, CTA, landing promocional, link rastreável e mensagem comercial.
+
+## Marco 18 — Calendário de marketing
+
+Calendário editorial baseado em segmento, sazonalidade, promoções, produtos, serviços, eventos, datas relevantes e histórico mensurável de desempenho.
+
+## Marco 19 — Autopromoção controlada
+
+Três níveis:
+
+1. Assistido: IA cria → cliente revisa → cliente publica.
+2. Programado: cliente aprova → agenda → sistema publica.
+3. Automático controlado: regra autorizada → geração/publicação dentro de limites → medição.
+
+Sempre com frequência máxima, categorias permitidas, logs, interrupção e controles antiabuso.
+
+## Marco 20 — SEO contínuo
+
+Monitorar títulos, descrições, conteúdo, páginas, links, indexação, SEO local, desempenho e problemas técnicos. Alterações significativas devem ser recomendadas antes de execução automática, salvo autorização explícita apropriada.
+
+## Marco 21 — Landings dinâmicas
+
+Permitir que campanhas criem páginas específicas em vez de direcionar todo tráfego à homepage.
+
+```text
+Campanha → Landing específica → CTA → WhatsApp/Formulário
+```
+
+## Marco 22 — Analytics comercial
+
+Unificar marketing e vendas medindo o funil observável entre campanha, interação, visita, contato, oportunidade e venda. Não alegar causalidade quando os dados não sustentarem atribuição.
+
+## Marco 23 — Marketing Copilot
+
+Permitir perguntas em linguagem natural sobre resultados, sempre respondidas com dados verificáveis. Recomendações devem estar ligadas às métricas que as sustentam.
+
+## Marco 24 — Automação visual
+
+```text
+Gatilho → Condição → Ação → Espera → Decisão
+```
+
+Suportar automações comerciais e de marketing com simulação, versionamento, auditoria, reversão, limites, filas, retentativas e dead-letter queue.
+
+## Marco 25 — Customer Success
+
+Depois da venda, acompanhar site, campanhas, leads, manutenção e resultados. Identificar oportunidades de renovação, upsell, cross-sell e melhoria sem inventar necessidades.
+
+## Marco 26 — Equipes e agências
+
+Organizações, workspaces, convites, papéis, permissões, territórios, metas, distribuição de leads, isolamento por tenant, MFA, auditoria, white label e subcontas.
+
+## Marco 27 — Portal do cliente
+
+Interface simplificada para o cliente final acompanhar site, campanhas, resultados, leads, mensagens, pagamentos e solicitações sem acessar o CRM completo da agência/vendedor.
+
+## Marco 28 — Receita recorrente
+
+Permitir estruturar ofertas que combinem criação com serviços recorrentes, como hospedagem, manutenção, Marketing Agent, social media, analytics e IA.
+
+## Marco 29 — Inteligência de receita
+
+Medir, quando houver dados suficientes: CAC, ticket, MRR, churn, conversão, ciclo comercial, velocidade de vendas, origem, campanhas, canais, serviços e segmentos.
+
+A IA explica dados; não inventa dados.
+
+## Marco 30 — Mobile
+
+Priorizar PWA instalável para CRM, tarefas, conversas, aprovação de conteúdo, campanhas, propostas e notificações. Aplicativo nativo somente se houver justificativa posterior.
+
+## Marco 31 — Plataforma e ecossistema
+
+Depois da consolidação: API pública versionada, OAuth, webhooks, SDK, sandbox, n8n, Make, Zapier, Google Workspace, Microsoft 365 e marketplace de integrações/templates.
+
+---
+
+## Arquitetura final pretendida
+
+```text
+                    LEADHUNTER PRO
+                           │
+        ┌──────────────────┼──────────────────┐
+        │                  │                  │
+   AQUISIÇÃO             VENDAS             ENTREGA
+        │                  │                  │
+  Prospecção             CRM              Studio
+  Auditor               Conversas          Sites
+  Scoring                SDR               Publicação
+        │                  │                  │
+        └─────────────── Proposta ───────────┘
+                           │
+                         Venda
+                           │
+                           ▼
+                     SITE DO CLIENTE
+                           │
+                           ▼
+                    MARKETING AGENT
+                           │
+             ┌─────────────┼─────────────┐
+             │             │             │
+           Social         SEO        Campanhas
+             │             │             │
+             └─────────────┼─────────────┘
+                           ▼
+                       VISITANTES
+                           │
+                           ▼
+                    LEADS / CONTATOS
+                           │
+                           ▼
+                          CRM
+                           │
+                           ▼
+                        RECEITA
+```
+
+O ciclo é:
+
+```text
+ENCONTRAR → VENDER → ENTREGAR → PROMOVER → GERAR DEMANDA → MEDIR → MELHORAR ↺
+```
+
+## Ordem prática de desenvolvimento
+
+### Fase A
+Marco 0 — Verdade do produto  
+Marco 1 — Limpeza e UX
+
+### Fase B
+Marco 2 — Prospecção 2.0  
+Marco 3 — Auditor Digital  
+Marco 4 — Scoring explicável
+
+### Fase C
+Marco 5 — CRM simplificado  
+Marco 6 — Comunicação real  
+Marco 7 — SDR assistido
+
+### Fase D
+Marco 8 — Demonstração  
+Marco 9 — Templates  
+Marco 10 — Preview
+
+### Fase E
+Marco 11 — Propostas  
+Marco 12 — Contratos e pagamentos
+
+### Fase F
+Marco 13 — Editor  
+Marco 14 — Publicação
+
+### Fase G
+Marcos 15–19 — Marketing Agent, social, campanhas, calendário e autopromoção
+
+### Fase H
+Marcos 20–23 — SEO, landings, analytics e Marketing Copilot
+
+### Fase I
+Marcos 24–29 — Automação, Customer Success, equipes, portal e inteligência de receita
+
+### Fase J
+Marcos 30–31 — Mobile e ecossistema
+
+## Regra de entrega
+
+Cada marco será quebrado em entregas pequenas com:
+
+```text
+Objetivo → Escopo → Banco → Backend → Frontend → Testes
+→ Documentação → Gate → Deploy → Smoke test
+```
 
 Toda evolução deve:
 
 1. manter `npm run quality` aprovado;
 2. preservar compatibilidade e dados existentes;
-3. incluir testes de unidade, integração e regressão;
+3. incluir testes adequados e regressão para bugs corrigidos;
 4. manter segredos fora do Git;
 5. documentar variáveis e migrações;
-6. publicar uma entrega pequena na `main` depois da validação;
-7. confirmar o commit implantado pelo `/api/health`;
-8. executar smoke test no Render;
-9. medir adoção e resultado antes de ampliar o escopo.
+6. confirmar o commit implantado;
+7. executar smoke test em produção antes de declarar a entrega operacional.
+
+## Próxima entrega
+
+O desenvolvimento deve retomar pelo **Marco 0 + Marco 1**.
+
+Primeiro será produzido um inventário da interface e dos recursos atuais, classificando cada item como MANTER, SIMPLIFICAR, FUNDIR, MOVER, REDESENHAR ou REMOVER. Depois será definido o novo mapa de navegação e os fluxos principais.
+
+Somente então a interface será reorganizada. Isso evita construir Demonstrações, Marketing Agent e outras capacidades novas sobre uma experiência já identificada como pouco intuitiva.
